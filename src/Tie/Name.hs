@@ -33,6 +33,7 @@ module Tie.Name
     toApiResponseConstructorName,
     toApiDefaultResponseConstructorName,
     toApiMemberName,
+    toEnumConstructorName,
   )
 where
 
@@ -155,6 +156,14 @@ toApiResponseConstructorName name statusCode =
 toApiDefaultResponseConstructorName :: Name -> PP.Doc ann
 toApiDefaultResponseConstructorName name =
   PP.pretty . Text.pack . escapeKeyword . (<> "DefaultResponse") . capitalizeFirstLetter . Text.unpack . unName $ name
+
+toEnumConstructorName :: Name -> Text -> PP.Doc ann
+toEnumConstructorName (Name typName) variant =
+  PP.pretty $
+    Text.pack $
+      escapeKeyword $
+        capitalizeFirstLetter (Text.unpack typName)
+          <> capitalizeFirstLetter (Text.unpack variant)
 
 -- | Constructs a name for an object defined inline. Based on the containing data
 -- type as well as the field name.

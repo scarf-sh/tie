@@ -19,6 +19,7 @@ import Tie.Name
     inlineVariantTypeName,
     toConstructorName,
     toDataTypeName,
+    toEnumConstructorName,
     toFieldName,
     toFunctionName,
     toJsonFieldName,
@@ -289,7 +290,7 @@ codegenEnumeration typName alternatives _includeNull =
               ( "="
                   <+> PP.concatWith
                     (\x y -> x <> PP.line <> "|" <+> y)
-                    (map PP.pretty alternatives)
+                    (map (toEnumConstructorName typName) alternatives)
                     <> PP.line
                     <> "deriving"
                   <+> "(" <> "Eq" <> ","
@@ -303,7 +304,7 @@ codegenEnumeration typName alternatives _includeNull =
                 <> PP.indent
                   4
                   ( PP.vsep
-                      [ PP.pretty alt <+> "->" <+> "\"" <+> PP.pretty alt <+> "\""
+                      [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
                         | alt <- alternatives
                       ]
                   )
@@ -312,13 +313,19 @@ codegenEnumeration typName alternatives _includeNull =
         "instance" <+> "Data.Aeson.FromJSON" <+> toDataTypeName typName <+> "where" <> PP.line
           <> PP.indent
             4
-            ( "parseJSON" <+> "=" <+> "withText" <+> "\"" <+> toDataTypeName typName <+> "\"" <+> "$" <+> "\\" <+> "s" <+> "->" <> PP.line
+            ( "parseJSON" <+> "=" <+> "Data.Aeson.withText" <+> "\"" <> toDataTypeName typName <> "\"" <+> "$" <+> "\\" <> "s" <+> "->" <> PP.line
                 <> PP.indent
                   4
-                  ( PP.vsep
-                      [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> PP.pretty alt
-                        | alt <- alternatives
-                      ]
+                  ( "case" <+> "s" <+> "of" <> PP.line
+                      <> PP.indent
+                        4
+                        ( PP.vsep
+                            ( [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> "pure" <+> toEnumConstructorName typName alt
+                                | alt <- alternatives
+                              ]
+                                ++ ["_" <+> "->" <+> "fail" <+> "\"invalid enum value\""]
+                            )
+                        )
                   )
             )
-   in PP.vsep [dataDecl, PP.line, toJSON, PP.line, fromJSON]
+   in PP.vsep [dataDecl, mempty, toJSON, mempty, fromJSON]
