@@ -111,6 +111,8 @@ import qualified Web.HttpApiData
 import OpenAPI.Schemas.NISE
 import OpenAPI.Schemas.Vehicle
 
+import OpenAPI.Response
+
 data GetUsersResponse
     = GetUsersResponse200 Vehicle
 

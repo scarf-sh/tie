@@ -18,6 +18,7 @@ import Prettyprinter (Doc, vsep)
 import Tie.Codegen.Cabal (codegenCabalFile)
 import Tie.Codegen.Imports
   ( codegenExtraApiModuleDependencies,
+    codegenExtraResponseModuleDependencies,
     codegenModuleHeader,
     codegenResponseDependencies,
     codegenSchemaDependencies,
@@ -80,11 +81,11 @@ specSchemas =
   InsOrd.toList . OpenApi._componentsSchemas . OpenApi._openApiComponents
 
 specPaths :: OpenApi.OpenApi -> [(FilePath, OpenApi.PathItem)]
-specPaths = 
+specPaths =
   InsOrd.toList . OpenApi._openApiPaths
 
 specComponents :: OpenApi.OpenApi -> OpenApi.Components
-specComponents = 
+specComponents =
   OpenApi._openApiComponents
 
 generate :: MonadIO m => Writer m -> FilePath -> m ()
@@ -160,6 +161,8 @@ generate write inputFile = do
         [ header,
           mempty,
           dependencyCode,
+          mempty,
+          codegenExtraResponseModuleDependencies apiName,
           mempty,
           responsesCode
         ]

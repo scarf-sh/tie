@@ -7,6 +7,7 @@ module Tie.Codegen.Imports
     codegenSchemaDependencies,
     codegenResponseDependencies,
     codegenExtraApiModuleDependencies,
+    codegenExtraResponseModuleDependencies,
   )
 where
 
@@ -60,6 +61,10 @@ codegenModuleHeader moduleName =
 
 codegenExtraApiModuleDependencies :: ApiName -> Doc ann
 codegenExtraApiModuleDependencies apiName =
+  "import" <+> PP.pretty (responseHaskellModuleName apiName)
+
+codegenExtraResponseModuleDependencies :: ApiName -> Doc ann
+codegenExtraResponseModuleDependencies apiName =
   "import" <+> PP.pretty (responseHaskellModuleName apiName)
 
 codegenSchemaDependencies :: ApiName -> [Name] -> Doc ann

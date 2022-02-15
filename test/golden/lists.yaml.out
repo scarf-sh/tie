@@ -108,6 +108,8 @@ import qualified Web.HttpApiData
 
 import OpenAPI.Schemas.Packages
 
+import OpenAPI.Response
+
 data ListPackagesResponse
     = ListPackagesResponse200 Packages
 
@@ -137,6 +139,8 @@ import qualified Network.Wai
 import qualified Web.HttpApiData
 
 import OpenAPI.Schemas.Package
+
+import OpenAPI.Response
 
 data ListPackages2Response
     = ListPackages2Response200 [ Package ]

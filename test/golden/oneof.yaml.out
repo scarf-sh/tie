@@ -96,6 +96,8 @@ import qualified Web.HttpApiData
 
 import OpenAPI.Schemas.Packages
 
+import OpenAPI.Response
+
 data ListPackagesResponse
     = ListPackagesResponse200 Packages
 
