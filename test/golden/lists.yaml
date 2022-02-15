@@ -1,0 +1,47 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Scarf
+  license:
+    name: AllRightsReserved
+servers:
+  - url: https://scarf.sh/api/v1
+paths:
+  /packages:
+    get:
+      summary: List all packages
+      operationId: listPackages
+      tags:
+        - packages
+      responses:
+        '200':
+          description: An array of packages
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Packages"
+  /packages2:
+    get:
+      summary: List all packages
+      operationId: listPackages2
+      tags:
+        - packages
+      responses:
+        '200':
+          description: An inline array of packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  $ref: "#/components/schemas/Package"
+components:
+  schemas:
+    Package: 
+      properties: 
+        name: 
+          type: string
+    Packages:
+      type: array
+      items:
+        $ref: "#/components/schemas/Package"

@@ -1,0 +1,201 @@
+OpenAPI/Api.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Api where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Response
+
+import OpenAPI.Schemas.Packages
+
+import OpenAPI.Response.ListPackages
+
+data Api m = Api {
+    listPackages :: m ListPackagesResponse
+}
+
+application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
+application run api notFound request respond =
+    case Network.Wai.pathInfo request of
+        [ "packages" ] ->
+            case Network.Wai.requestMethod request of
+                "GET" ->
+                    run request $ do
+                        response <- listPackages api  
+                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                x ->
+                    unsupportedMethod x
+
+        _ ->
+            notFound request respond
+    where
+        unsupportedMethod _ =
+            respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
+        invalidRequest _ =
+            respond (Network.Wai.responseBuilder (toEnum 401) [] mempty)
+---------------------
+OpenAPI/Response.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Response where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+class ToResponse a where
+    toResponse :: a -> Network.Wai.Response
+---------------------
+OpenAPI/Response/ListPackages.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Response.ListPackages where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.Packages
+
+data ListPackagesResponse
+    = ListPackagesResponse200 Packages
+
+instance ToResponse ListPackagesResponse where
+    toResponse (ListPackagesResponse200 x) =
+        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+OpenAPI/Schemas/Package.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Schemas.Package where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+
+
+newtype Package = Package
+    {
+        name :: Data.Maybe.Maybe (Data.Text.Text)
+    }
+
+instance Data.Aeson.ToJSON Package where
+    toJSON Package {..} = Data.Aeson.object
+        [
+            "name" Data.Aeson..= name
+        ]
+
+instance Data.Aeson.FromJSON Package where
+    parseJSON = Data.Aeson.withObject "Package" $ \o ->
+        Package
+            <$> o Data.Aeson..:? "name"
+---------------------
+OpenAPI/Schemas/Packages.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Schemas.Packages where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.Package
+
+data Packages
+    = PackagesPackage Package
+    | PackagesPackage Package
+
+instance Data.Aeson.ToJSON Packages where
+    toJSON (PackagesPackage x) = Data.Aeson.toJSON x
+    toJSON (PackagesPackage x) = Data.Aeson.toJSON x
+
+instance Data.Aeson.FromJSON Packages where
+    parseJSON x =
+        (PackagesPackage <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (PackagesPackage <$> Data.Aeson.parseJSON x)
+---------------------
+open-api.cabal
+
+cabal-version: 3.0
+name: open-api
+version: 0.1.0.0
+library
+  build-depends:
+    , aeson
+    , attoparsec
+    , base
+    , ghc-prim
+    , http-api-data
+    , http-types
+    , text
+    , wai
+  exposed-modules:
+    OpenAPI.Api
+    OpenAPI.Response
+    OpenAPI.Response.ListPackages
+    OpenAPI.Schemas.Package
+    OpenAPI.Schemas.Packages

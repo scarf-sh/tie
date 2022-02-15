@@ -1,0 +1,427 @@
+OpenAPI/Api.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Api where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Response
+
+import OpenAPI.Schemas.NISE
+import OpenAPI.Schemas.Vehicle
+
+import OpenAPI.Response.GetUsers
+
+data Api m = Api {
+    getUsers :: GHC.Types.Int -> Data.Text.Text -> NISE -> m GetUsersResponse
+}
+
+application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
+application run api notFound request respond =
+    case Network.Wai.pathInfo request of
+        [ "users", id, "create", name ] ->
+            case Web.HttpApiData.parseUrlPiece id of
+                Left _ -> invalidRequest "id"
+                Right id ->
+                    case Web.HttpApiData.parseUrlPiece name of
+                        Left _ -> invalidRequest "name"
+                        Right name ->
+                            case Network.Wai.requestMethod request of
+                                "POST" ->
+                                    do result <- Data.Attoparsec.ByteString.parseWith (Network.Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
+                                       case Data.Attoparsec.ByteString.eitherResult result of
+                                           Left _err -> undefined
+                                           Right bodyValue ->
+                                               case Data.Aeson.Types.parseEither Data.Aeson.parseJSON bodyValue of
+                                                   Left _err -> undefined
+                                                   Right body ->
+                                                       run request $ do
+                                                           response <- getUsers api id name body
+                                                           Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                                x ->
+                                    unsupportedMethod x
+
+        _ ->
+            notFound request respond
+    where
+        unsupportedMethod _ =
+            respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
+        invalidRequest _ =
+            respond (Network.Wai.responseBuilder (toEnum 401) [] mempty)
+---------------------
+OpenAPI/Response.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Response where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+class ToResponse a where
+    toResponse :: a -> Network.Wai.Response
+---------------------
+OpenAPI/Response/GetUsers.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Response.GetUsers where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.NISE
+import OpenAPI.Schemas.Vehicle
+
+data GetUsersResponse
+    = GetUsersResponse200 Vehicle
+
+instance ToResponse GetUsersResponse where
+    toResponse (GetUsersResponse200 x) =
+        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+OpenAPI/Schemas/Car.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Schemas.Car where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.Vehicle
+
+data Car = Car
+    {
+        has_4_wheel_drive :: Data.Maybe.Maybe (GHC.Types.Bool),
+        id :: GHC.Types.Int,
+        model :: Data.Maybe.Maybe (Data.Text.Text),
+        name :: Data.Maybe.Maybe (Data.Text.Text),
+        type' :: Data.Text.Text
+    }
+
+instance Data.Aeson.ToJSON Car where
+    toJSON Car {..} = Data.Aeson.object
+        [
+            "has_4_wheel_drive" Data.Aeson..= has_4_wheel_drive,
+            "id" Data.Aeson..= id,
+            "model" Data.Aeson..= model,
+            "name" Data.Aeson..= name,
+            "type" Data.Aeson..= type'
+        ]
+
+instance Data.Aeson.FromJSON Car where
+    parseJSON = Data.Aeson.withObject "Car" $ \o ->
+        Car
+            <$> o Data.Aeson..:? "has_4_wheel_drive"
+            <*> o Data.Aeson..: "id"
+            <*> o Data.Aeson..:? "model"
+            <*> o Data.Aeson..:? "name"
+            <*> o Data.Aeson..: "type"
+---------------------
+OpenAPI/Schemas/NISE.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Schemas.NISE where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.PackageId
+
+newtype NISEValue = NISEValue
+    {
+        name :: Data.Maybe.Maybe (Data.Text.Text)
+    }
+
+instance Data.Aeson.ToJSON NISEValue where
+    toJSON NISEValue {..} = Data.Aeson.object
+        [
+            "name" Data.Aeson..= name
+        ]
+
+instance Data.Aeson.FromJSON NISEValue where
+    parseJSON = Data.Aeson.withObject "NISEValue" $ \o ->
+        NISEValue
+            <$> o Data.Aeson..:? "name"
+
+data NISE = NISE
+    {
+        description :: PackageId,
+        id :: GHC.Types.Int,
+        name :: Data.Text.Text,
+        ports :: [ GHC.Types.Int ],
+        value :: Data.Maybe.Maybe (NISEValue)
+    }
+
+instance Data.Aeson.ToJSON NISE where
+    toJSON NISE {..} = Data.Aeson.object
+        [
+            "description" Data.Aeson..= description,
+            "id" Data.Aeson..= id,
+            "name" Data.Aeson..= name,
+            "ports" Data.Aeson..= ports,
+            "value" Data.Aeson..= value
+        ]
+
+instance Data.Aeson.FromJSON NISE where
+    parseJSON = Data.Aeson.withObject "NISE" $ \o ->
+        NISE
+            <$> o Data.Aeson..: "description"
+            <*> o Data.Aeson..: "id"
+            <*> o Data.Aeson..: "name"
+            <*> o Data.Aeson..: "ports"
+            <*> o Data.Aeson..:? "value"
+---------------------
+OpenAPI/Schemas/PackageId.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Schemas.PackageId where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.Car
+import OpenAPI.Schemas.Plane
+
+newtype PackageIdOneOf4 = PackageIdOneOf4
+    {
+        name :: Data.Maybe.Maybe (Data.Text.Text)
+    }
+
+instance Data.Aeson.ToJSON PackageIdOneOf4 where
+    toJSON PackageIdOneOf4 {..} = Data.Aeson.object
+        [
+            "name" Data.Aeson..= name
+        ]
+
+instance Data.Aeson.FromJSON PackageIdOneOf4 where
+    parseJSON = Data.Aeson.withObject "PackageIdOneOf4" $ \o ->
+        PackageIdOneOf4
+            <$> o Data.Aeson..:? "name"
+
+data PackageId
+    = PackageIdPlane Plane
+    | PackageIdCar Car
+    | PackageIdPackageIdOneOf3 GHC.Types.Int
+    | PackageIdPackageIdOneOf4 PackageIdOneOf4
+
+instance Data.Aeson.ToJSON PackageId where
+    toJSON (PackageIdPlane x) = Data.Aeson.toJSON x
+    toJSON (PackageIdCar x) = Data.Aeson.toJSON x
+    toJSON (PackageIdPackageIdOneOf3 x) = Data.Aeson.toJSON x
+    toJSON (PackageIdPackageIdOneOf4 x) = Data.Aeson.toJSON x
+
+instance Data.Aeson.FromJSON PackageId where
+    parseJSON x =
+        (PackageIdPlane <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (PackageIdCar <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (PackageIdPackageIdOneOf3 <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (PackageIdPackageIdOneOf4 <$> Data.Aeson.parseJSON x)
+---------------------
+OpenAPI/Schemas/Plane.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Schemas.Plane where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.Car
+import OpenAPI.Schemas.Vehicle
+
+data Plane = Plane
+    {
+        car :: Data.Maybe.Maybe (Car),
+        has_reactor :: Data.Maybe.Maybe (GHC.Types.Bool),
+        id :: Data.Maybe.Maybe (GHC.Types.Int),
+        model :: Data.Maybe.Maybe (Data.Text.Text),
+        name :: Data.Maybe.Maybe (Data.Text.Text),
+        nb_passengers :: Data.Maybe.Maybe (GHC.Types.Int),
+        type' :: Data.Maybe.Maybe (Data.Text.Text)
+    }
+
+instance Data.Aeson.ToJSON Plane where
+    toJSON Plane {..} = Data.Aeson.object
+        [
+            "car" Data.Aeson..= car,
+            "has_reactor" Data.Aeson..= has_reactor,
+            "id" Data.Aeson..= id,
+            "model" Data.Aeson..= model,
+            "name" Data.Aeson..= name,
+            "nb_passengers" Data.Aeson..= nb_passengers,
+            "type" Data.Aeson..= type'
+        ]
+
+instance Data.Aeson.FromJSON Plane where
+    parseJSON = Data.Aeson.withObject "Plane" $ \o ->
+        Plane
+            <$> o Data.Aeson..:? "car"
+            <*> o Data.Aeson..:? "has_reactor"
+            <*> o Data.Aeson..:? "id"
+            <*> o Data.Aeson..:? "model"
+            <*> o Data.Aeson..:? "name"
+            <*> o Data.Aeson..:? "nb_passengers"
+            <*> o Data.Aeson..:? "type"
+---------------------
+OpenAPI/Schemas/Vehicle.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Schemas.Vehicle where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+
+
+data Vehicle = Vehicle
+    {
+        id :: GHC.Types.Int,
+        model :: Data.Maybe.Maybe (Data.Text.Text),
+        name :: Data.Maybe.Maybe (Data.Text.Text),
+        type' :: Data.Text.Text
+    }
+
+instance Data.Aeson.ToJSON Vehicle where
+    toJSON Vehicle {..} = Data.Aeson.object
+        [
+            "id" Data.Aeson..= id,
+            "model" Data.Aeson..= model,
+            "name" Data.Aeson..= name,
+            "type" Data.Aeson..= type'
+        ]
+
+instance Data.Aeson.FromJSON Vehicle where
+    parseJSON = Data.Aeson.withObject "Vehicle" $ \o ->
+        Vehicle
+            <$> o Data.Aeson..: "id"
+            <*> o Data.Aeson..:? "model"
+            <*> o Data.Aeson..:? "name"
+            <*> o Data.Aeson..: "type"
+---------------------
+open-api.cabal
+
+cabal-version: 3.0
+name: open-api
+version: 0.1.0.0
+library
+  build-depends:
+    , aeson
+    , attoparsec
+    , base
+    , ghc-prim
+    , http-api-data
+    , http-types
+    , text
+    , wai
+  exposed-modules:
+    OpenAPI.Api
+    OpenAPI.Response
+    OpenAPI.Response.GetUsers
+    OpenAPI.Schemas.Car
+    OpenAPI.Schemas.NISE
+    OpenAPI.Schemas.PackageId
+    OpenAPI.Schemas.Plane
+    OpenAPI.Schemas.Vehicle

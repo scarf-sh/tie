@@ -1,0 +1,145 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: simple_violation_bool
+  license:
+    name: MIT
+  description: |
+    Simple violation in simple_violation_bool module
+servers:
+  - url: https://swagger.io/specification/
+paths:
+  /users/{id}/create/{name}:
+    parameters:
+      - in: path
+        name: id
+        schema: 
+          type: integer
+        required: true
+      - in: path
+        name: name
+        schema: 
+          type: string
+        required: true
+    post:
+      operationId: getUsers
+      summary: Adds a new user
+      requestBody:
+        content:
+          application/json:
+            schema:      # Request body contents
+              $ref: "#/components/schemas/NISE"
+      responses:
+        '200':
+          description: xxxx
+          content: 
+            application/json:
+              schema:      # Request body contents
+                $ref: "#/components/schemas/Vehicle"
+components:
+  schemas:
+    Vehicle:
+      type: object
+      required:
+        - id
+        - type
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+        model:
+          type: string
+        name:
+          type: string
+        
+    Car:
+      allOf:
+        - $ref: "#/components/schemas/Vehicle"
+        - type: object
+          properties:
+            type:
+              enum:
+                - car
+            has_4_wheel_drive:
+              type: boolean
+    
+    Plane:
+      anyOf:
+        - $ref: "#/components/schemas/Vehicle"
+        - type: object
+          properties:
+            type:
+              enum:
+                - plane
+            car: 
+              $ref: "#/components/schemas/Car"              
+            has_reactor:
+              type: boolean
+            nb_passengers:
+              type: integer
+        
+    Error:
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+        message:
+          type: string
+  
+    PackageId: 
+      oneOf: 
+        - $ref: "#/components/schemas/Plane"
+        - $ref: "#/components/schemas/Car"
+        - type: integer            
+        - properties: 
+            name: 
+              type: string
+
+    NISE:
+      type: object
+      title: The Root Schema
+      required:
+        - description
+        - id
+        - name
+        - ports
+      properties:
+        description:
+          $ref: "#/components/schemas/PackageId"
+        id:
+          type: integer
+          title: The Id Schema
+          default: 0
+          format: int64
+          schema:
+            $ref: './violation_schema.yaml#/NISE'
+        name:
+          type: string
+          title: The Name Schema
+          schema:
+            $ref: './violation_schema.yaml#/NISE'
+        ports:
+          type: array
+          title: The Ports Schema
+          schema:
+            $ref: './violation_schema.yaml#/NISE'
+          items:
+            type: integer
+            title: The items Schema
+            default: 0
+            schema:
+              $ref: './violation_schema.yaml#/NISE'
+        value:
+          type: object
+          title: The Value Schema
+          properties: 
+            name: 
+              type: string
+          schema:
+            $ref: './violation_schema.yaml#/NISE'
+
+
