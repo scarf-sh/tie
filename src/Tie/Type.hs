@@ -63,7 +63,7 @@ data StringFormat
     FormatByte
   | -- | binary data, used to describe files
     FormatBinary
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | Represents an OpenAPI enumeration.
 data Enumeration = Enumeration
@@ -72,7 +72,7 @@ data Enumeration = Enumeration
     -- | Whether 'null' is a valid 'Enum' value.
     includeNull :: Bool
   }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | Basic types OpenAPI data types.
 data BasicType
@@ -81,7 +81,7 @@ data BasicType
   | TyNumber
   | TyInteger
   | TyBoolean
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | An object is a collection of property/value pairs.
 data ObjectType ty = ObjectType
@@ -89,7 +89,7 @@ data ObjectType ty = ObjectType
     requiredProperties :: HashSet Name,
     freeFormObjectType :: Bool
   }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | Our own version of 'OpenApi.Referenced'.
 data Named ty
@@ -119,7 +119,7 @@ data Type
     Object (ObjectType (Named Type))
   | -- | Arrays of elements
     Array (Named Type)
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | Casts a 'Type' to a 'BasicType' if possible.
 isBasicType :: Type -> Maybe BasicType

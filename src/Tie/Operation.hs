@@ -83,7 +83,7 @@ data Param = Param
     schema :: Named Type,
     required :: Bool
   }
-  deriving (Eq, Show)
+  deriving (Eq, Ord, Show)
 
 -- | Internal representation for an 'OpenApi.Operation'.
 data Operation = Operation

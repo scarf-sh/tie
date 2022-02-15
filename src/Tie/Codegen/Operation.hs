@@ -8,6 +8,7 @@ module Tie.Codegen.Operation
   )
 where
 
+import qualified Data.Map.Strict as Map
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
@@ -32,8 +33,17 @@ import Tie.Resolve (Resolver)
 
 codegenOperations :: Monad m => Resolver m -> [Operation] -> m (PP.Doc ann)
 codegenOperations resolver operations = do
+  let 
+    groupedOperations :: Map.Map Path [Operation]
+    groupedOperations =
+        Map.fromListWith
+          (<>)
+          [ (path, [operation])
+            | operation@Operation {path} <- operations
+          ]
+
   dataApiDecl <- codegenApiType resolver operations
-  operationsCode <- traverse (codegenOperation resolver) operations
+  operationsCode <- traverse (codegenOperation resolver) (Map.elems groupedOperations)
   let apiDecl =
         -- TODO instead of "application" take name from openapi spec
         "application" <+> "::" <+> "(" <> "Control.Monad.IO.Class.MonadIO" <+> "m" <> ")" <+> "=>" <+> "(" <> "forall" <+> "a" <+> "." <+> "Network.Wai.Request" <+> "->" <+> "m"
@@ -129,8 +139,8 @@ codegenApiTypeOperation resolver Operation {..} = do
             ++ ["m" <+> toApiResponseTypeName name]
         )
 
-codegenOperation :: Monad m => Resolver m -> Operation -> m (PP.Doc ann)
-codegenOperation resolver operation@Operation {..} = do
+codegenOperation :: Monad m => Resolver m -> [Operation] -> m (PP.Doc ann)
+codegenOperation resolver operations@(Operation {path} : _) =
   pure $
     codegenPathGuard path $
       codegenMethodGuard
@@ -140,6 +150,7 @@ codegenOperation resolver operation@Operation {..} = do
               ( codegenCallApiMember name path requestBody
               )
           )
+          | operation@Operation {name, path, method, requestBody} <- operations
         ]
 
 codegenCallApiMember :: Name -> Path -> Maybe RequestBody -> PP.Doc ann

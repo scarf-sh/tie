@@ -21,13 +21,16 @@ import qualified Web.HttpApiData
 
 import OpenAPI.Response
 
+import OpenAPI.Schemas.Vehicle
 import OpenAPI.Schemas.NISE
 import OpenAPI.Schemas.Vehicle
 
-import OpenAPI.Response.GetUsers
+import OpenAPI.Response.GetUser
+import OpenAPI.Response.CreateUser
 
 data Api m = Api {
-    getUsers :: GHC.Types.Int -> Data.Text.Text -> NISE -> m GetUsersResponse
+    getUser :: GHC.Types.Int -> Data.Text.Text -> m GetUserResponse,
+    createUser :: GHC.Types.Int -> Data.Text.Text -> NISE -> m CreateUserResponse
 }
 
 application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
@@ -50,8 +53,12 @@ application run api notFound request respond =
                                                    Left _err -> undefined
                                                    Right body ->
                                                        run request $ do
-                                                           response <- getUsers api id name body
+                                                           response <- createUser api id name body
                                                            Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                                "GET" ->
+                                    run request $ do
+                                        response <- getUser api id name 
+                                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
                                 x ->
                                     unsupportedMethod x
 
@@ -87,13 +94,13 @@ import qualified Web.HttpApiData
 class ToResponse a where
     toResponse :: a -> Network.Wai.Response
 ---------------------
-OpenAPI/Response/GetUsers.hs
+OpenAPI/Response/CreateUser.hs
 
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response.GetUsers where
+module OpenAPI.Response.CreateUser where
 
 import qualified Control.Applicative
 import qualified Control.Monad.IO.Class
@@ -113,11 +120,43 @@ import OpenAPI.Schemas.Vehicle
 
 import OpenAPI.Response
 
-data GetUsersResponse
-    = GetUsersResponse200 Vehicle
+data CreateUserResponse
+    = CreateUserResponse200 Vehicle
 
-instance ToResponse GetUsersResponse where
-    toResponse (GetUsersResponse200 x) =
+instance ToResponse CreateUserResponse where
+    toResponse (CreateUserResponse200 x) =
+        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+OpenAPI/Response/GetUser.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Response.GetUser where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.Vehicle
+
+import OpenAPI.Response
+
+data GetUserResponse
+    = GetUserResponse200 Vehicle
+
+instance ToResponse GetUserResponse where
+    toResponse (GetUserResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 OpenAPI/Schemas/Car.hs
@@ -421,7 +460,8 @@ library
   exposed-modules:
     OpenAPI.Api
     OpenAPI.Response
-    OpenAPI.Response.GetUsers
+    OpenAPI.Response.CreateUser
+    OpenAPI.Response.GetUser
     OpenAPI.Schemas.Car
     OpenAPI.Schemas.NISE
     OpenAPI.Schemas.PackageId

@@ -21,8 +21,17 @@ paths:
         schema: 
           type: string
         required: true
+    get:
+      operationId: getUser
+      responses:
+        '200':
+          description: xxxx
+          content: 
+            application/json:
+              schema:      # Request body contents
+                $ref: "#/components/schemas/Vehicle"
     post:
-      operationId: getUsers
+      operationId: createUser
       summary: Adds a new user
       requestBody:
         content:
