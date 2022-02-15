@@ -158,11 +158,6 @@ codegenCallApiMember operationName path requestBody =
           <+> "response" <> ")" <> ")"
       )
 
-codegenPath :: Monad m => Resolver m -> Path -> m (PP.Doc ann)
-codegenPath resolver path = do
-  segments <- traverse (codegenSegment resolver) path
-  pure (PP.concatWith (\x y -> x <+> ":>" <+> y) segments)
-
 -- | Codegen a 'PathSegment'.
 codegenSegment :: Monad m => Resolver m -> PathSegment Param -> m (PP.Doc ann)
 codegenSegment _resolver segment = case segment of
@@ -182,11 +177,11 @@ codegenPathGuard path continuation =
       ( foldr
           ($)
           continuation
-          [codegenParamGuard param | VariableSegment param <- path]
+          [codegenPathParamGuard param | VariableSegment param <- path]
       )
 
-codegenParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
-codegenParamGuard Param {name} continuation =
+codegenPathParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
+codegenPathParamGuard Param {name} continuation =
   "case" <+> "Web.HttpApiData.parseUrlPiece" <+> toParamBinder name <+> "of" <> PP.line
     <> PP.indent
       4

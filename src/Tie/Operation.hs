@@ -76,12 +76,14 @@ data ParamIn
   | InCookie
   deriving (Eq, Ord, Show)
 
+-- | 'Param' corresponds to OpenAPI's Parameter component.
 data Param = Param
   { name :: Name,
     paramIn :: ParamIn,
     schema :: Named Type,
     required :: Bool
   }
+  deriving (Eq, Show)
 
 -- | Internal representation for an 'OpenApi.Operation'.
 data Operation = Operation
@@ -89,6 +91,10 @@ data Operation = Operation
     name :: Name,
     -- | Path
     path :: Path,
+    -- Query parameters
+    queryParams :: [Param],
+    -- | Header parameters
+    headerParams :: [Param],
     -- | HTTP method for this operation (Get, Post, Put, Delete)
     method :: Text,
     -- | Type of the request body (if any) for this 'Operation'.
@@ -191,6 +197,27 @@ operationToOperation ::
   OpenApi.Operation ->
   m Operation
 operationToOperation resolver errors@Errors {..} method path params OpenApi.Operation {..} = do
+  -- Operations override pathItem params
+  allParams <- traverse (resolve resolver) (_operationParameters ++ params)
+
+  let pathParams =
+        [ param
+          | param@OpenApi.Param {_paramIn} <- allParams,
+            _paramIn == OpenApi.ParamPath
+        ]
+
+      queryParams =
+        [ param
+          | param@OpenApi.Param {_paramIn} <- allParams,
+            _paramIn == OpenApi.ParamQuery
+        ]
+
+      headerParams =
+        [ param
+          | param@OpenApi.Param {_paramIn} <- allParams,
+            _paramIn == OpenApi.ParamHeader
+        ]
+
   operationId <-
     whenNothing _operationOperationId missingOperationId
   path <-
@@ -198,8 +225,11 @@ operationToOperation resolver errors@Errors {..} method path params OpenApi.Oper
       resolver
       errors
       path
-      -- Operations override pathItem params
-      (_operationParameters ++ params)
+      allParams
+  queryParams <-
+    traverse (paramToParam resolver errors) queryParams
+  headerParams <-
+    traverse (paramToParam resolver errors) headerParams
   requestBody <- forM _operationRequestBody $ \referencedRequestBody -> do
     requestBody <- resolve resolver referencedRequestBody
     requestBodyToRequestBody resolver errors requestBody
@@ -305,11 +335,10 @@ pathToPath ::
   -- | URL Path
   FilePath ->
   -- | Available 'OpenApi.Param's
-  [OpenApi.Referenced OpenApi.Param] ->
+  [OpenApi.Param] ->
   m Path
-pathToPath resolver errors@Errors {..} textualPath availableParams = do
+pathToPath resolver errors@Errors {..} textualPath params = do
   let path = parsePath textualPath
-  params <- traverse (resolve resolver) availableParams
   forM path $ \segment ->
     forM segment $ \paramName -> do
       param <-
