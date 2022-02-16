@@ -303,21 +303,24 @@ import qualified Web.HttpApiData
 import OpenAPI.Schemas.Car
 import OpenAPI.Schemas.Plane
 
-newtype PackageIdOneOf4 = PackageIdOneOf4
+data PackageIdOneOf4 = PackageIdOneOf4
     {
-        name :: Data.Maybe.Maybe (Data.Text.Text)
+        age :: Data.Maybe.Maybe (GHC.Types.Int),
+        name :: Data.Text.Text
     }
 
 instance Data.Aeson.ToJSON PackageIdOneOf4 where
     toJSON PackageIdOneOf4 {..} = Data.Aeson.object
         [
+            "age" Data.Aeson..= age,
             "name" Data.Aeson..= name
         ]
 
 instance Data.Aeson.FromJSON PackageIdOneOf4 where
     parseJSON = Data.Aeson.withObject "PackageIdOneOf4" $ \o ->
         PackageIdOneOf4
-            <$> o Data.Aeson..:? "name"
+            <$> o Data.Aeson..:? "age"
+            <*> o Data.Aeson..: "name"
 
 data PackageId
     = PackageIdPlane Plane

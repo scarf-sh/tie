@@ -104,10 +104,13 @@ components:
         - $ref: "#/components/schemas/Plane"
         - $ref: "#/components/schemas/Car"
         - type: integer            
-        - properties: 
+        - required:
+            - name
+          properties: 
             name: 
               type: string
-
+            age:
+              type: integer
     NISE:
       type: object
       title: The Root Schema
