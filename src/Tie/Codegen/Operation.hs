@@ -33,9 +33,8 @@ import Tie.Resolve (Resolver)
 
 codegenOperations :: Monad m => Resolver m -> [Operation] -> m (PP.Doc ann)
 codegenOperations resolver operations = do
-  let 
-    groupedOperations :: Map.Map Path [Operation]
-    groupedOperations =
+  let groupedOperations :: Map.Map Path [Operation]
+      groupedOperations =
         Map.fromListWith
           (<>)
           [ (path, [operation])

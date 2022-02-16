@@ -27,8 +27,10 @@ module Tie.Type
     isOneOfType,
 
     -- * Normalize types
-    normalizeObjectType,
-    normalizeVariants,
+
+    --    normalizeObjectType,
+    --    normalizeVariants,
+    normalizeType,
 
     -- * Dependencies
     namedTypeDependencies,
@@ -355,6 +357,7 @@ isObjectType ty = case ty of
 -- Invariant: The returned 'ObjectType' doesn't contain unnamed dependencies.
 normalizeObjectType ::
   Monad m =>
+  -- | Assign a nem to an object type
   (Name -> ObjectType (Named Type) -> m Name) ->
   ObjectType (Named Type) ->
   m (ObjectType (Named Type), [(Name, Type)])
@@ -370,7 +373,7 @@ normalizeObjectType assignName objectType@ObjectType {..} = do
             pure (Named name (Object objectType))
           -- TODO we need to recurse, otherwise we only support
           -- one level deep arrays.
-          | Array (Unnamed elemType) <- typ,
+          | Just (Unnamed elemType) <- isArrayType typ,
             Just objectType <- isObjectType elemType -> do
             name <- lift (assignName fieldName objectType)
             tell [(name, Object objectType)]
@@ -408,3 +411,47 @@ normalizeVariants assignName variants = runWriterT $
           pure (Named name typ)
       _ ->
         pure variant
+
+-- | Ensures that every reference to other types is named.
+-- In case of an inline definition `normalizeType` returns
+-- the types to generate.
+normalizeType ::
+  Monad m =>
+  -- | Assign a nem to an object type
+  (Name -> Name -> ObjectType (Named Type) -> m Name) ->
+  -- | Assign a name to a oneOf type
+  (Name -> Int -> Type -> m Name) ->
+  -- | Assign a name to an array type
+  (Name -> m Name) ->
+  -- | Name of the enclosing type
+  Name ->
+  -- | Type to normalize
+  Type ->
+  m (Type, [(Name, Type)])
+normalizeType
+  assignObjectTypeName
+  assignOneOfTypeName
+  assignArrayTypeName
+  typeName
+  typ
+    | Just variants <- isOneOfType typ = do
+      (variants, inlineDefinitions) <-
+        normalizeVariants
+          (assignOneOfTypeName typeName)
+          variants
+      pure (OneOf variants, inlineDefinitions)
+    | Just objectType <- isObjectType typ = do
+      (objectType, inlineDefinitions) <-
+        normalizeObjectType
+          (assignObjectTypeName typeName)
+          objectType
+      pure (Object objectType, inlineDefinitions)
+    | Just elemType <- isArrayType typ = do
+      case elemType of
+        Named {} ->
+          pure (typ, [])
+        Unnamed typ -> do
+          elemTypeName <- assignArrayTypeName typeName
+          pure (Array (Named elemTypeName typ), [(elemTypeName, typ)])
+    | otherwise =
+      pure (typ, [])

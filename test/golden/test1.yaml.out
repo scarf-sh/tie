@@ -182,6 +182,8 @@ import qualified Web.HttpApiData
 
 import OpenAPI.Schemas.Vehicle
 
+
+
 data Car = Car
     {
         has_4_wheel_drive :: Data.Maybe.Maybe (GHC.Types.Bool),
@@ -360,6 +362,8 @@ import qualified Web.HttpApiData
 import OpenAPI.Schemas.Car
 import OpenAPI.Schemas.Vehicle
 
+
+
 data Plane = Plane
     {
         car :: Data.Maybe.Maybe (Car),
@@ -414,6 +418,8 @@ import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
+
+
 
 
 

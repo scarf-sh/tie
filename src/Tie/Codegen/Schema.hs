@@ -15,8 +15,7 @@ import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
 import Tie.Name
-  ( inlineObjectTypeName,
-    inlineVariantTypeName,
+  ( inlineVariantTypeName,
     toConstructorName,
     toDataTypeName,
     toEnumConstructorName,
@@ -39,8 +38,7 @@ import Tie.Type
     isObjectType,
     isOneOfType,
     namedType,
-    normalizeObjectType,
-    normalizeVariants,
+    normalizeType,
   )
 import Prelude hiding (Type)
 
@@ -97,18 +95,6 @@ codegenArrayType name typ = pure mempty
 
 codegenOneOfType :: Monad m => Name -> [Named Type] -> m (Doc ann)
 codegenOneOfType typName variants = do
-  -- Extract the inline dependencies, we will codegen them into the same file.
-  (variants, inlineDependencies) <-
-    normalizeVariants
-      ( \ith _variantType ->
-          pure (inlineVariantTypeName typName ith)
-      )
-      variants
-
-  -- Generate code for inline dependencies inplace
-  codeForInlineDependencies <-
-    traverse (uncurry codegenSchema) inlineDependencies
-
   let -- We derive the constructor names upfront. For unnamed types - which can still
       -- exists after normalization for e.g. basic types - we generate an inline variant
       -- type name.
@@ -161,26 +147,10 @@ codegenOneOfType typName variants = do
                   )
             )
 
-  pure $
-    PP.vsep
-      ( (map (<> PP.line) codeForInlineDependencies)
-          ++ [decl, mempty, toJson, mempty, fromJson]
-      )
+  pure (PP.vsep [decl, mempty, toJson, mempty, fromJson])
 
 codegenObjectType :: Monad m => Name -> ObjectType (Named Type) -> m (Doc ann)
-codegenObjectType typName inputObjectType = do
-  -- Extract the inline dependencies, we will codegen them into the same file.
-  (ObjectType {..}, inlineDependencies) <-
-    normalizeObjectType
-      ( \fieldName _inlineObjectType ->
-          pure (inlineObjectTypeName typName fieldName)
-      )
-      inputObjectType
-
-  -- Generate code for inline dependencies inplace
-  codeForInlineDependencies <-
-    traverse (uncurry codegenSchema) inlineDependencies
-
+codegenObjectType typName ObjectType {..} = do
   -- Now generate for the object itself
   let orderedProperties =
         sortOn fst (HashMap.toList properties)
@@ -251,11 +221,7 @@ codegenObjectType typName inputObjectType = do
                         )
                   )
             )
-   in pure $
-        PP.vsep
-          ( (map (<> PP.line) codeForInlineDependencies)
-              ++ [decl, mempty, toJson, mempty, fromJson]
-          )
+   in pure (PP.vsep [decl, mempty, toJson, mempty, fromJson])
 
 codegenRequiredOptionalFieldType :: Bool -> Doc ann -> Doc ann
 codegenRequiredOptionalFieldType True doc = doc

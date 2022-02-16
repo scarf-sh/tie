@@ -35,6 +35,8 @@ import Tie.Name
     apiHaskellModuleName,
     cabalFileName,
     fromText,
+    inlineObjectTypeName,
+    inlineVariantTypeName,
     responseHaskellFileName,
     responseHaskellModuleName,
     toOperationHaskellFileName,
@@ -55,6 +57,7 @@ import Tie.Type
   ( Named,
     Type,
     namedTypeDependencies,
+    normalizeType,
     schemaToType,
     transitiveDependencies,
     typeDependencies,
@@ -87,6 +90,19 @@ specPaths =
 specComponents :: OpenApi.OpenApi -> OpenApi.Components
 specComponents =
   OpenApi._openApiComponents
+
+-- | Normalizes a 'Type' by extracting the contained inline type
+-- definitions.
+normalize :: Monad m => Name -> Type -> m (Type, [(Name, Type)])
+normalize =
+  normalizeType
+    ( \enclosingType fieldName _inlineObjectType ->
+        pure (inlineObjectTypeName enclosingType fieldName)
+    )
+    ( \enclosingType ith _variantType ->
+        pure (inlineVariantTypeName enclosingType ith)
+    )
+    undefined
 
 generate :: MonadIO m => Writer m -> FilePath -> m ()
 generate write inputFile = do
@@ -137,12 +153,23 @@ generate write inputFile = do
       let dependencyCode =
             codegenSchemaDependencies apiName $
               nubOrd (typeDependencies shallow type_)
-      output <- codegenSchema name' type_
+      -- Extract inline dependencies after dependency analysis. We
+      -- will generate the code for the inline dependencies in the
+      -- same file
+      (normedType, inlineDependencies) <-
+        normalize name' type_
+      codeForInlineDependencies <-
+        traverse (uncurry codegenSchema) inlineDependencies
+      -- Generate code for the schema
+      output <-
+        codegenSchema name' normedType
       write path $
         vsep
           [ header,
             mempty,
             dependencyCode,
+            mempty,
+            vsep codeForInlineDependencies,
             mempty,
             output
           ]
