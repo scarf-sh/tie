@@ -123,9 +123,9 @@ codegenApiType resolver operations = do
 codegenApiTypeOperation :: Monad m => Resolver m -> Operation -> m (PP.Doc ann)
 codegenApiTypeOperation resolver Operation {..} = do
   paramsCode <-
-    sequence $ 
-      [ codegenParamSchema param | VariableSegment param <- path ] ++ 
-      [ codegenParamSchema param| param <- queryParams ]
+    sequence $
+      [codegenParamSchema param | VariableSegment param <- path]
+        ++ [codegenParamSchema param | param <- queryParams]
   pure $
     toApiMemberName name <+> "::"
       <+> PP.concatWith

@@ -1,0 +1,30 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Scarf
+  license:
+    name: AllRightsReserved
+servers:
+  - url: https://scarf.sh/api/v1
+paths:
+  /test:
+    get:
+      summary: test
+      operationId: test
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Test"              
+components:
+  schemas:
+    Test: 
+      properties: 
+        dateProp: 
+          type: string
+          format: date
+        dateTimeProp:
+          type: string
+          format: date-time

@@ -24,7 +24,7 @@ import Tie.Name
 
 codegenModuleHeader :: Text -> Doc ann
 codegenModuleHeader moduleName =
-    "{-#" <+> "LANGUAGE" <+> "BangPatterns" <+> "#-}"
+  "{-#" <+> "LANGUAGE" <+> "BangPatterns" <+> "#-}"
     <> PP.line
     <> "{-#" <+> "LANGUAGE" <+> "DuplicateRecordFields" <+> "#-}"
     <> PP.line
@@ -56,6 +56,8 @@ codegenModuleHeader moduleName =
     <> "import" <+> "qualified" <+> "Data.Maybe"
     <> PP.line
     <> "import" <+> "qualified" <+> "Data.Text"
+    <> PP.line
+    <> "import" <+> "qualified" <+> "Data.Time"
     <> PP.line
     <> "import" <+> "qualified" <+> "Data.Text.Encoding"
     <> PP.line

@@ -3,6 +3,7 @@
 {-# LANGUAGE DeriveTraversable #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
+{-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 
 module Tie.Type
@@ -53,9 +54,7 @@ import Prelude hiding (Type)
 
 -- | Formats a String can have
 data StringFormat
-  = -- | Default for when there is no format defined in the type declaration.
-    FormatDefault
-  | -- | Full-date notation as defined by RFC 3339, section 5.6, for example, 2017-07-21
+  = -- | Full-date notation as defined by RFC 3339, section 5.6, for example, 2017-07-21
     FormatDate
   | -- | The date-time notation as defined by RFC 3339, section 5.6, for example, 2017-07-21T17:32:28Z
     FormatDateTime
@@ -65,6 +64,7 @@ data StringFormat
     FormatByte
   | -- | binary data, used to describe files
     FormatBinary
+  | FormatUnknown Text
   deriving (Eq, Ord, Show)
 
 -- | Represents an OpenAPI enumeration.
@@ -78,7 +78,7 @@ data Enumeration = Enumeration
 
 -- | Basic types OpenAPI data types.
 data BasicType
-  = TyString {format :: StringFormat}
+  = TyString {format :: Maybe StringFormat}
   | TyEnum Enumeration
   | TyNumber
   | TyInteger
@@ -240,7 +240,15 @@ schemaToStringyType schema
         }
   | otherwise =
     TyString
-      { format = FormatDefault -- TODO
+      { format = case OpenApi._schemaFormat schema of
+          Nothing ->
+            Nothing
+          Just "date" ->
+            Just FormatDate
+          Just "date-time" ->
+            Just FormatDateTime
+          Just unknown ->
+            Just (FormatUnknown unknown)
       }
 
 -- | Extracts the shallow dependencies of a 'Type' by traversing the 'Type' and

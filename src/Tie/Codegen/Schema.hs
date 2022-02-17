@@ -25,12 +25,14 @@ import Tie.Name
     toOneOfConstructorName,
     toOneOfDataTypeName,
   )
+import Tie.Operation (Param (..))
 import Tie.Type
   ( BasicType (..),
     Enumeration (..),
     Name,
     Named (..),
     ObjectType (..),
+    StringFormat (..),
     Type (..),
     isArrayType,
     isBasicType,
@@ -40,13 +42,12 @@ import Tie.Type
     namedType,
     normalizeType,
   )
-import Tie.Operation (Param(..))
 import Prelude hiding (Type)
 
 -- | Generate code for a parameter type.
 codegenParamSchema :: Monad m => Param -> m (Doc ann)
-codegenParamSchema Param{schema, required} = 
-  fmap (codegenRequiredOptionalFieldType required) $ 
+codegenParamSchema Param {schema, required} =
+  fmap (codegenRequiredOptionalFieldType required) $
     case schema of
       Named {} ->
         -- We are named, just defer to codegenFieldType
@@ -240,7 +241,18 @@ codegenFieldType namedType = case namedType of
     OneOf {} -> "error: oneOf"
     Not {} -> "error: not"
     Basic basicType -> case basicType of
-      TyString {} -> "Data.Text.Text"
+      TyString format -> case format of
+        Nothing ->
+          "Data.Text.Text"
+        Just FormatUnknown {} ->
+          "Data.Text.Text"
+        Just FormatDate ->
+          "Data.Time.Day"
+        Just FormatDateTime ->
+          "Data.Time.UTCTime"
+        Just _otherFormat ->
+          -- TODO consider other formats
+          "Data.Text.Text"
       TyEnum {} -> "error: Enum"
       TyNumber -> "GHC.Types.Double"
       TyInteger -> "GHC.Types.Int"

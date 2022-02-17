@@ -17,6 +17,7 @@ import qualified Data.Attoparsec.ByteString
 import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
@@ -115,6 +116,7 @@ import qualified Data.Attoparsec.ByteString
 import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
@@ -143,6 +145,7 @@ import qualified Data.Attoparsec.ByteString
 import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
@@ -180,6 +183,7 @@ import qualified Data.Attoparsec.ByteString
 import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
@@ -216,6 +220,7 @@ import qualified Data.Attoparsec.ByteString
 import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
@@ -273,6 +278,7 @@ import qualified Data.Attoparsec.ByteString
 import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
@@ -344,6 +350,7 @@ import qualified Data.Attoparsec.ByteString
 import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
@@ -449,6 +456,7 @@ import qualified Data.Attoparsec.ByteString
 import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
@@ -513,6 +521,7 @@ import qualified Data.Attoparsec.ByteString
 import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
