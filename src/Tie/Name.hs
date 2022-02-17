@@ -23,17 +23,18 @@ module Tie.Name
     toOperationHaskellModuleName,
     toResponseHaskellFileName,
     toResponseHaskellModuleName,
+    toApiResponseTypeName,
+    toApiResponseConstructorName,
+    toApiDefaultResponseConstructorName,
+    toApiMemberName,
+    toEnumConstructorName,
     apiHaskellModuleName,
     apiHaskellFileName,
     responseHaskellModuleName,
     responseHaskellFileName,
     inlineObjectTypeName,
     inlineVariantTypeName,
-    toApiResponseTypeName,
-    toApiResponseConstructorName,
-    toApiDefaultResponseConstructorName,
-    toApiMemberName,
-    toEnumConstructorName,
+    inlineArrayElementTypeName,
   )
 where
 
@@ -182,6 +183,13 @@ inlineVariantTypeName (Name parentType) ith =
     Text.pack $
       escapeKeyword $
         capitalizeFirstLetter (Text.unpack parentType) <> "OneOf" <> show ith
+
+inlineArrayElementTypeName :: Name -> Name
+inlineArrayElementTypeName (Name parentType) =
+  Name $
+    Text.pack $
+      escapeKeyword $
+        capitalizeFirstLetter (Text.unpack parentType) <> "Elem"
 
 lowerFirstLetter :: String -> String
 lowerFirstLetter [] = []

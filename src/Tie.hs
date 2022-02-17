@@ -35,6 +35,7 @@ import Tie.Name
     apiHaskellModuleName,
     cabalFileName,
     fromText,
+    inlineArrayElementTypeName,
     inlineObjectTypeName,
     inlineVariantTypeName,
     responseHaskellFileName,
@@ -101,6 +102,9 @@ normalize =
     )
     ( \enclosingType ith ->
         pure (inlineVariantTypeName enclosingType ith)
+    )
+    ( \enclosingType ->
+        pure (inlineArrayElementTypeName enclosingType)
     )
 
 generate :: MonadIO m => Writer m -> FilePath -> m ()

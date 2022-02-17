@@ -35,6 +35,21 @@ paths:
                 type: array
                 items: 
                   $ref: "#/components/schemas/Package"
+  /packages3:
+    get:
+      summary: List all packages
+      operationId: listPackages3
+      tags:
+        - packages
+      responses:
+        '200':
+          description: An inline array of packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  $ref: "#/components/schemas/Inline"              
 components:
   schemas:
     Package: 
@@ -45,3 +60,9 @@ components:
       type: array
       items:
         $ref: "#/components/schemas/Package"
+    Inline:
+      type: array
+      items: 
+          properties:
+            name: 
+              type: string

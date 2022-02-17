@@ -429,6 +429,8 @@ normalizeTypeShallow ::
   -- | Assign a name to an anonnymous type in the ith constructor of a
   -- variant type
   (Name -> Int -> m Name) ->
+  -- | Assign a name to an anonnymous element type of an array
+  (Name -> m Name) ->
   -- | Name of the type to normalize
   Name ->
   -- | Type to normalize
@@ -437,6 +439,7 @@ normalizeTypeShallow ::
 normalizeTypeShallow
   assignObjectFieldTypeName
   assignOneOfTypeName
+  assignArrayElemTypeName
   typeName
   typ
     | Just variants <- isOneOfType typ = do
@@ -447,7 +450,11 @@ normalizeTypeShallow
       (objectType, inlineDefinitions) <-
         normalizeObjectType (assignObjectFieldTypeName typeName) objectType
       pure (Object objectType, inlineDefinitions)
-    -- There is no need to handle Enums and Arrays here. Remember this is
+    | Just elemType <- isArrayType typ = do
+      (normedElemType, inlineDefinitions) <-
+        normalizeNamedType (assignArrayElemTypeName typeName) elemType
+      pure (Array normedElemType, inlineDefinitions)
+    -- There is no need to handle Enums here. Remember this is
     -- only called on types that already have names.
     | otherwise =
       pure (typ, [])
@@ -461,6 +468,8 @@ normalizeType ::
   -- | Assign a name to an anonnymous type in the ith constructor of a
   -- variant type
   (Name -> Int -> m Name) ->
+  -- | Assign a name to an anonnymous element type of an array
+  (Name -> m Name) ->
   -- | Name of the type to normalize
   Name ->
   -- | Type to normalize
@@ -469,6 +478,7 @@ normalizeType ::
 normalizeType
   assignObjectFieldTypeName
   assignOneOfTypeName
+  assignArrayElemTypeName
   typeName
   typ = do
     -- Normalize the type.
@@ -476,6 +486,7 @@ normalizeType
       normalizeTypeShallow
         assignObjectFieldTypeName
         assignOneOfTypeName
+        assignArrayElemTypeName
         typeName
         typ
     -- Now, normalize the inline definitions recursively to ensure
@@ -487,6 +498,7 @@ normalizeType
               normalizeType
                 assignObjectFieldTypeName
                 assignOneOfTypeName
+                assignArrayElemTypeName
                 inlineDefName
                 inlineDefType
             pure
