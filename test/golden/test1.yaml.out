@@ -306,6 +306,8 @@ import OpenAPI.Schemas.Plane
 data PackageIdOneOf4 = PackageIdOneOf4
     {
         age :: Data.Maybe.Maybe (GHC.Types.Int),
+        enum :: PackageIdOneOf4Enum,
+        list :: Data.Maybe.Maybe ([ PackageIdOneOf4List ]),
         name :: Data.Text.Text
     }
 
@@ -313,6 +315,8 @@ instance Data.Aeson.ToJSON PackageIdOneOf4 where
     toJSON PackageIdOneOf4 {..} = Data.Aeson.object
         [
             "age" Data.Aeson..= age,
+            "enum" Data.Aeson..= enum,
+            "list" Data.Aeson..= list,
             "name" Data.Aeson..= name
         ]
 
@@ -320,7 +324,42 @@ instance Data.Aeson.FromJSON PackageIdOneOf4 where
     parseJSON = Data.Aeson.withObject "PackageIdOneOf4" $ \o ->
         PackageIdOneOf4
             <$> o Data.Aeson..:? "age"
+            <*> o Data.Aeson..: "enum"
+            <*> o Data.Aeson..:? "list"
             <*> o Data.Aeson..: "name"
+
+newtype PackageIdOneOf4List = PackageIdOneOf4List
+    {
+        cool :: Data.Maybe.Maybe (Data.Text.Text)
+    }
+
+instance Data.Aeson.ToJSON PackageIdOneOf4List where
+    toJSON PackageIdOneOf4List {..} = Data.Aeson.object
+        [
+            "cool" Data.Aeson..= cool
+        ]
+
+instance Data.Aeson.FromJSON PackageIdOneOf4List where
+    parseJSON = Data.Aeson.withObject "PackageIdOneOf4List" $ \o ->
+        PackageIdOneOf4List
+            <$> o Data.Aeson..:? "cool"
+
+data PackageIdOneOf4Enum
+    = PackageIdOneOf4EnumA
+    | PackageIdOneOf4EnumB
+    deriving (Eq, Show)
+
+instance Data.Aeson.ToJSON PackageIdOneOf4Enum where
+    toJSON x = case x of
+        PackageIdOneOf4EnumA -> "A"
+        PackageIdOneOf4EnumB -> "B"
+
+instance Data.Aeson.FromJSON PackageIdOneOf4Enum where
+    parseJSON = Data.Aeson.withText "PackageIdOneOf4Enum" $ \s ->
+        case s of
+            "A" -> pure PackageIdOneOf4EnumA
+            "B" -> pure PackageIdOneOf4EnumB
+            _ -> fail "invalid enum value"
 
 data PackageId
     = PackageIdPlane Plane

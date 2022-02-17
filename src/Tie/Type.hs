@@ -291,6 +291,8 @@ objectTypeDependencies getDependencies objectType =
 -- | Casting a 'Type' to the set of types it could be.
 isOneOfType :: Type -> Maybe [Named Type]
 isOneOfType ty = case ty of
+  OneOf [_] ->
+    Nothing
   OneOf oneOfs ->
     Just oneOfs
   _ ->
@@ -351,107 +353,144 @@ isObjectType ty = case ty of
           freeFormObjectType = freeFormObjectType o1 || freeFormObjectType o2
         }
 
--- | OpenApi allows defining objects "inline". This function extracts inline objects
--- and assigns names to them.
---
--- Invariant: The returned 'ObjectType' doesn't contain unnamed dependencies.
+normalizeNamedType ::
+  Monad m =>
+  -- | Generate a new name based on the context of an anonymous type. Within 'normalizeNamedType'
+  -- we don't know anything about the enclosing context and we expect the callers to do the right
+  -- thing (tm).
+  m Name ->
+  -- | Named type to normalize.
+  Named Type ->
+  m (Named Type, [(Name, Type)])
+normalizeNamedType assignName namedType = case namedType of
+  Named {} ->
+    pure (namedType, [])
+  Unnamed typ
+    | Just enum <- isEnumType typ -> do
+      newTypeName <- assignName
+      pure
+        (Named newTypeName (Basic (TyEnum enum)), [(newTypeName, Basic (TyEnum enum))])
+    | Just variants <- isOneOfType typ -> do
+      newTypeName <- assignName
+      pure (Named newTypeName (OneOf variants), [(newTypeName, OneOf variants)])
+    | Just objectType <- isObjectType typ -> do
+      newTypeName <- assignName
+      pure (Named newTypeName (Object objectType), [(newTypeName, Object objectType)])
+    | Just (Unnamed elemType) <- isArrayType typ -> do
+      (normedElemType, inlineDefinitions) <-
+        normalizeNamedType assignName (Unnamed elemType)
+      pure (Unnamed (Array normedElemType), inlineDefinitions)
+    | otherwise ->
+      pure (namedType, [])
+
 normalizeObjectType ::
   Monad m =>
-  -- | Assign a nem to an object type
-  (Name -> ObjectType (Named Type) -> m Name) ->
+  -- | Assign a name to an anonnymous type in a field of an 'ObjectType'
+  (Name -> m Name) ->
+  -- | 'ObjectType' to normalize
   ObjectType (Named Type) ->
   m (ObjectType (Named Type), [(Name, Type)])
-normalizeObjectType assignName objectType@ObjectType {..} = do
+normalizeObjectType assignObjectFieldTypeName objectType@ObjectType {..} = do
   (properties, newTypes) <- runWriterT $
-    flip HashMap.traverseWithKey properties $ \fieldName fieldType ->
-      -- TODO we will probably have to handle enums here as well
-      case fieldType of
-        Unnamed typ
-          | Just objectType <- isObjectType typ -> do
-            name <- lift (assignName fieldName objectType)
-            tell [(name, Object objectType)]
-            pure (Named name (Object objectType))
-          -- TODO we need to recurse, otherwise we only support
-          -- one level deep arrays.
-          | Just (Unnamed elemType) <- isArrayType typ,
-            Just objectType <- isObjectType elemType -> do
-            name <- lift (assignName fieldName objectType)
-            tell [(name, Object objectType)]
-            pure (Named name (Object objectType))
-        _ ->
-          pure fieldType
+    flip HashMap.traverseWithKey properties $ \fieldName fieldType -> do
+      (normedType, inlineDefinitions) <-
+        lift $
+          normalizeNamedType (assignObjectFieldTypeName fieldName) fieldType
+      tell inlineDefinitions
+      pure normedType
   pure (objectType {properties}, newTypes)
 
--- | Walk through the variants of a oneOf type. This function extracts inline objects
--- and assigns names to them.
---
--- Invariant: The returned variants don't contain unnamed dependencies.
 normalizeVariants ::
   Monad m =>
-  (Int -> Type -> m Name) ->
+  (Int -> m Name) ->
   [Named Type] ->
   m ([Named Type], [(Name, Type)])
 normalizeVariants assignName variants = runWriterT $
   forM (zip [1 ..] variants) $ \(i, variant) -> do
-    -- TODO we will probably have to handle enums here as well
-    case variant of
-      Unnamed typ
-        | Just objectType <- isObjectType typ -> do
-          let typ = Object objectType
-          name <- lift (assignName i typ)
-          tell [(name, typ)]
-          pure (Named name typ)
-        -- TODO we need to recurse, otherwise we only support
-        -- one level deep arrays.
-        | Array (Unnamed elemType) <- typ,
-          Just objectType <- isObjectType elemType -> do
-          let typ = Object objectType
-          name <- lift (assignName i typ)
-          tell [(name, typ)]
-          pure (Named name typ)
-      _ ->
-        pure variant
+    (normedVariant, inlineDefinitions) <-
+      lift $ normalizeNamedType (assignName i) variant
+    tell inlineDefinitions
+    pure normedVariant
 
--- | Ensures that every reference to other types is named.
--- In case of an inline definition `normalizeType` returns
--- the types to generate.
+-- | Normalizes a 'Type' by assigning each anonymous, inline definition a name.
+-- Returns the normalized 'Type' alongside with the additional inline definitions.
+--
+-- `normalizeTypeShallow` doesn't recurse into the tree but only normalizes the
+-- direct references to anonymous definitions. See `normalizeType` for the recursion.
+-- Otherwise handling of Arrays and Enums gets tricky.
+--
+-- This is called on things that already have a name like
+--   - top-level definitions
+--   - inline definitions that we just assigned a name
+normalizeTypeShallow ::
+  Monad m =>
+  -- | Assign a name to an anonnymous type in a field of an 'ObjectType'
+  (Name -> Name -> m Name) ->
+  -- | Assign a name to an anonnymous type in the ith constructor of a
+  -- variant type
+  (Name -> Int -> m Name) ->
+  -- | Name of the type to normalize
+  Name ->
+  -- | Type to normalize
+  Type ->
+  m (Type, [(Name, Type)])
+normalizeTypeShallow
+  assignObjectFieldTypeName
+  assignOneOfTypeName
+  typeName
+  typ
+    | Just variants <- isOneOfType typ = do
+      (variants, inlineDefinitions) <-
+        normalizeVariants (assignOneOfTypeName typeName) variants
+      pure (OneOf variants, inlineDefinitions)
+    | Just objectType <- isObjectType typ = do
+      (objectType, inlineDefinitions) <-
+        normalizeObjectType (assignObjectFieldTypeName typeName) objectType
+      pure (Object objectType, inlineDefinitions)
+    -- There is no need to handle Enums and Arrays here. Remember this is
+    -- only called on types that already have names.
+    | otherwise =
+      pure (typ, [])
+
+-- Normalizes a 'Type' by assigning each anonymous, inline definition a name.
+-- Returns the normalized 'Type' alongside with the additional inline definitions.
 normalizeType ::
   Monad m =>
-  -- | Assign a nem to an object type
-  (Name -> Name -> ObjectType (Named Type) -> m Name) ->
-  -- | Assign a name to a oneOf type
-  (Name -> Int -> Type -> m Name) ->
-  -- | Assign a name to an array type
-  (Name -> m Name) ->
-  -- | Name of the enclosing type
+  -- | Assign a name to an anonnymous type in a field of an 'ObjectType'
+  (Name -> Name -> m Name) ->
+  -- | Assign a name to an anonnymous type in the ith constructor of a
+  -- variant type
+  (Name -> Int -> m Name) ->
+  -- | Name of the type to normalize
   Name ->
   -- | Type to normalize
   Type ->
   m (Type, [(Name, Type)])
 normalizeType
-  assignObjectTypeName
+  assignObjectFieldTypeName
   assignOneOfTypeName
-  assignArrayTypeName
   typeName
-  typ
-    | Just variants <- isOneOfType typ = do
-      (variants, inlineDefinitions) <-
-        normalizeVariants
-          (assignOneOfTypeName typeName)
-          variants
-      pure (OneOf variants, inlineDefinitions)
-    | Just objectType <- isObjectType typ = do
-      (objectType, inlineDefinitions) <-
-        normalizeObjectType
-          (assignObjectTypeName typeName)
-          objectType
-      pure (Object objectType, inlineDefinitions)
-    | Just elemType <- isArrayType typ = do
-      case elemType of
-        Named {} ->
-          pure (typ, [])
-        Unnamed typ -> do
-          elemTypeName <- assignArrayTypeName typeName
-          pure (Array (Named elemTypeName typ), [(elemTypeName, typ)])
-    | otherwise =
-      pure (typ, [])
+  typ = do
+    -- Normalize the type.
+    (normedType, inlineDefinitions) <-
+      normalizeTypeShallow
+        assignObjectFieldTypeName
+        assignOneOfTypeName
+        typeName
+        typ
+    -- Now, normalize the inline definitions recursively to ensure
+    -- every anonymous definition in the tree has a name assigned.
+    normalizedInlineDefinitions <-
+      foldMapM
+        ( \(inlineDefName, inlineDefType) -> do
+            (normedInlineDefType, moreInlineDefinitions) <-
+              normalizeType
+                assignObjectFieldTypeName
+                assignOneOfTypeName
+                inlineDefName
+                inlineDefType
+            pure
+              ((inlineDefName, normedInlineDefType) : moreInlineDefinitions)
+        )
+        inlineDefinitions
+    pure (normedType, normalizedInlineDefinitions)

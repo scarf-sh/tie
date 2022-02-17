@@ -96,13 +96,12 @@ specComponents =
 normalize :: Monad m => Name -> Type -> m (Type, [(Name, Type)])
 normalize =
   normalizeType
-    ( \enclosingType fieldName _inlineObjectType ->
+    ( \enclosingType fieldName ->
         pure (inlineObjectTypeName enclosingType fieldName)
     )
-    ( \enclosingType ith _variantType ->
+    ( \enclosingType ith ->
         pure (inlineVariantTypeName enclosingType ith)
     )
-    undefined
 
 generate :: MonadIO m => Writer m -> FilePath -> m ()
 generate write inputFile = do
@@ -169,7 +168,7 @@ generate write inputFile = do
             mempty,
             dependencyCode,
             mempty,
-            vsep codeForInlineDependencies,
+            vsep (intersperse mempty codeForInlineDependencies),
             mempty,
             output
           ]

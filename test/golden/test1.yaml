@@ -106,11 +106,28 @@ components:
         - type: integer            
         - required:
             - name
+            - sub
+            - enum
           properties: 
             name: 
               type: string
             age:
               type: integer
+            enum: 
+              type: string
+              enum: 
+                - A
+                - B
+            list: 
+              type: array
+              items:
+                properties: 
+                  cool: 
+                    type: string
+                sub:
+              properties: 
+                subProperty:
+                  type: string
     NISE:
       type: object
       title: The Root Schema

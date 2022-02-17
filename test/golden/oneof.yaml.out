@@ -22,11 +22,17 @@ import qualified Web.HttpApiData
 import OpenAPI.Response
 
 import OpenAPI.Schemas.Packages
+import OpenAPI.Schemas.Inline2
+import OpenAPI.Schemas.Inline
 
 import OpenAPI.Response.ListPackages
+import OpenAPI.Response.ListPackages2
+import OpenAPI.Response.ListPackages2
 
 data Api m = Api {
-    listPackages :: m ListPackagesResponse
+    listPackages :: m ListPackagesResponse,
+    listPackages2 :: m ListPackages2Response,
+    listPackages2 :: m ListPackages2Response
 }
 
 application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
@@ -37,6 +43,24 @@ application run api notFound request respond =
                 "GET" ->
                     run request $ do
                         response <- listPackages api  
+                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                x ->
+                    unsupportedMethod x
+
+        [ "packages2" ] ->
+            case Network.Wai.requestMethod request of
+                "GET" ->
+                    run request $ do
+                        response <- listPackages2 api  
+                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                x ->
+                    unsupportedMethod x
+
+        [ "packages3" ] ->
+            case Network.Wai.requestMethod request of
+                "GET" ->
+                    run request $ do
+                        response <- listPackages2 api  
                         Control.Monad.IO.Class.liftIO (respond (toResponse response))
                 x ->
                     unsupportedMethod x
@@ -104,6 +128,193 @@ data ListPackagesResponse
 instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+OpenAPI/Response/ListPackages2.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Response.ListPackages2 where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.Inline
+
+import OpenAPI.Response
+
+data ListPackages2Response
+    = ListPackages2Response200 Inline
+
+instance ToResponse ListPackages2Response where
+    toResponse (ListPackages2Response200 x) =
+        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+OpenAPI/Response/ListPackages2.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Response.ListPackages2 where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.Inline2
+
+import OpenAPI.Response
+
+data ListPackages2Response
+    = ListPackages2Response200 Inline2
+
+instance ToResponse ListPackages2Response where
+    toResponse (ListPackages2Response200 x) =
+        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+OpenAPI/Schemas/Inline.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Schemas.Inline where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.Package
+
+data InlineValue
+    = InlineValueInlineValueOneOf1 GHC.Types.Int
+    | InlineValueInlineValueOneOf2 Data.Text.Text
+    | InlineValuePackage Package
+
+instance Data.Aeson.ToJSON InlineValue where
+    toJSON (InlineValueInlineValueOneOf1 x) = Data.Aeson.toJSON x
+    toJSON (InlineValueInlineValueOneOf2 x) = Data.Aeson.toJSON x
+    toJSON (InlineValuePackage x) = Data.Aeson.toJSON x
+
+instance Data.Aeson.FromJSON InlineValue where
+    parseJSON x =
+        (InlineValueInlineValueOneOf1 <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (InlineValueInlineValueOneOf2 <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (InlineValuePackage <$> Data.Aeson.parseJSON x)
+
+newtype Inline = Inline
+    {
+        value :: Data.Maybe.Maybe (InlineValue)
+    }
+
+instance Data.Aeson.ToJSON Inline where
+    toJSON Inline {..} = Data.Aeson.object
+        [
+            "value" Data.Aeson..= value
+        ]
+
+instance Data.Aeson.FromJSON Inline where
+    parseJSON = Data.Aeson.withObject "Inline" $ \o ->
+        Inline
+            <$> o Data.Aeson..:? "value"
+---------------------
+OpenAPI/Schemas/Inline2.hs
+
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module OpenAPI.Schemas.Inline2 where
+
+import qualified Control.Applicative
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import OpenAPI.Schemas.Package
+
+data Inline2Value
+    = Inline2ValueInline2ValueOneOf1 GHC.Types.Int
+    | Inline2ValueInline2ValueOneOf2 Data.Text.Text
+    | Inline2ValueInline2ValueOneOf3 Inline2ValueOneOf3
+
+instance Data.Aeson.ToJSON Inline2Value where
+    toJSON (Inline2ValueInline2ValueOneOf1 x) = Data.Aeson.toJSON x
+    toJSON (Inline2ValueInline2ValueOneOf2 x) = Data.Aeson.toJSON x
+    toJSON (Inline2ValueInline2ValueOneOf3 x) = Data.Aeson.toJSON x
+
+instance Data.Aeson.FromJSON Inline2Value where
+    parseJSON x =
+        (Inline2ValueInline2ValueOneOf1 <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (Inline2ValueInline2ValueOneOf2 <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (Inline2ValueInline2ValueOneOf3 <$> Data.Aeson.parseJSON x)
+
+data Inline2ValueOneOf3
+    = Inline2ValueOneOf3Inline2ValueOneOf3OneOf1 GHC.Types.Double
+    | Inline2ValueOneOf3Package Package
+
+instance Data.Aeson.ToJSON Inline2ValueOneOf3 where
+    toJSON (Inline2ValueOneOf3Inline2ValueOneOf3OneOf1 x) = Data.Aeson.toJSON x
+    toJSON (Inline2ValueOneOf3Package x) = Data.Aeson.toJSON x
+
+instance Data.Aeson.FromJSON Inline2ValueOneOf3 where
+    parseJSON x =
+        (Inline2ValueOneOf3Inline2ValueOneOf3OneOf1 <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (Inline2ValueOneOf3Package <$> Data.Aeson.parseJSON x)
+
+newtype Inline2 = Inline2
+    {
+        value :: Data.Maybe.Maybe (Inline2Value)
+    }
+
+instance Data.Aeson.ToJSON Inline2 where
+    toJSON Inline2 {..} = Data.Aeson.object
+        [
+            "value" Data.Aeson..= value
+        ]
+
+instance Data.Aeson.FromJSON Inline2 where
+    parseJSON = Data.Aeson.withObject "Inline2" $ \o ->
+        Inline2
+            <$> o Data.Aeson..:? "value"
 ---------------------
 OpenAPI/Schemas/Package.hs
 
@@ -203,5 +414,8 @@ library
     OpenAPI.Api
     OpenAPI.Response
     OpenAPI.Response.ListPackages
+    OpenAPI.Response.ListPackages2
+    OpenAPI.Schemas.Inline
+    OpenAPI.Schemas.Inline2
     OpenAPI.Schemas.Package
     OpenAPI.Schemas.Packages

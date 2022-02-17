@@ -20,6 +20,32 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Packages"
+  /packages2:
+    get:
+      summary: List all packages
+      operationId: listPackages2
+      tags:
+        - packages
+      responses:
+        '200':
+          description: An array of Inlines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inline"
+  /packages3:
+    get:
+      summary: List all packages
+      operationId: listPackages2
+      tags:
+        - packages
+      responses:
+        '200':
+          description: An array of Inlines
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inline2"
 components:
   schemas:
     Package: 
@@ -30,3 +56,19 @@ components:
       oneOf:
         - $ref: "#/components/schemas/Package"
         - $ref: "#/components/schemas/Package"
+    Inline:
+      properties:
+        value: 
+          oneOf: 
+            - type: integer
+            - type: string
+            - $ref: "#/components/schemas/Package"
+    Inline2:
+      properties:
+        value: 
+          oneOf: 
+            - type: integer
+            - type: string
+            - oneOf:
+                - type: number
+                - $ref: "#/components/schemas/Package"
