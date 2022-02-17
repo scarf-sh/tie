@@ -70,7 +70,7 @@ codegenSchema typName typ
   | Just objectType <- isObjectType typ =
     codegenObjectType typName objectType
   | Just elemType <- isArrayType typ =
-    codegenArrayType typName elemType
+    pure (codegenArrayType typName elemType)
   | otherwise =
     undefined
 
@@ -90,8 +90,9 @@ codegenBasicType typName basicType =
           "GHC.Types.Bool"
    in "type" <+> toDataTypeName typName <+> "=" <+> typ
 
-codegenArrayType :: Monad m => Name -> Named Type -> m (Doc ann)
-codegenArrayType name typ = pure mempty
+codegenArrayType :: Name -> Named Type -> Doc ann
+codegenArrayType typeName elemType =
+  "type" <+> toDataTypeName typeName <+> "=" <+> "[" <+> codegenFieldType elemType <+> "]"
 
 codegenOneOfType :: Monad m => Name -> [Named Type] -> m (Doc ann)
 codegenOneOfType typName variants = do
