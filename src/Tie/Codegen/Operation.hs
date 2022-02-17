@@ -124,18 +124,48 @@ codegenApiTypeOperation :: Monad m => Resolver m -> Operation -> m (PP.Doc ann)
 codegenApiTypeOperation resolver Operation {..} = do
   paramsCode <-
     sequence $
-      [codegenParamSchema param | VariableSegment param <- path]
-        ++ [codegenParamSchema param | param <- queryParams]
+      [ codegenParamSchemaAndComment param
+        | VariableSegment param@Param {summary} <- path
+      ]
+        ++ [ codegenParamSchemaAndComment param
+             | param@Param {summary} <- queryParams
+           ]
   pure $
-    toApiMemberName name <+> "::"
-      <+> PP.concatWith
-        (\x y -> x <+> "->" <+> y)
-        ( paramsCode
-            ++ [ codegenFieldType jsonRequestBodyContent
-                 | Just RequestBody {jsonRequestBodyContent} <- [requestBody]
-               ]
-            ++ ["m" <+> toApiResponseTypeName name]
+    codegenApiMemberComment summary
+      <> toApiMemberName name <+> "::"
+      <> PP.line
+      <> PP.indent
+        4
+        ( PP.concatWith
+            (\x y -> x <+> "->" <> PP.line <> y)
+            ( paramsCode
+                ++ [ codegenRequestBodyComment body
+                       <> codegenFieldType jsonRequestBodyContent
+                     | Just body@RequestBody {jsonRequestBodyContent} <- [requestBody]
+                   ]
+                ++ ["m" <+> toApiResponseTypeName name]
+            )
         )
+  where
+    codegenApiMemberComment mcomment = case mcomment of
+      Nothing -> mempty
+      Just comment -> "-- |" <+> PP.pretty comment <> PP.line
+
+    codegenParamComment Param {name, summary} = case summary of
+      Nothing ->
+        "--" <+> "@" <> toParamBinder name <> "@" <> PP.line
+      Just comment ->
+        "--" <+> "@" <> toParamBinder name <> "@" <+> PP.pretty comment <> PP.line
+
+    codegenRequestBodyComment RequestBody {description} = case description of
+      Nothing ->
+        mempty
+      Just comment ->
+        "--" <+> PP.pretty comment <> PP.line
+
+    codegenParamSchemaAndComment param = do
+      code <- codegenParamSchema param
+      pure (codegenParamComment param <> code)
 
 codegenOperation :: Monad m => Resolver m -> [Operation] -> m (PP.Doc ann)
 codegenOperation resolver operations@(Operation {path} : _) =

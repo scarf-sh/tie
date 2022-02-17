@@ -35,9 +35,15 @@ import OpenAPI.Response.ListPackages2
 import OpenAPI.Response.ListPackages2
 
 data Api m = Api {
-    listPackages :: m ListPackagesResponse,
-    listPackages2 :: m ListPackages2Response,
-    listPackages2 :: m ListPackages2Response
+    -- | List all packages
+    listPackages ::
+        m ListPackagesResponse,
+    -- | List all packages
+    listPackages2 ::
+        m ListPackages2Response,
+    -- | List all packages
+    listPackages2 ::
+        m ListPackages2Response
 }
 
 application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application

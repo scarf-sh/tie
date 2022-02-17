@@ -33,8 +33,12 @@ import OpenAPI.Response.ListPackages
 import OpenAPI.Response.ListPackages
 
 data Api m = Api {
-    listPackages :: m ListPackagesResponse,
-    listPackages :: m ListPackagesResponse
+    -- | List all packages
+    listPackages ::
+        m ListPackagesResponse,
+    -- | List all packages
+    listPackages ::
+        m ListPackagesResponse
 }
 
 application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application

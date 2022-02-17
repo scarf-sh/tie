@@ -31,7 +31,9 @@ import OpenAPI.Schemas.Test
 import OpenAPI.Response.Test
 
 data Api m = Api {
-    test :: m TestResponse
+    -- | test
+    test ::
+        m TestResponse
 }
 
 application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application

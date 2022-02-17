@@ -51,12 +51,14 @@ type StatusCode = Int
 
 -- | Request body descriptor
 data RequestBody = RequestBody
-  { jsonRequestBodyContent :: Named Type
+  { description :: Maybe Text,
+    jsonRequestBodyContent :: Named Type
   }
 
 -- | Response descriptor
 data Response = Response
-  { -- | JSON schema of the response
+  { description :: Text,
+    -- | JSON schema of the response
     jsonResponseContent :: Named Type
   }
 
@@ -79,6 +81,7 @@ data ParamIn
 -- | 'Param' corresponds to OpenAPI's Parameter component.
 data Param = Param
   { name :: Name,
+    summary :: Maybe Text,
     paramIn :: ParamIn,
     schema :: Named Type,
     required :: Bool
@@ -89,6 +92,8 @@ data Param = Param
 data Operation = Operation
   { -- | Name of the operation. Used for identifiers.
     name :: Name,
+    -- | A short summary of what the operation is.
+    summary :: Maybe Text,
     -- | Path
     path :: Path,
     -- Query parameters
@@ -242,6 +247,7 @@ operationToOperation resolver errors@Errors {..} method path params OpenApi.Oper
   pure
     Operation
       { name = fromText operationId,
+        summary = _operationSummary,
         ..
       }
 
@@ -265,7 +271,8 @@ requestBodyToRequestBody resolver Errors {..} requestBody = do
     schemaRefToType resolver referencedSchema
   pure
     RequestBody
-      { jsonRequestBodyContent = type_
+      { description = OpenApi._requestBodyDescription requestBody,
+        jsonRequestBodyContent = type_
       }
 
 responseToResponse ::
@@ -288,7 +295,8 @@ responseToResponse resolver Errors {..} response = do
     schemaRefToType resolver referencedSchema
   pure
     Response
-      { jsonResponseContent = type_
+      { description = OpenApi._responseDescription response,
+        jsonResponseContent = type_
       }
 
 parsePath :: FilePath -> [PathSegment Text]
@@ -319,6 +327,7 @@ paramToParam resolver Errors {..} OpenApi.Param {..} = do
   pure
     Param
       { name = fromText _paramName,
+        summary = _paramDescription,
         paramIn = case _paramIn of
           OpenApi.ParamQuery -> InQuery
           OpenApi.ParamHeader -> InHeader

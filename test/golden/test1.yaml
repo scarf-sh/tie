@@ -13,10 +13,12 @@ paths:
     parameters:
       - in: path
         name: id
+        description: Uniquely identifies a user
         schema: 
           type: integer
         required: true
       - in: path
+        description: Name of a user
         name: name
         schema: 
           type: string
@@ -43,6 +45,7 @@ paths:
       operationId: createUser
       summary: Adds a new user
       requestBody:
+        description: Some nice request body
         content:
           application/json:
             schema:      # Request body contents

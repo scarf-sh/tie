@@ -34,8 +34,29 @@ import OpenAPI.Response.GetUser
 import OpenAPI.Response.CreateUser
 
 data Api m = Api {
-    getUser :: GHC.Types.Int -> Data.Text.Text -> GHC.Types.Int -> Data.Maybe.Maybe (GHC.Types.Int) -> m GetUserResponse,
-    createUser :: GHC.Types.Int -> Data.Text.Text -> GHC.Types.Int -> Data.Maybe.Maybe (GHC.Types.Int) -> NISE -> m CreateUserResponse
+    getUser ::
+        -- @id@ Uniquely identifies a user
+        GHC.Types.Int ->
+        -- @name@ Name of a user
+        Data.Text.Text ->
+        -- @page@
+        GHC.Types.Int ->
+        -- @offset@
+        Data.Maybe.Maybe (GHC.Types.Int) ->
+        m GetUserResponse,
+    -- | Adds a new user
+    createUser ::
+        -- @id@ Uniquely identifies a user
+        GHC.Types.Int ->
+        -- @name@ Name of a user
+        Data.Text.Text ->
+        -- @page@
+        GHC.Types.Int ->
+        -- @offset@
+        Data.Maybe.Maybe (GHC.Types.Int) ->
+        -- Some nice request body
+        NISE ->
+        m CreateUserResponse
 }
 
 application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
