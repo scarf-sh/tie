@@ -1,5 +1,6 @@
 OpenAPI/Api.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -66,6 +67,7 @@ application run api notFound request respond =
 ---------------------
 OpenAPI/Response.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -93,6 +95,7 @@ class ToResponse a where
 ---------------------
 OpenAPI/Response/ListPackages.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -128,6 +131,7 @@ instance ToResponse ListPackagesResponse where
 ---------------------
 OpenAPI/Response/ListPackages.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -163,6 +167,7 @@ instance ToResponse ListPackagesResponse where
 ---------------------
 OpenAPI/Schemas/Package.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}

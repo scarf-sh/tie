@@ -1,5 +1,6 @@
 OpenAPI/Api.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -78,6 +79,7 @@ application run api notFound request respond =
 ---------------------
 OpenAPI/Response.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -105,6 +107,7 @@ class ToResponse a where
 ---------------------
 OpenAPI/Response/ListPackages.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -140,6 +143,7 @@ instance ToResponse ListPackagesResponse where
 ---------------------
 OpenAPI/Response/ListPackages2.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -175,6 +179,7 @@ instance ToResponse ListPackages2Response where
 ---------------------
 OpenAPI/Response/ListPackages2.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -210,6 +215,7 @@ instance ToResponse ListPackages2Response where
 ---------------------
 OpenAPI/Schemas/Inline.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -268,6 +274,7 @@ instance Data.Aeson.FromJSON Inline where
 ---------------------
 OpenAPI/Schemas/Inline2.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -339,6 +346,7 @@ instance Data.Aeson.FromJSON Inline2 where
 ---------------------
 OpenAPI/Schemas/Package.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -383,6 +391,7 @@ instance Data.Aeson.FromJSON Package where
 ---------------------
 OpenAPI/Schemas/Packages.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}

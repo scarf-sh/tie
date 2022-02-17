@@ -24,7 +24,9 @@ import Tie.Name
 
 codegenModuleHeader :: Text -> Doc ann
 codegenModuleHeader moduleName =
-  "{-#" <+> "LANGUAGE" <+> "DuplicateRecordFields" <+> "#-}"
+    "{-#" <+> "LANGUAGE" <+> "BangPatterns" <+> "#-}"
+    <> PP.line
+    <> "{-#" <+> "LANGUAGE" <+> "DuplicateRecordFields" <+> "#-}"
     <> PP.line
     <> "{-#" <+> "LANGUAGE" <+> "OverloadedStrings" <+> "#-}"
     <> PP.line

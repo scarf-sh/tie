@@ -1,5 +1,6 @@
 OpenAPI/Api.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -97,6 +98,7 @@ application run api notFound request respond =
 ---------------------
 OpenAPI/Response.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -124,6 +126,7 @@ class ToResponse a where
 ---------------------
 OpenAPI/Response/CreateUser.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -160,6 +163,7 @@ instance ToResponse CreateUserResponse where
 ---------------------
 OpenAPI/Response/GetUser.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -195,6 +199,7 @@ instance ToResponse GetUserResponse where
 ---------------------
 OpenAPI/Schemas/Car.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -251,6 +256,7 @@ instance Data.Aeson.FromJSON Car where
 ---------------------
 OpenAPI/Schemas/NISE.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -321,6 +327,7 @@ instance Data.Aeson.FromJSON NISE where
 ---------------------
 OpenAPI/Schemas/PackageId.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -425,6 +432,7 @@ instance Data.Aeson.FromJSON PackageId where
 ---------------------
 OpenAPI/Schemas/Plane.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
@@ -488,6 +496,7 @@ instance Data.Aeson.FromJSON Plane where
 ---------------------
 OpenAPI/Schemas/Vehicle.hs
 
+{-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
