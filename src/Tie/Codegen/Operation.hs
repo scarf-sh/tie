@@ -123,10 +123,9 @@ codegenApiType resolver operations = do
 codegenApiTypeOperation :: Monad m => Resolver m -> Operation -> m (PP.Doc ann)
 codegenApiTypeOperation resolver Operation {..} = do
   paramsCode <-
-    sequence
-      [ codegenParamSchema name schema
-        | VariableSegment Param {name, schema} <- path
-      ]
+    sequence $ 
+      [ codegenParamSchema param | VariableSegment param <- path ] ++ 
+      [ codegenParamSchema param| param <- queryParams ]
   pure $
     toApiMemberName name <+> "::"
       <+> PP.concatWith
@@ -144,22 +143,32 @@ codegenOperation resolver operations@(Operation {path} : _) =
     codegenPathGuard path $
       codegenMethodGuard
         [ ( method,
-            codegenRequestBodyGuard
-              requestBody
-              ( codegenCallApiMember name path requestBody
-              )
+            codegenQueryParamsGuard queryParams $
+              codegenRequestBodyGuard requestBody $
+                ( codegenCallApiMember name path queryParams requestBody
+                )
           )
-          | operation@Operation {name, path, method, requestBody} <- operations
+          | operation@Operation
+              { name,
+                path,
+                queryParams,
+                method,
+                requestBody
+              } <-
+              operations
         ]
 
-codegenCallApiMember :: Name -> Path -> Maybe RequestBody -> PP.Doc ann
-codegenCallApiMember operationName path requestBody =
+codegenCallApiMember :: Name -> Path -> [Param] -> Maybe RequestBody -> PP.Doc ann
+codegenCallApiMember operationName path queryParams requestBody =
   "run" <+> "request" <+> "$" <+> "do" <> PP.line
     <> PP.indent
       4
       ( "response" <+> "<-" <+> toApiMemberName operationName
           <+> "api"
-          <+> PP.hsep [toParamBinder name | VariableSegment Param {name} <- path]
+          <+> PP.hsep
+            ( [toParamBinder name | VariableSegment Param {name} <- path]
+                ++ [toParamBinder name | Param {name} <- queryParams]
+            )
           <+> (maybe mempty (\_ -> "body") requestBody)
             <> PP.line
             <> "Control.Monad.IO.Class.liftIO"
@@ -167,17 +176,6 @@ codegenCallApiMember operationName path requestBody =
           <+> "(" <> "toResponse"
           <+> "response" <> ")" <> ")"
       )
-
--- | Codegen a 'PathSegment'.
-codegenSegment :: Monad m => Resolver m -> PathSegment Param -> m (PP.Doc ann)
-codegenSegment _resolver segment = case segment of
-  StaticSegment literal ->
-    pure ("\"" <> PP.pretty literal <> "\"")
-  VariableSegment Param {name, schema} -> do
-    code <- codegenParamSchema name schema
-    let capture =
-          "Capture" <+> "\"" <> toParamName name <> "\"" <+> code
-    pure capture
 
 codegenPathGuard :: Path -> PP.Doc ann -> PP.Doc ann
 codegenPathGuard path continuation =
@@ -253,6 +251,85 @@ codegenRequestBodyGuard requestBody continuation = case requestBody of
                               <> PP.line
                               <> PP.indent 4 continuation
                           )
+                    )
+              )
+        )
+
+codegenQueryParamsGuard :: [Param] -> PP.Doc ann -> PP.Doc ann
+codegenQueryParamsGuard params continuation =
+  foldr
+    ($)
+    continuation
+    [codegenQueryParamGuard param | param <- params]
+
+codegenQueryParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
+codegenQueryParamGuard Param {name, required} continuation
+  | required =
+    "case" <+> "Control.Monad.join" <+> "(" <> "fmap" <+> "(" <> "fmap" <+> "(" <> "Web.HttpApiData.parseUrlPiece" <+> "." <+> "Data.Text.Encoding.decodeUtf8" <> ")" <> ")" <+> "("
+      <> "Data.List.lookup" <+> "\""
+      <> toParamName name
+      <> "\"" <+> "("
+      <> "Network.Wai.queryString" <+> "request"
+      <> ")"
+      <> ")"
+      <> ")" <+> "of"
+      <> PP.line
+      <> PP.indent
+        4
+        ( "Nothing" <+> "->" <> PP.line
+            <> PP.indent
+              4
+              ( "undefined"
+              )
+            <> PP.line
+            <> "Just" <+> "("
+            <> "Left" <+> "err"
+            <> ")" <+> "->"
+            <> PP.line
+            <> PP.indent
+              4
+              ( "undefined"
+              )
+            <> PP.line
+            <> "Just" <+> "("
+            <> "Right" <+> toParamBinder name
+            <> ")" <+> "->"
+            <> PP.line
+            <> PP.indent
+              4
+              ( continuation
+              )
+        )
+  | otherwise =
+    "case" <+> "fmap" <+> "(" <> "fmap" <+> "(" <> "Web.HttpApiData.parseUrlPiece" <+> "." <+> "Data.Text.Encoding.decodeUtf8" <> ")" <> ")" <+> "("
+      <> "Data.List.lookup" <+> "\""
+      <> toParamName name
+      <> "\"" <+> "("
+      <> "Network.Wai.queryString" <+> "request"
+      <> ")"
+      <> ")" <+> "of"
+      <> PP.line
+      <> PP.indent
+        4
+        ( "Just" <+> "(" <> "Left" <+> "err" <> ")" <+> "->" <> PP.line
+            <> PP.indent
+              4
+              ( "undefined"
+              )
+            <> PP.line
+            <> "_x" <+> "->"
+            <> PP.line
+            <> PP.indent
+              4
+              ( "let" <+> "!" <> toParamBinder name <+> "=" <+> "fmap" <+> "(" <> "\\"
+                  <> "("
+                  <> "Right" <+> "_x"
+                  <> ")" <+> "->" <+> "_x"
+                  <> ")" <+> "_x" <+> "in"
+                  <> PP.line
+                  <> PP.indent
+                    4
+                    ( continuation
                     )
               )
         )

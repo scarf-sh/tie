@@ -7,13 +7,16 @@ OpenAPI/Api.hs
 module OpenAPI.Api where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -82,13 +85,16 @@ OpenAPI/Response.hs
 module OpenAPI.Response where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -106,13 +112,16 @@ OpenAPI/Response/ListPackages.hs
 module OpenAPI.Response.ListPackages where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -138,13 +147,16 @@ OpenAPI/Response/ListPackages2.hs
 module OpenAPI.Response.ListPackages2 where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -170,13 +182,16 @@ OpenAPI/Response/ListPackages3.hs
 module OpenAPI.Response.ListPackages3 where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -202,13 +217,16 @@ OpenAPI/Schemas/Inline.hs
 module OpenAPI.Schemas.Inline where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -243,13 +261,16 @@ OpenAPI/Schemas/Package.hs
 module OpenAPI.Schemas.Package where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -284,13 +305,16 @@ OpenAPI/Schemas/Packages.hs
 module OpenAPI.Schemas.Packages where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai

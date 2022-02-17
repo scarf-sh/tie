@@ -37,6 +37,8 @@ codegenModuleHeader moduleName =
     <> PP.line
     <> "import" <+> "qualified" <+> "Control.Applicative"
     <> PP.line
+    <> "import" <+> "qualified" <+> "Control.Monad"
+    <> PP.line
     <> "import" <+> "qualified" <+> "Control.Monad.IO.Class"
     <> PP.line
     <> "import" <+> "qualified" <+> "Data.Aeson"
@@ -47,9 +49,13 @@ codegenModuleHeader moduleName =
     <> PP.line
     <> "import" <+> "qualified" <+> "Data.Attoparsec.ByteString"
     <> PP.line
+    <> "import" <+> "qualified" <+> "Data.List"
+    <> PP.line
     <> "import" <+> "qualified" <+> "Data.Maybe"
     <> PP.line
     <> "import" <+> "qualified" <+> "Data.Text"
+    <> PP.line
+    <> "import" <+> "qualified" <+> "Data.Text.Encoding"
     <> PP.line
     <> "import" <+> "qualified" <+> "GHC.Types"
     <> PP.line

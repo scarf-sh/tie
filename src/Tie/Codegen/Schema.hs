@@ -40,23 +40,26 @@ import Tie.Type
     namedType,
     normalizeType,
   )
+import Tie.Operation (Param(..))
 import Prelude hiding (Type)
 
 -- | Generate code for a parameter type.
-codegenParamSchema :: Monad m => Name -> Named Type -> m (Doc ann)
-codegenParamSchema _paramName typ = case typ of
-  Named {} ->
-    -- We are named, just defer to codegenFieldType
-    pure (codegenFieldType typ)
-  Unnamed typ
-    | Just _enumeration <- isEnumType typ ->
-      error "TODO enumeration params"
-    | Just basicType <- isBasicType typ ->
-      pure (codegenFieldType (Unnamed typ))
-    | Just objectType <- isObjectType typ ->
-      error "Invariant broken: ruled out by pathToPath"
-    | otherwise ->
-      undefined
+codegenParamSchema :: Monad m => Param -> m (Doc ann)
+codegenParamSchema Param{schema, required} = 
+  fmap (codegenRequiredOptionalFieldType required) $ 
+    case schema of
+      Named {} ->
+        -- We are named, just defer to codegenFieldType
+        pure (codegenFieldType schema)
+      Unnamed typ
+        | Just _enumeration <- isEnumType typ ->
+          error "TODO enumeration params"
+        | Just basicType <- isBasicType typ ->
+          pure (codegenFieldType (Unnamed typ))
+        | Just objectType <- isObjectType typ ->
+          error "Invariant broken: ruled out by pathToPath"
+        | otherwise ->
+          undefined
 
 -- | Generate code for a schema.
 codegenSchema :: Monad m => Name -> Type -> m (Doc ann)

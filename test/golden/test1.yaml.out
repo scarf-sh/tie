@@ -7,13 +7,16 @@ OpenAPI/Api.hs
 module OpenAPI.Api where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -29,8 +32,8 @@ import OpenAPI.Response.GetUser
 import OpenAPI.Response.CreateUser
 
 data Api m = Api {
-    getUser :: GHC.Types.Int -> Data.Text.Text -> m GetUserResponse,
-    createUser :: GHC.Types.Int -> Data.Text.Text -> NISE -> m CreateUserResponse
+    getUser :: GHC.Types.Int -> Data.Text.Text -> GHC.Types.Int -> Data.Maybe.Maybe (GHC.Types.Int) -> m GetUserResponse,
+    createUser :: GHC.Types.Int -> Data.Text.Text -> GHC.Types.Int -> Data.Maybe.Maybe (GHC.Types.Int) -> NISE -> m CreateUserResponse
 }
 
 application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
@@ -45,20 +48,42 @@ application run api notFound request respond =
                         Right name ->
                             case Network.Wai.requestMethod request of
                                 "POST" ->
-                                    do result <- Data.Attoparsec.ByteString.parseWith (Network.Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
-                                       case Data.Attoparsec.ByteString.eitherResult result of
-                                           Left _err -> undefined
-                                           Right bodyValue ->
-                                               case Data.Aeson.Types.parseEither Data.Aeson.parseJSON bodyValue of
-                                                   Left _err -> undefined
-                                                   Right body ->
-                                                       run request $ do
-                                                           response <- createUser api id name body
-                                                           Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                                    case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "page" (Network.Wai.queryString request))) of
+                                        Nothing ->
+                                            undefined
+                                        Just (Left err) ->
+                                            undefined
+                                        Just (Right page) ->
+                                            case fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "offset" (Network.Wai.queryString request)) of
+                                                Just (Left err) ->
+                                                    undefined
+                                                _x ->
+                                                    let !offset = fmap (\(Right _x) -> _x) _x in
+                                                        do result <- Data.Attoparsec.ByteString.parseWith (Network.Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
+                                                           case Data.Attoparsec.ByteString.eitherResult result of
+                                                               Left _err -> undefined
+                                                               Right bodyValue ->
+                                                                   case Data.Aeson.Types.parseEither Data.Aeson.parseJSON bodyValue of
+                                                                       Left _err -> undefined
+                                                                       Right body ->
+                                                                           run request $ do
+                                                                               response <- createUser api id name page offset body
+                                                                               Control.Monad.IO.Class.liftIO (respond (toResponse response))
                                 "GET" ->
-                                    run request $ do
-                                        response <- getUser api id name 
-                                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                                    case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "page" (Network.Wai.queryString request))) of
+                                        Nothing ->
+                                            undefined
+                                        Just (Left err) ->
+                                            undefined
+                                        Just (Right page) ->
+                                            case fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "offset" (Network.Wai.queryString request)) of
+                                                Just (Left err) ->
+                                                    undefined
+                                                _x ->
+                                                    let !offset = fmap (\(Right _x) -> _x) _x in
+                                                        run request $ do
+                                                            response <- getUser api id name page offset 
+                                                            Control.Monad.IO.Class.liftIO (respond (toResponse response))
                                 x ->
                                     unsupportedMethod x
 
@@ -79,13 +104,16 @@ OpenAPI/Response.hs
 module OpenAPI.Response where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -103,13 +131,16 @@ OpenAPI/Response/CreateUser.hs
 module OpenAPI.Response.CreateUser where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -136,13 +167,16 @@ OpenAPI/Response/GetUser.hs
 module OpenAPI.Response.GetUser where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -168,13 +202,16 @@ OpenAPI/Schemas/Car.hs
 module OpenAPI.Schemas.Car where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -221,13 +258,16 @@ OpenAPI/Schemas/NISE.hs
 module OpenAPI.Schemas.NISE where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -288,13 +328,16 @@ OpenAPI/Schemas/PackageId.hs
 module OpenAPI.Schemas.PackageId where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -389,13 +432,16 @@ OpenAPI/Schemas/Plane.hs
 module OpenAPI.Schemas.Plane where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -449,13 +495,16 @@ OpenAPI/Schemas/Vehicle.hs
 module OpenAPI.Schemas.Vehicle where
 
 import qualified Control.Applicative
+import qualified Control.Monad
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
+import qualified Data.List
 import qualified Data.Maybe
 import qualified Data.Text
+import qualified Data.Text.Encoding
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai

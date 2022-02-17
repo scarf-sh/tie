@@ -21,6 +21,15 @@ paths:
         schema: 
           type: string
         required: true
+      - in: query
+        required: true
+        name: page
+        schema: 
+          type: integer
+      - in: query
+        name: offset
+        schema: 
+          type: integer
     get:
       operationId: getUser
       responses:
