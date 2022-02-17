@@ -81,19 +81,9 @@ codegenSchema typName typ
 -- | Generate code for basic, primitive types
 codegenBasicType :: Name -> BasicType -> Doc ann
 codegenBasicType typName basicType =
-  let typ = case basicType of
-        TyString {} ->
-          "Data.Text.Text"
-        TyEnum {} ->
-          error "Impossible: Enumerations are handled by codegenEnumeration"
-        TyNumber ->
-          "GHC.Types.Double"
-        TyInteger ->
-          "GHC.Types.Int"
-        TyBoolean ->
-          "GHC.Types.Bool"
-   in "type" <+> toDataTypeName typName <+> "=" <+> typ
+  "type" <+> toDataTypeName typName <+> "=" <+> codegenFieldType (Unnamed (Basic basicType))
 
+-- | Generate code for array types
 codegenArrayType :: Name -> Named Type -> Doc ann
 codegenArrayType typeName elemType =
   "type" <+> toDataTypeName typeName <+> "=" <+> "[" <+> codegenFieldType elemType <+> "]"
