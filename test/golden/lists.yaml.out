@@ -1,11 +1,11 @@
-OpenAPI/Api.hs
+Test/Api.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Api where
+module Test.Api where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -24,15 +24,15 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Response
+import Test.Response
 
-import OpenAPI.Schemas.Packages
-import OpenAPI.Schemas.Inline
-import OpenAPI.Schemas.Package
+import Test.Schemas.Packages
+import Test.Schemas.Inline
+import Test.Schemas.Package
 
-import OpenAPI.Response.ListPackages
-import OpenAPI.Response.ListPackages3
-import OpenAPI.Response.ListPackages2
+import Test.Response.ListPackages
+import Test.Response.ListPackages3
+import Test.Response.ListPackages2
 
 data Api m = Api {
     -- | List all packages
@@ -84,14 +84,14 @@ application run api notFound request respond =
         invalidRequest _ =
             respond (Network.Wai.responseBuilder (toEnum 401) [] mempty)
 ---------------------
-OpenAPI/Response.hs
+Test/Response.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response where
+module Test.Response where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -113,14 +113,14 @@ import qualified Web.HttpApiData
 class ToResponse a where
     toResponse :: a -> Network.Wai.Response
 ---------------------
-OpenAPI/Response/ListPackages.hs
+Test/Response/ListPackages.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response.ListPackages where
+module Test.Response.ListPackages where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -139,9 +139,9 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.Packages
+import Test.Schemas.Packages
 
-import OpenAPI.Response
+import Test.Response
 
 data ListPackagesResponse
     = ListPackagesResponse200 Packages
@@ -150,14 +150,14 @@ instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
-OpenAPI/Response/ListPackages2.hs
+Test/Response/ListPackages2.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response.ListPackages2 where
+module Test.Response.ListPackages2 where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -176,9 +176,9 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.Package
+import Test.Schemas.Package
 
-import OpenAPI.Response
+import Test.Response
 
 data ListPackages2Response
     = ListPackages2Response200 [ Package ]
@@ -187,14 +187,14 @@ instance ToResponse ListPackages2Response where
     toResponse (ListPackages2Response200 x) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
-OpenAPI/Response/ListPackages3.hs
+Test/Response/ListPackages3.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response.ListPackages3 where
+module Test.Response.ListPackages3 where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -213,9 +213,9 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.Inline
+import Test.Schemas.Inline
 
-import OpenAPI.Response
+import Test.Response
 
 data ListPackages3Response
     = ListPackages3Response200 [ Inline ]
@@ -224,14 +224,14 @@ instance ToResponse ListPackages3Response where
     toResponse (ListPackages3Response200 x) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
-OpenAPI/Schemas/Inline.hs
+Test/Schemas/Inline.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Schemas.Inline where
+module Test.Schemas.Inline where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -270,14 +270,14 @@ instance Data.Aeson.FromJSON InlineElem where
 
 type Inline = [ InlineElem ]
 ---------------------
-OpenAPI/Schemas/Package.hs
+Test/Schemas/Package.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Schemas.Package where
+module Test.Schemas.Package where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -316,14 +316,14 @@ instance Data.Aeson.FromJSON Package where
         Package
             <$> o Data.Aeson..:? "name"
 ---------------------
-OpenAPI/Schemas/Packages.hs
+Test/Schemas/Packages.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Schemas.Packages where
+module Test.Schemas.Packages where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -342,16 +342,16 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.Package
+import Test.Schemas.Package
 
 
 
 type Packages = [ Package ]
 ---------------------
-open-api.cabal
+test.cabal
 
 cabal-version: 3.0
-name: open-api
+name: test
 version: 0.1.0.0
 library
   build-depends:
@@ -362,13 +362,14 @@ library
     , http-api-data
     , http-types
     , text
+    , time
     , wai
   exposed-modules:
-    OpenAPI.Api
-    OpenAPI.Response
-    OpenAPI.Response.ListPackages
-    OpenAPI.Response.ListPackages2
-    OpenAPI.Response.ListPackages3
-    OpenAPI.Schemas.Inline
-    OpenAPI.Schemas.Package
-    OpenAPI.Schemas.Packages
+    Test.Api
+    Test.Response
+    Test.Response.ListPackages
+    Test.Response.ListPackages2
+    Test.Response.ListPackages3
+    Test.Schemas.Inline
+    Test.Schemas.Package
+    Test.Schemas.Packages

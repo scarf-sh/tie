@@ -26,6 +26,7 @@ codegenCabalFile packageName exposedModules =
                           "," <+> "http-api-data",
                           "," <+> "http-types",
                           "," <+> "text",
+                          "," <+> "time",
                           "," <+> "wai"
                         ]
                     ),

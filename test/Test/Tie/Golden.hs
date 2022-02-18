@@ -1,3 +1,5 @@
+{-# LANGUAGE OverloadedStrings #-}
+
 module Test.Tie.Golden (test_Golden_tests) where
 
 import Data.ByteString.Builder (toLazyByteString)
@@ -18,7 +20,11 @@ test_Golden_tests = do
         (replaceExtension input ".yaml.out")
         ( do
             (_, output) <- withTestWriter $ \writer ->
-              generate writer input
+              generate
+                writer
+                "test" -- package name
+                "Test" -- module name
+                input
             pure (toLazyByteString output)
         )
       | input' <- inputs,

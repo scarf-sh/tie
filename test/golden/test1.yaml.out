@@ -1,11 +1,11 @@
-OpenAPI/Api.hs
+Test/Api.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Api where
+module Test.Api where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -24,14 +24,14 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Response
+import Test.Response
 
-import OpenAPI.Schemas.Vehicle
-import OpenAPI.Schemas.NISE
-import OpenAPI.Schemas.Vehicle
+import Test.Schemas.Vehicle
+import Test.Schemas.NISE
+import Test.Schemas.Vehicle
 
-import OpenAPI.Response.GetUser
-import OpenAPI.Response.CreateUser
+import Test.Response.GetUser
+import Test.Response.CreateUser
 
 data Api m = Api {
     getUser ::
@@ -118,14 +118,14 @@ application run api notFound request respond =
         invalidRequest _ =
             respond (Network.Wai.responseBuilder (toEnum 401) [] mempty)
 ---------------------
-OpenAPI/Response.hs
+Test/Response.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response where
+module Test.Response where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -147,14 +147,14 @@ import qualified Web.HttpApiData
 class ToResponse a where
     toResponse :: a -> Network.Wai.Response
 ---------------------
-OpenAPI/Response/CreateUser.hs
+Test/Response/CreateUser.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response.CreateUser where
+module Test.Response.CreateUser where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -173,10 +173,10 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.NISE
-import OpenAPI.Schemas.Vehicle
+import Test.Schemas.NISE
+import Test.Schemas.Vehicle
 
-import OpenAPI.Response
+import Test.Response
 
 data CreateUserResponse
     = CreateUserResponse200 Vehicle
@@ -185,14 +185,14 @@ instance ToResponse CreateUserResponse where
     toResponse (CreateUserResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
-OpenAPI/Response/GetUser.hs
+Test/Response/GetUser.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response.GetUser where
+module Test.Response.GetUser where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -211,9 +211,9 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.Vehicle
+import Test.Schemas.Vehicle
 
-import OpenAPI.Response
+import Test.Response
 
 data GetUserResponse
     = GetUserResponse200 Vehicle
@@ -222,14 +222,14 @@ instance ToResponse GetUserResponse where
     toResponse (GetUserResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
-OpenAPI/Schemas/Car.hs
+Test/Schemas/Car.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Schemas.Car where
+module Test.Schemas.Car where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -248,7 +248,7 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.Vehicle
+import Test.Schemas.Vehicle
 
 
 
@@ -280,14 +280,14 @@ instance Data.Aeson.FromJSON Car where
             <*> o Data.Aeson..:? "name"
             <*> o Data.Aeson..: "type"
 ---------------------
-OpenAPI/Schemas/NISE.hs
+Test/Schemas/NISE.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Schemas.NISE where
+module Test.Schemas.NISE where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -306,7 +306,7 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.PackageId
+import Test.Schemas.PackageId
 
 newtype NISEValue = NISEValue
     {
@@ -352,14 +352,14 @@ instance Data.Aeson.FromJSON NISE where
             <*> o Data.Aeson..: "ports"
             <*> o Data.Aeson..:? "value"
 ---------------------
-OpenAPI/Schemas/PackageId.hs
+Test/Schemas/PackageId.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Schemas.PackageId where
+module Test.Schemas.PackageId where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -378,8 +378,8 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.Car
-import OpenAPI.Schemas.Plane
+import Test.Schemas.Car
+import Test.Schemas.Plane
 
 data PackageIdOneOf4 = PackageIdOneOf4
     {
@@ -458,14 +458,14 @@ instance Data.Aeson.FromJSON PackageId where
         (PackageIdPackageIdOneOf3 <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
         (PackageIdPackageIdOneOf4 <$> Data.Aeson.parseJSON x)
 ---------------------
-OpenAPI/Schemas/Plane.hs
+Test/Schemas/Plane.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Schemas.Plane where
+module Test.Schemas.Plane where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -484,8 +484,8 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.Car
-import OpenAPI.Schemas.Vehicle
+import Test.Schemas.Car
+import Test.Schemas.Vehicle
 
 
 
@@ -523,14 +523,14 @@ instance Data.Aeson.FromJSON Plane where
             <*> o Data.Aeson..:? "nb_passengers"
             <*> o Data.Aeson..:? "type"
 ---------------------
-OpenAPI/Schemas/Vehicle.hs
+Test/Schemas/Vehicle.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Schemas.Vehicle where
+module Test.Schemas.Vehicle where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -578,10 +578,10 @@ instance Data.Aeson.FromJSON Vehicle where
             <*> o Data.Aeson..:? "name"
             <*> o Data.Aeson..: "type"
 ---------------------
-open-api.cabal
+test.cabal
 
 cabal-version: 3.0
-name: open-api
+name: test
 version: 0.1.0.0
 library
   build-depends:
@@ -592,14 +592,15 @@ library
     , http-api-data
     , http-types
     , text
+    , time
     , wai
   exposed-modules:
-    OpenAPI.Api
-    OpenAPI.Response
-    OpenAPI.Response.CreateUser
-    OpenAPI.Response.GetUser
-    OpenAPI.Schemas.Car
-    OpenAPI.Schemas.NISE
-    OpenAPI.Schemas.PackageId
-    OpenAPI.Schemas.Plane
-    OpenAPI.Schemas.Vehicle
+    Test.Api
+    Test.Response
+    Test.Response.CreateUser
+    Test.Response.GetUser
+    Test.Schemas.Car
+    Test.Schemas.NISE
+    Test.Schemas.PackageId
+    Test.Schemas.Plane
+    Test.Schemas.Vehicle

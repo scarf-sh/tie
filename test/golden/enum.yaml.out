@@ -1,11 +1,11 @@
-OpenAPI/Api.hs
+Test/Api.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Api where
+module Test.Api where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -24,13 +24,13 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Response
+import Test.Response
 
-import OpenAPI.Schemas.Package
+import Test.Schemas.Package
 
 
-import OpenAPI.Response.ListPackages
-import OpenAPI.Response.ListPackages
+import Test.Response.ListPackages
+import Test.Response.ListPackages
 
 data Api m = Api {
     -- | List all packages
@@ -70,14 +70,14 @@ application run api notFound request respond =
         invalidRequest _ =
             respond (Network.Wai.responseBuilder (toEnum 401) [] mempty)
 ---------------------
-OpenAPI/Response.hs
+Test/Response.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response where
+module Test.Response where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -99,14 +99,14 @@ import qualified Web.HttpApiData
 class ToResponse a where
     toResponse :: a -> Network.Wai.Response
 ---------------------
-OpenAPI/Response/ListPackages.hs
+Test/Response/ListPackages.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response.ListPackages where
+module Test.Response.ListPackages where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -127,7 +127,7 @@ import qualified Web.HttpApiData
 
 
 
-import OpenAPI.Response
+import Test.Response
 
 data ListPackagesResponse
     = ListPackagesResponse200 error: Enum
@@ -136,14 +136,14 @@ instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
-OpenAPI/Response/ListPackages.hs
+Test/Response/ListPackages.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Response.ListPackages where
+module Test.Response.ListPackages where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -162,9 +162,9 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import OpenAPI.Schemas.Package
+import Test.Schemas.Package
 
-import OpenAPI.Response
+import Test.Response
 
 data ListPackagesResponse
     = ListPackagesResponse200 Package
@@ -173,14 +173,14 @@ instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
-OpenAPI/Schemas/Package.hs
+Test/Schemas/Package.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module OpenAPI.Schemas.Package where
+module Test.Schemas.Package where
 
 import qualified Control.Applicative
 import qualified Control.Monad
@@ -223,10 +223,10 @@ instance Data.Aeson.FromJSON Package where
             "NPM" -> pure PackageNPM
             _ -> fail "invalid enum value"
 ---------------------
-open-api.cabal
+test.cabal
 
 cabal-version: 3.0
-name: open-api
+name: test
 version: 0.1.0.0
 library
   build-depends:
@@ -237,9 +237,10 @@ library
     , http-api-data
     , http-types
     , text
+    , time
     , wai
   exposed-modules:
-    OpenAPI.Api
-    OpenAPI.Response
-    OpenAPI.Response.ListPackages
-    OpenAPI.Schemas.Package
+    Test.Api
+    Test.Response
+    Test.Response.ListPackages
+    Test.Schemas.Package

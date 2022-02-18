@@ -107,12 +107,16 @@ normalize =
         pure (inlineArrayElementTypeName enclosingType)
     )
 
-generate :: MonadIO m => Writer m -> FilePath -> m ()
-generate write inputFile = do
-  -- TODO make configurable
-  let apiName = "OpenAPI"
-      packageName = "open-api"
-
+generate ::
+  MonadIO m =>
+  Writer m ->
+  -- | Package name
+  Text ->
+  -- | Module name
+  Text ->
+  FilePath ->
+  m ()
+generate write packageName apiName inputFile = do
   openApi <- readOpenApiSpec inputFile
 
   -- Helper to resolve components in the spec.

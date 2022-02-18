@@ -71,6 +71,20 @@ library
     hs-source-dirs:   src
     default-language: Haskell2010
 
+executable tie
+
+  build-depends: 
+    base, tie, relude, optparse-applicative
+
+  mixins:
+    base hiding (Prelude),
+    relude (Relude as Prelude),
+    relude
+
+  main-is: Main.hs
+  hs-source-dirs: bin
+  default-language: Haskell2010
+
 test-suite tie-tests
   type:               exitcode-stdio-1.0
   main-is:            Main.hs
