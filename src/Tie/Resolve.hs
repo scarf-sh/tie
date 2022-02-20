@@ -21,11 +21,13 @@ newtype Resolver m = Resolver
   { resolve :: forall a. Resolvable a => OpenApi.Referenced a -> m a
   }
 
-newResolver :: Applicative m => OpenApi.Components -> (forall a. OpenApi.Reference -> m a) -> Resolver m
+newResolver ::
+  Applicative m =>
+  OpenApi.Components ->
+  (forall a. OpenApi.Reference -> m a) ->
+  Resolver m
 newResolver components notFound =
   Resolver (resolveComponent components notFound)
-
-type ComponentName = Text
 
 resolveComponent ::
   (Applicative m, Resolvable a) =>
@@ -37,7 +39,6 @@ resolveComponent ::
   OpenApi.Referenced a ->
   m a
 resolveComponent components notFound = \referenced -> do
-  let (componentType, resolveComponent) = resolvables
   case referenced of
     OpenApi.Inline a ->
       pure a
@@ -45,7 +46,7 @@ resolveComponent components notFound = \referenced -> do
       | Just a <-
           InsOrd.lookup
             (OpenApi.getReference reference)
-            (resolveComponent components) ->
+            (resolvables components) ->
         pure a
       | otherwise ->
         notFound reference
@@ -53,19 +54,21 @@ resolveComponent components notFound = \referenced -> do
 -- | Helper class helping to dispatch from 'OpenApi.Referenced' to component type @a@.
 class Resolvable a where
   -- | Resolves the `OpenApi.Components` to the given corresponding `Definitions`.
-  resolvables :: (Text.Text, OpenApi.Components -> OpenApi.Definitions a)
+  resolvables ::
+    OpenApi.Components ->
+    OpenApi.Definitions a
 
 instance Resolvable OpenApi.Schema where
-  resolvables = ("schemas", OpenApi._componentsSchemas)
+  resolvables = OpenApi._componentsSchemas
 
 instance Resolvable OpenApi.Response where
-  resolvables = ("responses", OpenApi._componentsResponses)
+  resolvables = OpenApi._componentsResponses
 
 instance Resolvable OpenApi.Param where
-  resolvables = ("parameters", OpenApi._componentsParameters)
+  resolvables = OpenApi._componentsParameters
 
 instance Resolvable OpenApi.Example where
-  resolvables = ("examples", OpenApi._componentsExamples)
+  resolvables = OpenApi._componentsExamples
 
 instance Resolvable OpenApi.RequestBody where
-  resolvables = ("requestBodies", OpenApi._componentsRequestBodies)
+  resolvables = OpenApi._componentsRequestBodies
