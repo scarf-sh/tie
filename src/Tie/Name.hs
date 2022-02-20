@@ -66,7 +66,7 @@ apiHaskellModuleName apiName =
 
 apiHaskellFileName :: ApiName -> FilePath
 apiHaskellFileName apiName =
-  Text.unpack apiName <> "/Api.hs"
+  haskellModuleToFilePath apiName <> "/Api.hs"
 
 responseHaskellModuleName :: ApiName -> Text
 responseHaskellModuleName apiName =
@@ -74,7 +74,7 @@ responseHaskellModuleName apiName =
 
 responseHaskellFileName :: ApiName -> FilePath
 responseHaskellFileName apiName =
-  Text.unpack apiName <> "/Response.hs"
+  haskellModuleToFilePath apiName <> "/Response.hs"
 
 toSchemaHaskellModuleName :: ApiName -> Name -> Text
 toSchemaHaskellModuleName apiName (Name name) =
@@ -82,7 +82,11 @@ toSchemaHaskellModuleName apiName (Name name) =
 
 toSchemaHaskellFileName :: ApiName -> Name -> FilePath
 toSchemaHaskellFileName apiName (Name name) =
-  Text.unpack apiName <> "/Schemas/" <> capitalizeFirstLetter (Text.unpack name) <> ".hs"
+  haskellModuleToFilePath apiName <> "/Schemas/" <> capitalizeFirstLetter (Text.unpack name) <> ".hs"
+
+haskellModuleToFilePath :: ApiName -> FilePath
+haskellModuleToFilePath = 
+  Text.unpack . Text.replace "." "/"
 
 toOperationHaskellModuleName :: ApiName -> Name -> Text
 toOperationHaskellModuleName apiName (Name name) =
@@ -90,7 +94,7 @@ toOperationHaskellModuleName apiName (Name name) =
 
 toOperationHaskellFileName :: ApiName -> Name -> FilePath
 toOperationHaskellFileName apiName (Name name) =
-  Text.unpack apiName <> "/Api/" <> capitalizeFirstLetter (Text.unpack name) <> ".hs"
+  haskellModuleToFilePath apiName <> "/Api/" <> capitalizeFirstLetter (Text.unpack name) <> ".hs"
 
 toResponseHaskellModuleName :: ApiName -> Name -> Text
 toResponseHaskellModuleName apiName (Name name) =
@@ -98,7 +102,7 @@ toResponseHaskellModuleName apiName (Name name) =
 
 toResponseHaskellFileName :: ApiName -> Name -> FilePath
 toResponseHaskellFileName apiName (Name name) =
-  Text.unpack apiName <> "/Response/" <> capitalizeFirstLetter (Text.unpack name) <> ".hs"
+  haskellModuleToFilePath apiName <> "/Response/" <> capitalizeFirstLetter (Text.unpack name) <> ".hs"
 
 toApiTypeName :: Name -> PP.Doc ann
 toApiTypeName =
