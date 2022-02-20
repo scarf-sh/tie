@@ -77,7 +77,7 @@ application run api notFound request respond =
                                         Just (Left err) ->
                                             undefined
                                         Just (Right page) ->
-                                            case fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "offset" (Network.Wai.queryString request)) of
+                                            case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "offset" (Network.Wai.queryString request))) of
                                                 Just (Left err) ->
                                                     undefined
                                                 _x ->
@@ -99,7 +99,7 @@ application run api notFound request respond =
                                         Just (Left err) ->
                                             undefined
                                         Just (Right page) ->
-                                            case fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "offset" (Network.Wai.queryString request)) of
+                                            case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "offset" (Network.Wai.queryString request))) of
                                                 Just (Left err) ->
                                                     undefined
                                                 _x ->

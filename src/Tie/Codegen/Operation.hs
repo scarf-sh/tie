@@ -331,11 +331,12 @@ codegenQueryParamGuard Param {name, required} continuation
               )
         )
   | otherwise =
-    "case" <+> "fmap" <+> "(" <> "fmap" <+> "(" <> "Web.HttpApiData.parseUrlPiece" <+> "." <+> "Data.Text.Encoding.decodeUtf8" <> ")" <> ")" <+> "("
+    "case" <+> "Control.Monad.join" <+> "(" <> "fmap" <+> "(" <> "fmap" <+> "(" <> "Web.HttpApiData.parseUrlPiece" <+> "." <+> "Data.Text.Encoding.decodeUtf8" <> ")" <> ")" <+> "("
       <> "Data.List.lookup" <+> "\""
       <> toParamName name
       <> "\"" <+> "("
       <> "Network.Wai.queryString" <+> "request"
+      <> ")"
       <> ")"
       <> ")" <+> "of"
       <> PP.line
