@@ -35,6 +35,9 @@ module Tie.Name
     inlineObjectTypeName,
     inlineVariantTypeName,
     inlineArrayElementTypeName,
+    operationParamTypeName,
+    apiResponseConstructorName,
+    apiDefaultResponseConstructorName,
   )
 where
 
@@ -85,7 +88,7 @@ toSchemaHaskellFileName apiName (Name name) =
   haskellModuleToFilePath apiName <> "/Schemas/" <> capitalizeFirstLetter (Text.unpack name) <> ".hs"
 
 haskellModuleToFilePath :: ApiName -> FilePath
-haskellModuleToFilePath = 
+haskellModuleToFilePath =
   Text.unpack . Text.replace "." "/"
 
 toOperationHaskellModuleName :: ApiName -> Name -> Text
@@ -146,6 +149,15 @@ toParamBinder :: Name -> PP.Doc ann
 toParamBinder =
   PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . Text.unpack . unName
 
+operationParamTypeName :: Name -> Name -> Name
+operationParamTypeName (Name operationName) (Name paramName) =
+  Name $
+    Text.pack $
+      escapeKeyword $
+        capitalizeFirstLetter (Text.unpack operationName)
+          <> capitalizeFirstLetter (Text.unpack paramName)
+          <> "Param"
+
 toApiMemberName :: Name -> PP.Doc ann
 toApiMemberName =
   PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . Text.unpack . unName
@@ -158,9 +170,17 @@ toApiResponseConstructorName :: Name -> Int -> PP.Doc ann
 toApiResponseConstructorName name statusCode =
   PP.pretty . Text.pack . escapeKeyword . (<> show statusCode) . (<> "Response") . capitalizeFirstLetter . Text.unpack . unName $ name
 
+apiResponseConstructorName :: Name -> Int -> Name
+apiResponseConstructorName name statusCode =
+  Name . Text.pack . escapeKeyword . (<> show statusCode) . (<> "Response") . capitalizeFirstLetter . Text.unpack . unName $ name
+
 toApiDefaultResponseConstructorName :: Name -> PP.Doc ann
 toApiDefaultResponseConstructorName name =
   PP.pretty . Text.pack . escapeKeyword . (<> "DefaultResponse") . capitalizeFirstLetter . Text.unpack . unName $ name
+
+apiDefaultResponseConstructorName :: Name -> Name
+apiDefaultResponseConstructorName name =
+  Name . Text.pack . escapeKeyword . (<> "DefaultResponse") . capitalizeFirstLetter . Text.unpack . unName $ name
 
 toEnumConstructorName :: Name -> Text -> PP.Doc ann
 toEnumConstructorName (Name typName) variant =

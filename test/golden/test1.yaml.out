@@ -178,6 +178,8 @@ import Test.Schemas.Vehicle
 
 import Test.Response
 
+
+
 data CreateUserResponse
     = CreateUserResponse200 Vehicle
 
@@ -214,6 +216,8 @@ import qualified Web.HttpApiData
 import Test.Schemas.Vehicle
 
 import Test.Response
+
+
 
 data GetUserResponse
     = GetUserResponse200 Vehicle

@@ -129,8 +129,28 @@ import qualified Web.HttpApiData
 
 import Test.Response
 
+data ListPackagesResponse200
+    = ListPackagesResponse200A
+    | ListPackagesResponse200B
+    | ListPackagesResponse200C
+    deriving (Eq, Show)
+
+instance Data.Aeson.ToJSON ListPackagesResponse200 where
+    toJSON x = case x of
+        ListPackagesResponse200A -> "A"
+        ListPackagesResponse200B -> "B"
+        ListPackagesResponse200C -> "C"
+
+instance Data.Aeson.FromJSON ListPackagesResponse200 where
+    parseJSON = Data.Aeson.withText "ListPackagesResponse200" $ \s ->
+        case s of
+            "A" -> pure ListPackagesResponse200A
+            "B" -> pure ListPackagesResponse200B
+            "C" -> pure ListPackagesResponse200C
+            _ -> fail "invalid enum value"
+
 data ListPackagesResponse
-    = ListPackagesResponse200 error: Enum
+    = ListPackagesResponse200 ListPackagesResponse200
 
 instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x) =
@@ -165,6 +185,8 @@ import qualified Web.HttpApiData
 import Test.Schemas.Package
 
 import Test.Response
+
+
 
 data ListPackagesResponse
     = ListPackagesResponse200 Package

@@ -6,6 +6,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TupleSections #-}
 
 module Tie.Operation
   ( StatusCode,
@@ -28,13 +29,23 @@ module Tie.Operation
     -- * Dependencies
     operationSchemaDependencies,
     operationResponseDependencies,
+
+    -- * Normalization
+    normalizeOperation,
   )
 where
 
+import Control.Monad.Writer (WriterT (..), runWriterT)
 import qualified Data.HashMap.Strict.InsOrd as InsOrd
 import qualified Data.OpenApi as OpenApi
 import qualified Data.Text as Text
-import Tie.Name (Name, fromText)
+import Tie.Name
+  ( Name,
+    apiDefaultResponseConstructorName,
+    apiResponseConstructorName,
+    fromText,
+    operationParamTypeName,
+  )
 import Tie.Resolve (Resolver, resolve)
 import Tie.Type
   ( Named,
@@ -42,6 +53,7 @@ import Tie.Type
     isBasicType,
     namedType,
     namedTypeDependencies,
+    normalizeNamedType,
     schemaRefToType,
   )
 import Prelude hiding (Type)
@@ -366,3 +378,41 @@ pathToPath resolver errors@Errors {..} textualPath params = do
           (isBasicType (namedType (schema param)))
           paramNotBasicType
       pure param
+
+normalizeParam :: Monad m => Name -> Param -> m (Param, [(Name, Type)])
+normalizeParam operationName param@Param {..} = do
+  (normedType, inlineDefinitions) <-
+    normalizeNamedType
+      (pure (operationParamTypeName operationName name))
+      schema
+  pure (param {schema = normedType}, inlineDefinitions)
+
+normalizeResponse :: Monad m => Name -> Response -> m (Response, [(Name, Type)])
+normalizeResponse name response@Response {..} = do
+  (normedType, inlineDefinitions) <- normalizeNamedType (pure name) jsonResponseContent
+  pure (response {jsonResponseContent = normedType}, inlineDefinitions)
+
+normalizeOperation :: Monad m => Operation -> m (Operation, [(Name, Type)])
+normalizeOperation operation@Operation {..} = runWriterT $ do
+  queryParams <-
+    traverse
+      (WriterT . normalizeParam name)
+      queryParams
+  headerParams <-
+    traverse
+      (WriterT . normalizeParam name)
+      headerParams
+  defaultResponse <-
+    traverse
+      (WriterT . normalizeResponse (apiDefaultResponseConstructorName name))
+      defaultResponse
+  responses <-
+    traverse
+      ( \(status, response) ->
+          ( (status,)
+              <$> WriterT
+                (normalizeResponse (apiResponseConstructorName name status) response)
+          )
+      )
+      responses
+  pure Operation {..}

@@ -49,6 +49,7 @@ import Tie.Name
 import Tie.Operation
   ( Operation (..),
     errors,
+    normalizeOperation,
     operationResponseDependencies,
     operationSchemaDependencies,
     pathItemsToOperation,
@@ -185,18 +186,23 @@ generate write packageName apiName inputFile = do
   for_ operations $ \operation@Operation {name} -> do
     let path = toResponseHaskellFileName apiName name
         header = codegenModuleHeader (toResponseHaskellModuleName apiName name)
-
-        dependencyCode =
+        importsCode =
           codegenSchemaDependencies apiName $
             nubOrd (operationSchemaDependencies shallow operation)
+    (operation, inlineDefinitions) <-
+      normalizeOperation operation
+    codeForInlineDefinitions <-
+      traverse (uncurry codegenSchema) inlineDefinitions
     responsesCode <- codegenResponses resolver operation
     write path $
       vsep
         [ header,
           mempty,
-          dependencyCode,
+          importsCode,
           mempty,
           codegenExtraResponseModuleDependencies apiName,
+          mempty,
+          vsep codeForInlineDefinitions,
           mempty,
           responsesCode
         ]

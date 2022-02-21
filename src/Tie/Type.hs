@@ -28,10 +28,8 @@ module Tie.Type
     isOneOfType,
 
     -- * Normalize types
-
-    --    normalizeObjectType,
-    --    normalizeVariants,
     normalizeType,
+    normalizeNamedType,
 
     -- * Dependencies
     namedTypeDependencies,
