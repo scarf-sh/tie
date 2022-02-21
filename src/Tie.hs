@@ -219,7 +219,21 @@ generate write packageName apiName inputFile = do
       ]
 
   -- Generate a single Api.hs module containing the server for the api
-  operationsCode <- codegenOperations resolver operations
+
+  -- Normalize operations, to give all anonymous types a name
+  normalizedOperations <-
+    traverse
+      (fmap fst . normalizeOperation)
+      operations
+
+  -- Generate operations code form the normalized representation
+  -- Careful: We still want the imports and dependencies be dependent
+  -- only
+  operationsCode <-
+    codegenOperations
+      resolver
+      normalizedOperations
+
   let path = apiHaskellFileName apiName
 
       header =

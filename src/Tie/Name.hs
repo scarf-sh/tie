@@ -36,6 +36,7 @@ module Tie.Name
     inlineVariantTypeName,
     inlineArrayElementTypeName,
     operationParamTypeName,
+    operationRequestBodyName,
     apiResponseConstructorName,
     apiDefaultResponseConstructorName,
   )
@@ -157,6 +158,14 @@ operationParamTypeName (Name operationName) (Name paramName) =
         capitalizeFirstLetter (Text.unpack operationName)
           <> capitalizeFirstLetter (Text.unpack paramName)
           <> "Param"
+
+operationRequestBodyName :: Name -> Name
+operationRequestBodyName (Name operationName) =
+  Name $
+    Text.pack $
+      escapeKeyword $
+        capitalizeFirstLetter (Text.unpack operationName)
+          <> "RequestBody"
 
 toApiMemberName :: Name -> PP.Doc ann
 toApiMemberName =

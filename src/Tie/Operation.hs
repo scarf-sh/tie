@@ -45,6 +45,7 @@ import Tie.Name
     apiResponseConstructorName,
     fromText,
     operationParamTypeName,
+    operationRequestBodyName,
   )
 import Tie.Resolve (Resolver, resolve)
 import Tie.Type
@@ -392,6 +393,14 @@ normalizeResponse name response@Response {..} = do
   (normedType, inlineDefinitions) <- normalizeNamedType (pure name) jsonResponseContent
   pure (response {jsonResponseContent = normedType}, inlineDefinitions)
 
+normalizeRequestBody :: Monad m => Name -> RequestBody -> m (RequestBody, [(Name, Type)])
+normalizeRequestBody name body@RequestBody {..} = do
+  (normedType, inlineDefinitions) <-
+    normalizeNamedType
+      (pure (operationRequestBodyName name))
+      jsonRequestBodyContent
+  pure (body {jsonRequestBodyContent = normedType}, inlineDefinitions)
+
 normalizeOperation :: Monad m => Operation -> m (Operation, [(Name, Type)])
 normalizeOperation operation@Operation {..} = runWriterT $ do
   queryParams <-
@@ -402,6 +411,10 @@ normalizeOperation operation@Operation {..} = runWriterT $ do
     traverse
       (WriterT . normalizeParam name)
       headerParams
+  requestBody <-
+    traverse
+      (WriterT . normalizeRequestBody name)
+      requestBody
   defaultResponse <-
     traverse
       (WriterT . normalizeResponse (apiDefaultResponseConstructorName name))

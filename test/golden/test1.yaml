@@ -49,7 +49,9 @@ paths:
         content:
           application/json:
             schema:      # Request body contents
-              $ref: "#/components/schemas/NISE"
+              properties: 
+                nise: 
+                  $ref: "#/components/schemas/NISE"
       responses:
         '200':
           description: xxxx

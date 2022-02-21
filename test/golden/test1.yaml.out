@@ -54,7 +54,7 @@ data Api m = Api {
         -- @offset@
         Data.Maybe.Maybe (GHC.Types.Int) ->
         -- Some nice request body
-        NISE ->
+        CreateUserRequestBody ->
         m CreateUserResponse
 }
 
@@ -176,6 +176,21 @@ import Test.Schemas.NISE
 
 import Test.Response
 
+newtype CreateUserRequestBody = CreateUserRequestBody
+    {
+        nise :: Data.Maybe.Maybe (NISE)
+    }
+
+instance Data.Aeson.ToJSON CreateUserRequestBody where
+    toJSON CreateUserRequestBody {..} = Data.Aeson.object
+        [
+            "nise" Data.Aeson..= nise
+        ]
+
+instance Data.Aeson.FromJSON CreateUserRequestBody where
+    parseJSON = Data.Aeson.withObject "CreateUserRequestBody" $ \o ->
+        CreateUserRequestBody
+            <$> o Data.Aeson..:? "nise"
 newtype CreateUserResponseBody200 = CreateUserResponseBody200
     {
         name :: Data.Maybe.Maybe (Data.Text.Text)
