@@ -172,7 +172,7 @@ toApiResponseConstructorName name statusCode =
 
 apiResponseConstructorName :: Name -> Int -> Name
 apiResponseConstructorName name statusCode =
-  Name . Text.pack . escapeKeyword . (<> show statusCode) . (<> "Response") . capitalizeFirstLetter . Text.unpack . unName $ name
+  Name . Text.pack . escapeKeyword . (<> show statusCode) . (<> "ResponseBody") . capitalizeFirstLetter . Text.unpack . unName $ name
 
 toApiDefaultResponseConstructorName :: Name -> PP.Doc ann
 toApiDefaultResponseConstructorName name =
@@ -180,7 +180,7 @@ toApiDefaultResponseConstructorName name =
 
 apiDefaultResponseConstructorName :: Name -> Name
 apiDefaultResponseConstructorName name =
-  Name . Text.pack . escapeKeyword . (<> "DefaultResponse") . capitalizeFirstLetter . Text.unpack . unName $ name
+  Name . Text.pack . escapeKeyword . (<> "DefaultResponseBody") . capitalizeFirstLetter . Text.unpack . unName $ name
 
 toEnumConstructorName :: Name -> Text -> PP.Doc ann
 toEnumConstructorName (Name typName) variant =

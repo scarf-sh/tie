@@ -129,28 +129,28 @@ import qualified Web.HttpApiData
 
 import Test.Response
 
-data ListPackagesResponse200
-    = ListPackagesResponse200A
-    | ListPackagesResponse200B
-    | ListPackagesResponse200C
+data ListPackagesResponseBody200
+    = ListPackagesResponseBody200A
+    | ListPackagesResponseBody200B
+    | ListPackagesResponseBody200C
     deriving (Eq, Show)
 
-instance Data.Aeson.ToJSON ListPackagesResponse200 where
+instance Data.Aeson.ToJSON ListPackagesResponseBody200 where
     toJSON x = case x of
-        ListPackagesResponse200A -> "A"
-        ListPackagesResponse200B -> "B"
-        ListPackagesResponse200C -> "C"
+        ListPackagesResponseBody200A -> "A"
+        ListPackagesResponseBody200B -> "B"
+        ListPackagesResponseBody200C -> "C"
 
-instance Data.Aeson.FromJSON ListPackagesResponse200 where
-    parseJSON = Data.Aeson.withText "ListPackagesResponse200" $ \s ->
+instance Data.Aeson.FromJSON ListPackagesResponseBody200 where
+    parseJSON = Data.Aeson.withText "ListPackagesResponseBody200" $ \s ->
         case s of
-            "A" -> pure ListPackagesResponse200A
-            "B" -> pure ListPackagesResponse200B
-            "C" -> pure ListPackagesResponse200C
+            "A" -> pure ListPackagesResponseBody200A
+            "B" -> pure ListPackagesResponseBody200B
+            "C" -> pure ListPackagesResponseBody200C
             _ -> fail "invalid enum value"
 
 data ListPackagesResponse
-    = ListPackagesResponse200 ListPackagesResponse200
+    = ListPackagesResponse200 ListPackagesResponseBody200
 
 instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x) =

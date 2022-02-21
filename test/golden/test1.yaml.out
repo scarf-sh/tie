@@ -28,7 +28,6 @@ import Test.Response
 
 import Test.Schemas.Vehicle
 import Test.Schemas.NISE
-import Test.Schemas.Vehicle
 
 import Test.Response.GetUser
 import Test.Response.CreateUser
@@ -174,14 +173,27 @@ import qualified Network.Wai
 import qualified Web.HttpApiData
 
 import Test.Schemas.NISE
-import Test.Schemas.Vehicle
 
 import Test.Response
 
+newtype CreateUserResponseBody200 = CreateUserResponseBody200
+    {
+        name :: Data.Maybe.Maybe (Data.Text.Text)
+    }
 
+instance Data.Aeson.ToJSON CreateUserResponseBody200 where
+    toJSON CreateUserResponseBody200 {..} = Data.Aeson.object
+        [
+            "name" Data.Aeson..= name
+        ]
+
+instance Data.Aeson.FromJSON CreateUserResponseBody200 where
+    parseJSON = Data.Aeson.withObject "CreateUserResponseBody200" $ \o ->
+        CreateUserResponseBody200
+            <$> o Data.Aeson..:? "name"
 
 data CreateUserResponse
-    = CreateUserResponse200 Vehicle
+    = CreateUserResponse200 CreateUserResponseBody200
 
 instance ToResponse CreateUserResponse where
     toResponse (CreateUserResponse200 x) =
