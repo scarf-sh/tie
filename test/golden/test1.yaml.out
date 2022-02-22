@@ -91,7 +91,7 @@ application run api notFound request respond =
                                                                        Left _err -> undefined
                                                                        Right body ->
                                                                            run request $ do
-                                                                               response <- Control.Monad.Catch.handle pure $ createUser api id name page offset body
+                                                                               response <- Control.Monad.Catch.handle pure (createUser api id name page offset body)
                                                                                Control.Monad.IO.Class.liftIO (respond (toResponse response))
                                 "GET" ->
                                     case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "page" (Network.Wai.queryString request))) of
@@ -106,7 +106,7 @@ application run api notFound request respond =
                                                 _x ->
                                                     let !offset = fmap (\(Right _x) -> _x) _x in
                                                         run request $ do
-                                                            response <- Control.Monad.Catch.handle pure $ getUser api id name page offset 
+                                                            response <- Control.Monad.Catch.handle pure (getUser api id name page offset )
                                                             Control.Monad.IO.Class.liftIO (respond (toResponse response))
                                 x ->
                                     unsupportedMethod x
