@@ -1,0 +1,410 @@
+Test/Api.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Api where
+
+import qualified Control.Applicative
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Response
+
+import Test.Schemas.Error
+import Test.Schemas.Pets
+import Test.Schemas.Error
+import Test.Schemas.Error
+import Test.Schemas.Pet
+
+import Test.Response.ListPets
+import Test.Response.CreatePets
+import Test.Response.ShowPetById
+
+data Api m = Api {
+    -- | List all pets
+    listPets ::
+        -- @limit@ How many items to return at one time (max 100)
+        Data.Maybe.Maybe (GHC.Types.Int) ->
+        m ListPetsResponse,
+    -- | Create a pet
+    createPets ::
+        m CreatePetsResponse,
+    -- | Info for a specific pet
+    showPetById ::
+        -- @petId@ The id of the pet to retrieve
+        Data.Text.Text ->
+        m ShowPetByIdResponse
+}
+
+application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
+application run api notFound request respond =
+    case Network.Wai.pathInfo request of
+        [ "pets" ] ->
+            case Network.Wai.requestMethod request of
+                "POST" ->
+                    run request $ do
+                        response <- createPets api  
+                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                "GET" ->
+                    case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "limit" (Network.Wai.queryString request))) of
+                        Just (Left err) ->
+                            undefined
+                        _x ->
+                            let !limit = fmap (\(Right _x) -> _x) _x in
+                                run request $ do
+                                    response <- listPets api limit 
+                                    Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                x ->
+                    unsupportedMethod x
+
+        [ "pets", petId ] ->
+            case Web.HttpApiData.parseUrlPiece petId of
+                Left _ -> invalidRequest "petId"
+                Right petId ->
+                    case Network.Wai.requestMethod request of
+                        "GET" ->
+                            run request $ do
+                                response <- showPetById api petId 
+                                Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                        x ->
+                            unsupportedMethod x
+
+        _ ->
+            notFound request respond
+    where
+        unsupportedMethod _ =
+            respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
+        invalidRequest _ =
+            respond (Network.Wai.responseBuilder (toEnum 401) [] mempty)
+---------------------
+Test/Response.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Response where
+
+import qualified Control.Applicative
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+class ToResponse a where
+    toResponse :: a -> Network.Wai.Response
+---------------------
+Test/Response/CreatePets.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Response.CreatePets where
+
+import qualified Control.Applicative
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.Error
+
+import Test.Response
+
+
+
+data CreatePetsResponse
+    = CreatePetsResponse201 
+    | CreatePetsDefaultResponse Network.HTTP.Types.Status Error
+
+instance ToResponse CreatePetsResponse where
+    toResponse (CreatePetsResponse201 ) =
+        Network.Wai.responseBuilder (toEnum 201) [] 
+    toResponse (CreatePetsDefaultResponse status x) =
+        Network.Wai.responseBuilder status [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+Test/Response/ListPets.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Response.ListPets where
+
+import qualified Control.Applicative
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.Error
+import Test.Schemas.Pets
+
+import Test.Response
+
+
+
+data ListPetsResponse
+    = ListPetsResponse200 Pets
+    | ListPetsDefaultResponse Network.HTTP.Types.Status Error
+
+instance ToResponse ListPetsResponse where
+    toResponse (ListPetsResponse200 x) =
+        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+    toResponse (ListPetsDefaultResponse status x) =
+        Network.Wai.responseBuilder status [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+Test/Response/ShowPetById.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Response.ShowPetById where
+
+import qualified Control.Applicative
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.Error
+import Test.Schemas.Pet
+
+import Test.Response
+
+
+
+data ShowPetByIdResponse
+    = ShowPetByIdResponse200 Pet
+    | ShowPetByIdDefaultResponse Network.HTTP.Types.Status Error
+
+instance ToResponse ShowPetByIdResponse where
+    toResponse (ShowPetByIdResponse200 x) =
+        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+    toResponse (ShowPetByIdDefaultResponse status x) =
+        Network.Wai.responseBuilder status [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+Test/Schemas/Error.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Schemas.Error where
+
+import qualified Control.Applicative
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+
+
+
+
+data Error = Error
+    {
+        code :: GHC.Types.Int,
+        message :: Data.Text.Text
+    }
+
+instance Data.Aeson.ToJSON Error where
+    toJSON Error {..} = Data.Aeson.object
+        [
+            "code" Data.Aeson..= code,
+            "message" Data.Aeson..= message
+        ]
+
+instance Data.Aeson.FromJSON Error where
+    parseJSON = Data.Aeson.withObject "Error" $ \o ->
+        Error
+            <$> o Data.Aeson..: "code"
+            <*> o Data.Aeson..: "message"
+---------------------
+Test/Schemas/Pet.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Schemas.Pet where
+
+import qualified Control.Applicative
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+
+
+
+
+data Pet = Pet
+    {
+        id :: GHC.Types.Int,
+        name :: Data.Text.Text,
+        tag :: Data.Maybe.Maybe (Data.Text.Text)
+    }
+
+instance Data.Aeson.ToJSON Pet where
+    toJSON Pet {..} = Data.Aeson.object
+        [
+            "id" Data.Aeson..= id,
+            "name" Data.Aeson..= name,
+            "tag" Data.Aeson..= tag
+        ]
+
+instance Data.Aeson.FromJSON Pet where
+    parseJSON = Data.Aeson.withObject "Pet" $ \o ->
+        Pet
+            <$> o Data.Aeson..: "id"
+            <*> o Data.Aeson..: "name"
+            <*> o Data.Aeson..:? "tag"
+---------------------
+Test/Schemas/Pets.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Schemas.Pets where
+
+import qualified Control.Applicative
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.Pet
+
+
+
+type Pets = [ Pet ]
+---------------------
+test.cabal
+
+cabal-version: 3.0
+name: test
+version: 0.1.0.0
+library
+  build-depends:
+    , aeson
+    , attoparsec
+    , base
+    , ghc-prim
+    , http-api-data
+    , http-types
+    , text
+    , time
+    , wai
+  exposed-modules:
+    Test.Api
+    Test.Response
+    Test.Response.CreatePets
+    Test.Response.ListPets
+    Test.Response.ShowPetById
+    Test.Schemas.Error
+    Test.Schemas.Pet
+    Test.Schemas.Pets
