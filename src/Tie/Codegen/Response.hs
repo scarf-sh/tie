@@ -39,12 +39,16 @@ codegenResponses resolver Operation {..} = do
           <> PP.indent
             4
             ( PP.vsep $
-                [ op <+> toApiResponseConstructorName name statusCode <+> codegenFieldType jsonResponseContent
+                [ op <+> toApiResponseConstructorName name statusCode <+> case jsonResponseContent of
+                    Nothing -> mempty
+                    Just jsonContent -> codegenFieldType jsonContent
                   | (op, (statusCode, Response {jsonResponseContent})) <- zip ("=" : repeat "|") responses
                 ]
                   ++ [ "|" <+> toApiDefaultResponseConstructorName name
                          <+> "Network.HTTP.Types.Status"
-                         <+> codegenFieldType jsonResponseContent
+                         <+> case jsonResponseContent of
+                           Nothing -> mempty
+                           Just jsonContent -> codegenFieldType jsonContent
                        | Just Response {jsonResponseContent} <- [defaultResponse]
                      ]
             )
@@ -55,36 +59,52 @@ codegenResponses resolver Operation {..} = do
 
 codegenToResponses :: Name -> [(Int, Response)] -> Maybe Response -> Doc ann
 codegenToResponses operationName responses defaultResponse =
-  let decl =
+  let hasBody response = case response of
+        Response {jsonResponseContent = Just {}} -> True
+        _ -> False
+
+      bodyBinder response
+        | hasBody response = "x"
+        | otherwise = mempty
+
+      bodySerialize Response {jsonResponseContent}
+        | Just {} <- jsonResponseContent =
+          "(" <> "Data.Aeson.fromEncoding" <+> "(" <> "Data.Aeson.toEncoding" <+> "x" <> ")" <> ")"
+        | otherwise =
+          mempty
+
+      responseHeaders Response {jsonResponseContent}
+        | Just {} <- jsonResponseContent =
+          "[(Network.HTTP.Types.hContentType, \"application/json\")]"
+        | otherwise =
+          "[]"
+
+      decl =
         "instance" <+> "ToResponse" <+> toApiResponseTypeName operationName <+> "where" <> PP.line
           <> PP.indent
             4
             ( PP.vsep $
-                [ "toResponse" <+> "(" <> toApiResponseConstructorName operationName statusCode <+> "x" <> ")"
+                [ "toResponse" <+> "(" <> toApiResponseConstructorName operationName statusCode <+> bodyBinder response <> ")"
                     <+> "="
                     <> PP.line
                     <> PP.indent
                       4
                       ( "Network.Wai.responseBuilder" <+> "(" <> "toEnum" <+> PP.pretty statusCode <> ")"
-                          <+> "[(Network.HTTP.Types.hContentType, \"application/json\")]"
-                          <+> "(" <> "Data.Aeson.fromEncoding"
-                          <+> "(" <> "Data.Aeson.toEncoding"
-                          <+> "x" <> ")" <> ")"
+                          <+> responseHeaders response
+                          <+> bodySerialize response
                       )
-                  | (statusCode, _response) <- responses
+                  | (statusCode, response) <- responses
                 ]
-                  ++ [ "toResponse" <+> "(" <> toApiDefaultResponseConstructorName operationName <+> "status" <+> "x" <> ")"
+                  ++ [ "toResponse" <+> "(" <> toApiDefaultResponseConstructorName operationName <+> "status" <+> bodyBinder response <> ")"
                          <+> "="
                          <> PP.line
                          <> PP.indent
                            4
                            ( "Network.Wai.responseBuilder" <+> "status"
-                               <+> "[(Network.HTTP.Types.hContentType, \"application/json\")]"
-                               <+> "(" <> "Data.Aeson.fromEncoding"
-                               <+> "(" <> "Data.Aeson.toEncoding"
-                               <+> "x" <> ")" <> ")"
+                               <+> responseHeaders response
+                               <+> bodySerialize response
                            )
-                       | Just Response {jsonResponseContent} <- [defaultResponse]
+                       | Just response@Response {jsonResponseContent} <- [defaultResponse]
                      ]
             )
    in decl

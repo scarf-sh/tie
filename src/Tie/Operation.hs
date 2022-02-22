@@ -72,7 +72,7 @@ data RequestBody = RequestBody
 data Response = Response
   { description :: Text,
     -- | JSON schema of the response
-    jsonResponseContent :: Named Type
+    jsonResponseContent :: Maybe (Named Type)
   }
 
 -- | Internal representation of a path.
@@ -125,7 +125,7 @@ data Operation = Operation
 
 data Errors m = Errors
   { missingOperationId :: forall a. m a,
-    unsupportedMediaType :: forall a. m a,
+    unsupportedMediaType :: forall a. HasCallStack => m a,
     requestBodyMissingSchema :: forall a. m a,
     unknownParameter :: forall a. Text -> m a,
     paramMissingSchema :: forall a. m a,
@@ -160,11 +160,11 @@ operationSchemaDependencies getDependencies Operation {..} =
     [ getDependencies jsonRequestBodyContent
       | Just RequestBody {jsonRequestBodyContent} <- [requestBody]
     ]
-      ++ [ getDependencies jsonResponseContent
-           | Just Response {jsonResponseContent} <- [defaultResponse]
+      ++ [ getDependencies jsonContent
+           | Just Response {jsonResponseContent = Just jsonContent} <- [defaultResponse]
          ]
-      ++ [ getDependencies jsonResponseContent
-           | (_, Response {jsonResponseContent}) <- responses
+      ++ [ getDependencies jsonContent
+           | (_, Response {jsonResponseContent = Just jsonContent}) <- responses
          ]
 
 -- | Dependencies in the Response.* modules.
@@ -294,23 +294,28 @@ responseToResponse ::
   Errors m ->
   OpenApi.Response ->
   m Response
-responseToResponse resolver Errors {..} response = do
-  OpenApi.MediaTypeObject {..} <-
-    whenNothing
-      (InsOrd.lookup "application/json" (OpenApi._responseContent response))
-      unsupportedMediaType
-  -- TODO take care of headers
-  referencedSchema <-
-    whenNothing
-      _mediaTypeObjectSchema
-      requestBodyMissingSchema
-  type_ <-
-    schemaRefToType resolver referencedSchema
+responseToResponse resolver errors@Errors {..} response = do
+  responseTy <- responseMediaTypeObject resolver errors response
   pure
     Response
       { description = OpenApi._responseDescription response,
-        jsonResponseContent = type_
+        jsonResponseContent = responseTy
       }
+
+responseMediaTypeObject :: Monad m => Resolver m -> Errors m -> OpenApi.Response -> m (Maybe (Named Type))
+responseMediaTypeObject resolver Errors {..} response
+  | Just OpenApi.MediaTypeObject {..} <- InsOrd.lookup "application/json" (OpenApi._responseContent response) = do
+    referencedSchema <-
+      whenNothing
+        _mediaTypeObjectSchema
+        requestBodyMissingSchema
+    type_ <-
+      schemaRefToType resolver referencedSchema
+    pure (Just type_)
+  | InsOrd.null (OpenApi._responseContent response) = do
+    pure Nothing
+  | otherwise =
+    unsupportedMediaType
 
 parsePath :: FilePath -> [PathSegment Text]
 parsePath path =
@@ -389,9 +394,12 @@ normalizeParam operationName param@Param {..} = do
   pure (param {schema = normedType}, inlineDefinitions)
 
 normalizeResponse :: Monad m => Name -> Response -> m (Response, [(Name, Type)])
-normalizeResponse name response@Response {..} = do
-  (normedType, inlineDefinitions) <- normalizeNamedType (pure name) jsonResponseContent
-  pure (response {jsonResponseContent = normedType}, inlineDefinitions)
+normalizeResponse name response@Response {..} =
+  case jsonResponseContent of
+    Nothing -> pure (response, [])
+    Just jsonContent -> do
+      (normedType, inlineDefinitions) <- normalizeNamedType (pure name) jsonContent
+      pure (response {jsonResponseContent = Just normedType}, inlineDefinitions)
 
 normalizeRequestBody :: Monad m => Name -> RequestBody -> m (RequestBody, [(Name, Type)])
 normalizeRequestBody name body@RequestBody {..} = do
