@@ -51,11 +51,16 @@ codegenResponses resolver Operation {..} = do
                            Just jsonContent -> codegenFieldType jsonContent
                        | Just Response {jsonResponseContent} <- [defaultResponse]
                      ]
+                  ++ [ "deriving" <+> "(" <> "Show" <> ")"
+                     ]
             )
       instances =
         codegenToResponses name responses defaultResponse
 
-  pure (PP.vsep [decl, mempty, instances])
+      exceptionInstance =
+        "instance" <+> "Control.Exception.Exception" <+> toApiResponseTypeName name
+
+  pure (PP.vsep [decl, mempty, exceptionInstance, mempty, instances])
 
 codegenToResponses :: Name -> [(Int, Response)] -> Maybe Response -> Doc ann
 codegenToResponses operationName responses defaultResponse =

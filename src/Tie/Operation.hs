@@ -275,7 +275,7 @@ requestBodyToRequestBody resolver Errors {..} requestBody = do
   OpenApi.MediaTypeObject {..} <-
     whenNothing
       (InsOrd.lookup "application/json" (OpenApi._requestBodyContent requestBody))
-      unsupportedMediaType
+      (traceShow requestBody $ unsupportedMediaType)
   referencedSchema <-
     whenNothing
       _mediaTypeObjectSchema
@@ -315,7 +315,7 @@ responseMediaTypeObject resolver Errors {..} response
   | InsOrd.null (OpenApi._responseContent response) = do
     pure Nothing
   | otherwise =
-    unsupportedMediaType
+    traceShow response $ unsupportedMediaType
 
 parsePath :: FilePath -> [PathSegment Text]
 parsePath path =

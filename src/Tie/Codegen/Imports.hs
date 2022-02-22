@@ -39,6 +39,8 @@ codegenModuleHeader moduleName =
     <> PP.line
     <> "import" <+> "qualified" <+> "Control.Applicative"
     <> PP.line
+    <> "import" <+> "qualified" <+> "Control.Exception"
+    <> PP.line
     <> "import" <+> "qualified" <+> "Control.Monad"
     <> PP.line
     <> "import" <+> "qualified" <+> "Control.Monad.IO.Class"

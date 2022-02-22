@@ -108,11 +108,14 @@ codegenOneOfType typName variants = do
           <> PP.indent
             4
             ( PP.vsep
-                [ op
-                    <+> variantName
-                    <+> codegenFieldType variantType
-                  | (op, (variantName, variantType)) <- zip ("=" : repeat "|") variantConstructors
-                ]
+                ( [ op
+                      <+> variantName
+                      <+> codegenFieldType variantType
+                    | (op, (variantName, variantType)) <- zip ("=" : repeat "|") variantConstructors
+                  ]
+                    ++ [ "deriving" <+> "(" <> "Show" <> ")"
+                       ]
+                )
             )
 
       toJson =
@@ -172,6 +175,10 @@ codegenObjectType typName ObjectType {..} = do
                   )
                 <> PP.line
                 <> "}"
+                <> PP.line
+                <> "deriving" <+> "("
+                <> "Show"
+                <> ")"
             )
 
       toJson =
