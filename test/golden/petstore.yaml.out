@@ -160,7 +160,7 @@ data CreatePetsResponse
 
 instance ToResponse CreatePetsResponse where
     toResponse (CreatePetsResponse201 ) =
-        Network.Wai.responseBuilder (toEnum 201) [] 
+        Network.Wai.responseBuilder (toEnum 201) [] mempty
     toResponse (CreatePetsDefaultResponse status x) =
         Network.Wai.responseBuilder status [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------

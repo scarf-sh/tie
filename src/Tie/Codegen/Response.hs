@@ -71,7 +71,7 @@ codegenToResponses operationName responses defaultResponse =
         | Just {} <- jsonResponseContent =
           "(" <> "Data.Aeson.fromEncoding" <+> "(" <> "Data.Aeson.toEncoding" <+> "x" <> ")" <> ")"
         | otherwise =
-          mempty
+          "mempty"
 
       responseHeaders Response {jsonResponseContent}
         | Just {} <- jsonResponseContent =
