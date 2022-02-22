@@ -8,7 +8,9 @@ Test/Api.hs
 module Test.Api where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -58,7 +60,7 @@ data Api m = Api {
         m CreateUserResponse
 }
 
-application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
+application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
 application run api notFound request respond =
     case Network.Wai.pathInfo request of
         [ "users", id, "create", name ] ->
@@ -89,7 +91,7 @@ application run api notFound request respond =
                                                                        Left _err -> undefined
                                                                        Right body ->
                                                                            run request $ do
-                                                                               response <- createUser api id name page offset body
+                                                                               response <- Control.Monad.Catch.handle pure $ createUser api id name page offset body
                                                                                Control.Monad.IO.Class.liftIO (respond (toResponse response))
                                 "GET" ->
                                     case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "page" (Network.Wai.queryString request))) of
@@ -104,7 +106,7 @@ application run api notFound request respond =
                                                 _x ->
                                                     let !offset = fmap (\(Right _x) -> _x) _x in
                                                         run request $ do
-                                                            response <- getUser api id name page offset 
+                                                            response <- Control.Monad.Catch.handle pure $ getUser api id name page offset 
                                                             Control.Monad.IO.Class.liftIO (respond (toResponse response))
                                 x ->
                                     unsupportedMethod x
@@ -127,7 +129,9 @@ Test/Response.hs
 module Test.Response where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -156,7 +160,9 @@ Test/Response/CreateUser.hs
 module Test.Response.CreateUser where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -180,6 +186,7 @@ newtype CreateUserRequestBody = CreateUserRequestBody
     {
         nise :: Data.Maybe.Maybe (NISE)
     }
+    deriving (Show)
 
 instance Data.Aeson.ToJSON CreateUserRequestBody where
     toJSON CreateUserRequestBody {..} = Data.Aeson.object
@@ -195,6 +202,7 @@ newtype CreateUserResponseBody200 = CreateUserResponseBody200
     {
         name :: Data.Maybe.Maybe (Data.Text.Text)
     }
+    deriving (Show)
 
 instance Data.Aeson.ToJSON CreateUserResponseBody200 where
     toJSON CreateUserResponseBody200 {..} = Data.Aeson.object
@@ -209,6 +217,9 @@ instance Data.Aeson.FromJSON CreateUserResponseBody200 where
 
 data CreateUserResponse
     = CreateUserResponse200 CreateUserResponseBody200
+    deriving (Show)
+
+instance Control.Exception.Exception CreateUserResponse
 
 instance ToResponse CreateUserResponse where
     toResponse (CreateUserResponse200 x) =
@@ -224,7 +235,9 @@ Test/Response/GetUser.hs
 module Test.Response.GetUser where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -248,6 +261,9 @@ import Test.Response
 
 data GetUserResponse
     = GetUserResponse200 Vehicle
+    deriving (Show)
+
+instance Control.Exception.Exception GetUserResponse
 
 instance ToResponse GetUserResponse where
     toResponse (GetUserResponse200 x) =
@@ -263,7 +279,9 @@ Test/Schemas/Car.hs
 module Test.Schemas.Car where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -291,6 +309,7 @@ data Car = Car
         name :: Data.Maybe.Maybe (Data.Text.Text),
         type' :: Data.Text.Text
     }
+    deriving (Show)
 
 instance Data.Aeson.ToJSON Car where
     toJSON Car {..} = Data.Aeson.object
@@ -321,7 +340,9 @@ Test/Schemas/NISE.hs
 module Test.Schemas.NISE where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -343,6 +364,7 @@ newtype NISEValue = NISEValue
     {
         name :: Data.Maybe.Maybe (Data.Text.Text)
     }
+    deriving (Show)
 
 instance Data.Aeson.ToJSON NISEValue where
     toJSON NISEValue {..} = Data.Aeson.object
@@ -363,6 +385,7 @@ data NISE = NISE
         ports :: [ GHC.Types.Int ],
         value :: Data.Maybe.Maybe (NISEValue)
     }
+    deriving (Show)
 
 instance Data.Aeson.ToJSON NISE where
     toJSON NISE {..} = Data.Aeson.object
@@ -393,7 +416,9 @@ Test/Schemas/PackageId.hs
 module Test.Schemas.PackageId where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -419,6 +444,7 @@ data PackageIdOneOf4 = PackageIdOneOf4
         list :: Data.Maybe.Maybe ([ PackageIdOneOf4List ]),
         name :: Data.Text.Text
     }
+    deriving (Show)
 
 instance Data.Aeson.ToJSON PackageIdOneOf4 where
     toJSON PackageIdOneOf4 {..} = Data.Aeson.object
@@ -441,6 +467,7 @@ newtype PackageIdOneOf4List = PackageIdOneOf4List
     {
         cool :: Data.Maybe.Maybe (Data.Text.Text)
     }
+    deriving (Show)
 
 instance Data.Aeson.ToJSON PackageIdOneOf4List where
     toJSON PackageIdOneOf4List {..} = Data.Aeson.object
@@ -475,6 +502,7 @@ data PackageId
     | PackageIdCar Car
     | PackageIdPackageIdOneOf3 GHC.Types.Int
     | PackageIdPackageIdOneOf4 PackageIdOneOf4
+    deriving (Show)
 
 instance Data.Aeson.ToJSON PackageId where
     toJSON (PackageIdPlane x) = Data.Aeson.toJSON x
@@ -499,7 +527,9 @@ Test/Schemas/Plane.hs
 module Test.Schemas.Plane where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -530,6 +560,7 @@ data Plane = Plane
         nb_passengers :: Data.Maybe.Maybe (GHC.Types.Int),
         type' :: Data.Maybe.Maybe (Data.Text.Text)
     }
+    deriving (Show)
 
 instance Data.Aeson.ToJSON Plane where
     toJSON Plane {..} = Data.Aeson.object
@@ -564,7 +595,9 @@ Test/Schemas/Vehicle.hs
 module Test.Schemas.Vehicle where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -591,6 +624,7 @@ data Vehicle = Vehicle
         name :: Data.Maybe.Maybe (Data.Text.Text),
         type' :: Data.Text.Text
     }
+    deriving (Show)
 
 instance Data.Aeson.ToJSON Vehicle where
     toJSON Vehicle {..} = Data.Aeson.object
@@ -619,6 +653,7 @@ library
     , aeson
     , attoparsec
     , base
+    , exceptions
     , ghc-prim
     , http-api-data
     , http-types

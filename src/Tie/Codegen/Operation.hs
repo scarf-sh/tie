@@ -45,7 +45,7 @@ codegenOperations resolver operations = do
   operationsCode <- traverse (codegenOperation resolver) (Map.elems groupedOperations)
   let apiDecl =
         -- TODO instead of "application" take name from openapi spec
-        "application" <+> "::" <+> "(" <> "Control.Monad.IO.Class.MonadIO" <+> "m" <> ")" <+> "=>" <+> "(" <> "forall" <+> "a" <+> "." <+> "Network.Wai.Request" <+> "->" <+> "m"
+        "application" <+> "::" <+> "(" <> "Control.Monad.Catch.MonadCatch" <+> "m" <> "," <+> "Control.Monad.IO.Class.MonadIO" <+> "m" <> ")" <+> "=>" <+> "(" <> "forall" <+> "a" <+> "." <+> "Network.Wai.Request" <+> "->" <+> "m"
           <+> "a"
           <+> "->"
           <+> "IO"
@@ -193,7 +193,7 @@ codegenCallApiMember operationName path queryParams requestBody =
   "run" <+> "request" <+> "$" <+> "do" <> PP.line
     <> PP.indent
       4
-      ( "response" <+> "<-" <+> toApiMemberName operationName
+      ( "response" <+> "<-" <+> "Control.Monad.Catch.handle" <+> "pure" <+> "$" <+> toApiMemberName operationName
           <+> "api"
           <+> PP.hsep
             ( [toParamBinder name | VariableSegment Param {name} <- path]

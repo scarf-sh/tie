@@ -8,7 +8,9 @@ Test/Api.hs
 module Test.Api where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -41,14 +43,14 @@ data Api m = Api {
         m ListPackagesResponse
 }
 
-application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
+application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
 application run api notFound request respond =
     case Network.Wai.pathInfo request of
         [ "packages" ] ->
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request $ do
-                        response <- listPackages api  
+                        response <- Control.Monad.Catch.handle pure $ listPackages api  
                         Control.Monad.IO.Class.liftIO (respond (toResponse response))
                 x ->
                     unsupportedMethod x
@@ -57,7 +59,7 @@ application run api notFound request respond =
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request $ do
-                        response <- listPackages api  
+                        response <- Control.Monad.Catch.handle pure $ listPackages api  
                         Control.Monad.IO.Class.liftIO (respond (toResponse response))
                 x ->
                     unsupportedMethod x
@@ -80,7 +82,9 @@ Test/Response.hs
 module Test.Response where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -109,7 +113,9 @@ Test/Response/ListPackages.hs
 module Test.Response.ListPackages where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -151,6 +157,9 @@ instance Data.Aeson.FromJSON ListPackagesResponseBody200 where
 
 data ListPackagesResponse
     = ListPackagesResponse200 ListPackagesResponseBody200
+    deriving (Show)
+
+instance Control.Exception.Exception ListPackagesResponse
 
 instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x) =
@@ -166,7 +175,9 @@ Test/Response/ListPackages.hs
 module Test.Response.ListPackages where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -190,6 +201,9 @@ import Test.Response
 
 data ListPackagesResponse
     = ListPackagesResponse200 Package
+    deriving (Show)
+
+instance Control.Exception.Exception ListPackagesResponse
 
 instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x) =
@@ -205,7 +219,9 @@ Test/Schemas/Package.hs
 module Test.Schemas.Package where
 
 import qualified Control.Applicative
+import qualified Control.Exception
 import qualified Control.Monad
+import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Parser
@@ -255,6 +271,7 @@ library
     , aeson
     , attoparsec
     , base
+    , exceptions
     , ghc-prim
     , http-api-data
     , http-types
