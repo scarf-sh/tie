@@ -84,7 +84,7 @@ application run api notFound request respond =
         unsupportedMethod _ =
             respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
         invalidRequest _ =
-            respond (Network.Wai.responseBuilder (toEnum 401) [] mempty)
+            respond (Network.Wai.responseBuilder (toEnum 400) [] mempty)
 ---------------------
 Test/Response.hs
 

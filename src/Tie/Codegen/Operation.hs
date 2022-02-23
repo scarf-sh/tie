@@ -98,7 +98,7 @@ codegenOperations resolver operations = do
                           4
                           ( "respond" <+> "(" <> "Network.Wai.responseBuilder"
                               <+> "(" <> "toEnum"
-                              <+> "401" <> ")"
+                              <+> "400" <> ")"
                               <+> "[]"
                               <+> "mempty" <> ")"
                           )
@@ -269,7 +269,7 @@ codegenRequestBodyGuard requestBody continuation = case requestBody of
             <> PP.line
             <> PP.indent
               4
-              ( "Left" <+> "_err" <+> "->" <+> "undefined" <> PP.line
+              ( "Left" <+> "err" <+> "->" <+> "invalidRequest" <+> "err" <> PP.line
                   <> "Right" <+> "bodyValue" <+> "->"
                   <> PP.line
                   <> PP.indent
@@ -277,7 +277,7 @@ codegenRequestBodyGuard requestBody continuation = case requestBody of
                     ( "case" <+> "Data.Aeson.Types.parseEither" <+> "Data.Aeson.parseJSON" <+> "bodyValue" <+> "of" <> PP.line
                         <> PP.indent
                           4
-                          ( "Left" <+> "_err" <+> "->" <+> "undefined" <> PP.line
+                          ( "Left" <+> "err" <+> "->" <+> "invalidRequest" <+> "err" <> PP.line
                               <> "Right" <+> "body" <+> "->"
                               <> PP.line
                               <> PP.indent 4 continuation
@@ -310,7 +310,7 @@ codegenQueryParamGuard Param {name, required} continuation
         ( "Nothing" <+> "->" <> PP.line
             <> PP.indent
               4
-              ( "undefined"
+              ( "invalidRequest" <+> "mempty"
               )
             <> PP.line
             <> "Just" <+> "("
@@ -319,7 +319,7 @@ codegenQueryParamGuard Param {name, required} continuation
             <> PP.line
             <> PP.indent
               4
-              ( "undefined"
+              ( "invalidRequest" <+> "mempty"
               )
             <> PP.line
             <> "Just" <+> "("
@@ -346,7 +346,7 @@ codegenQueryParamGuard Param {name, required} continuation
         ( "Just" <+> "(" <> "Left" <+> "err" <> ")" <+> "->" <> PP.line
             <> PP.indent
               4
-              ( "undefined"
+              ( "invalidRequest" <+> "err"
               )
             <> PP.line
             <> "_x" <+> "->"

@@ -74,21 +74,21 @@ application run api notFound request respond =
                                 "POST" ->
                                     case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "page" (Network.Wai.queryString request))) of
                                         Nothing ->
-                                            undefined
+                                            invalidRequest mempty
                                         Just (Left err) ->
-                                            undefined
+                                            invalidRequest mempty
                                         Just (Right page) ->
                                             case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "offset" (Network.Wai.queryString request))) of
                                                 Just (Left err) ->
-                                                    undefined
+                                                    invalidRequest err
                                                 _x ->
                                                     let !offset = fmap (\(Right _x) -> _x) _x in
                                                         do result <- Data.Attoparsec.ByteString.parseWith (Network.Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
                                                            case Data.Attoparsec.ByteString.eitherResult result of
-                                                               Left _err -> undefined
+                                                               Left err -> invalidRequest err
                                                                Right bodyValue ->
                                                                    case Data.Aeson.Types.parseEither Data.Aeson.parseJSON bodyValue of
-                                                                       Left _err -> undefined
+                                                                       Left err -> invalidRequest err
                                                                        Right body ->
                                                                            run request $ do
                                                                                response <- Control.Monad.Catch.handle pure (createUser api id name page offset body)
@@ -96,13 +96,13 @@ application run api notFound request respond =
                                 "GET" ->
                                     case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "page" (Network.Wai.queryString request))) of
                                         Nothing ->
-                                            undefined
+                                            invalidRequest mempty
                                         Just (Left err) ->
-                                            undefined
+                                            invalidRequest mempty
                                         Just (Right page) ->
                                             case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "offset" (Network.Wai.queryString request))) of
                                                 Just (Left err) ->
-                                                    undefined
+                                                    invalidRequest err
                                                 _x ->
                                                     let !offset = fmap (\(Right _x) -> _x) _x in
                                                         run request $ do
@@ -117,7 +117,7 @@ application run api notFound request respond =
         unsupportedMethod _ =
             respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
         invalidRequest _ =
-            respond (Network.Wai.responseBuilder (toEnum 401) [] mempty)
+            respond (Network.Wai.responseBuilder (toEnum 400) [] mempty)
 ---------------------
 Test/Response.hs
 
