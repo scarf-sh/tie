@@ -190,7 +190,7 @@ codegenOperation resolver operations@(Operation {path} : _) =
 
 codegenCallApiMember :: Name -> Path -> [Param] -> Maybe RequestBody -> PP.Doc ann
 codegenCallApiMember operationName path queryParams requestBody =
-  "run" <+> "request" <+> "$" <+> "do" <> PP.line
+  "run" <+> "request" <+> "(" <> "do" <> PP.line
     <> PP.indent
       4
       ( "response" <+> "<-" <+> "Control.Monad.Catch.handle" <+> "pure" <+> "(" <> toApiMemberName operationName
@@ -206,7 +206,8 @@ codegenCallApiMember operationName path queryParams requestBody =
           <+> "(" <> "respond"
           <+> "(" <> "toResponse"
           <+> "response" <> ")" <> ")"
-      )
+      ) <> PP.line <>
+      ")"
 
 codegenPathGuard :: Path -> PP.Doc ann -> PP.Doc ann
 codegenPathGuard path continuation =
@@ -310,7 +311,7 @@ codegenQueryParamGuard Param {name, required} continuation
         ( "Nothing" <+> "->" <> PP.line
             <> PP.indent
               4
-              ( "invalidRequest" <+> "mempty"
+              ( "invalidRequest" <+> "\"request body\""
               )
             <> PP.line
             <> "Just" <+> "("
@@ -319,7 +320,7 @@ codegenQueryParamGuard Param {name, required} continuation
             <> PP.line
             <> PP.indent
               4
-              ( "invalidRequest" <+> "mempty"
+              ( "invalidRequest" <+> "\"request body\""
               )
             <> PP.line
             <> "Just" <+> "("
