@@ -7,10 +7,12 @@
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TupleSections #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Tie.Operation
   ( StatusCode,
     Param (..),
+    Header (..),
     RequestBody (..),
     Response (..),
     Operation (..),
@@ -68,11 +70,20 @@ data RequestBody = RequestBody
     jsonRequestBodyContent :: Named Type
   }
 
+data Header = Header
+  { name :: Text,
+    description :: Maybe Text,
+    schema :: Maybe (Named Type),
+    required :: Bool
+  }
+
 -- | Response descriptor
 data Response = Response
   { description :: Text,
     -- | JSON schema of the response
-    jsonResponseContent :: Maybe (Named Type)
+    jsonResponseContent :: Maybe (Named Type),
+    -- | Response headers
+    headers :: [Header]
   }
 
 -- | Internal representation of a path.
@@ -294,12 +305,14 @@ responseToResponse ::
   Errors m ->
   OpenApi.Response ->
   m Response
-responseToResponse resolver errors@Errors {..} response = do
+responseToResponse resolver errors@Errors {..} response@OpenApi.Response {..} = do
   responseTy <- responseMediaTypeObject resolver errors response
+  headers <- traverse (uncurry (headerToHeader resolver errors)) (InsOrd.toList _responseHeaders)
   pure
     Response
       { description = OpenApi._responseDescription response,
-        jsonResponseContent = responseTy
+        jsonResponseContent = responseTy,
+        headers
       }
 
 responseMediaTypeObject :: Monad m => Resolver m -> Errors m -> OpenApi.Response -> m (Maybe (Named Type))
@@ -355,6 +368,24 @@ paramToParam resolver Errors {..} OpenApi.Param {..} = do
         schema = typ
       }
 
+headerToHeader ::
+  Monad m =>
+  Resolver m ->
+  Errors m ->
+  Text ->
+  OpenApi.Referenced OpenApi.Header ->
+  m Header
+headerToHeader resolver Errors {..} name referencedHeader = do
+  OpenApi.Header {..} <- resolve resolver referencedHeader
+  schema <- traverse (schemaRefToType resolver) _headerSchema
+  pure
+    Header
+      { name,
+        schema,
+        description = _headerDescription,
+        required = fromMaybe False _headerRequired
+      }
+
 pathToPath ::
   Monad m =>
   Resolver m ->
@@ -375,13 +406,13 @@ pathToPath resolver errors@Errors {..} textualPath params = do
               params
           )
           (unknownParameter paramName)
-      param <- paramToParam resolver errors param
+      param@Param {schema} <- paramToParam resolver errors param
       when
         (paramIn param /= InPath)
         paramNotInPath
       _ <-
         whenNothing
-          (isBasicType (namedType (schema param)))
+          (isBasicType (namedType schema))
           paramNotBasicType
       pure param
 
@@ -391,7 +422,7 @@ normalizeParam operationName param@Param {..} = do
     normalizeNamedType
       (pure (operationParamTypeName operationName name))
       schema
-  pure (param {schema = normedType}, inlineDefinitions)
+  pure (param {schema = normedType} :: Param, inlineDefinitions)
 
 normalizeResponse :: Monad m => Name -> Response -> m (Response, [(Name, Type)])
 normalizeResponse name response@Response {..} =

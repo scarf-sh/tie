@@ -206,8 +206,9 @@ codegenCallApiMember operationName path queryParams requestBody =
           <+> "(" <> "respond"
           <+> "(" <> "toResponse"
           <+> "response" <> ")" <> ")"
-      ) <> PP.line <>
-      ")"
+      )
+    <> PP.line
+    <> ")"
 
 codegenPathGuard :: Path -> PP.Doc ann -> PP.Doc ann
 codegenPathGuard path continuation =

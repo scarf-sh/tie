@@ -5,6 +5,7 @@
 module Tie.Codegen.Schema
   ( codegenSchema,
     codegenParamSchema,
+    codegenHeaderSchema,
     codegenFieldType,
   )
 where
@@ -25,7 +26,7 @@ import Tie.Name
     toOneOfConstructorName,
     toOneOfDataTypeName,
   )
-import Tie.Operation (Param (..))
+import Tie.Operation (Header (..), Param (..))
 import Tie.Type
   ( BasicType (..),
     Enumeration (..),
@@ -61,6 +62,26 @@ codegenParamSchema Param {schema, required} =
           error "Invariant broken: ruled out by pathToPath"
         | otherwise ->
           undefined
+
+-- | Generate code for a header
+codegenHeaderSchema :: Header -> Doc ann
+codegenHeaderSchema Header {schema, required} =
+  codegenRequiredOptionalFieldType required $
+    case schema of
+      Just schema@Named {} ->
+        -- We are named, just defer to codegenFieldType
+        codegenFieldType schema
+      Just (Unnamed typ)
+        | Just _enumeration <- isEnumType typ ->
+          error "TODO enumeration params"
+        | Just basicType <- isBasicType typ ->
+          codegenFieldType (Unnamed typ)
+        | Just objectType <- isObjectType typ ->
+          error "Invariant broken: ruled out by pathToPath"
+        | otherwise ->
+          undefined
+      Nothing ->
+        error "Header without schema"
 
 -- | Generate code for a schema.
 codegenSchema :: Monad m => Name -> Type -> m (Doc ann)

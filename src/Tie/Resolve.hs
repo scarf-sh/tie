@@ -72,3 +72,6 @@ instance Resolvable OpenApi.Example where
 
 instance Resolvable OpenApi.RequestBody where
   resolvables = OpenApi._componentsRequestBodies
+
+instance Resolvable OpenApi.Header where
+  resolvables = OpenApi._componentsHeaders

@@ -11,7 +11,11 @@ where
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
-import Tie.Codegen.Schema (codegenFieldType, codegenParamSchema)
+import Tie.Codegen.Schema
+  ( codegenFieldType,
+    codegenHeaderSchema,
+    codegenParamSchema,
+  )
 import Tie.Name
   ( Name,
     toApiDefaultResponseConstructorName,
@@ -34,22 +38,30 @@ import Tie.Resolve (Resolver)
 -- | Generate code for the responses of an 'Operation'.
 codegenResponses :: Monad m => Resolver m -> Operation -> m (Doc ann)
 codegenResponses resolver Operation {..} = do
-  let decl =
+  let 
+      responseHeaderTypes Response {headers} =
+        PP.hsep (map codegenHeaderSchema headers)
+
+      decl =
         "data" <+> toApiResponseTypeName name <> PP.line
           <> PP.indent
             4
             ( PP.vsep $
                 [ op <+> toApiResponseConstructorName name statusCode <+> case jsonResponseContent of
                     Nothing -> mempty
-                    Just jsonContent -> codegenFieldType jsonContent
-                  | (op, (statusCode, Response {jsonResponseContent})) <- zip ("=" : repeat "|") responses
+                    Just jsonContent ->
+                      codegenFieldType jsonContent
+                        <+> responseHeaderTypes response
+                  | (op, (statusCode, response@Response {jsonResponseContent})) <- zip ("=" : repeat "|") responses
                 ]
                   ++ [ "|" <+> toApiDefaultResponseConstructorName name
                          <+> "Network.HTTP.Types.Status"
                          <+> case jsonResponseContent of
                            Nothing -> mempty
-                           Just jsonContent -> codegenFieldType jsonContent
-                       | Just Response {jsonResponseContent} <- [defaultResponse]
+                           Just jsonContent ->
+                             codegenFieldType jsonContent
+                               <+> responseHeaderTypes response
+                       | Just response@Response {jsonResponseContent} <- [defaultResponse]
                      ]
                   ++ [ "deriving" <+> "(" <> "Show" <> ")"
                      ]
@@ -84,13 +96,19 @@ codegenToResponses operationName responses defaultResponse =
         | otherwise =
           "[]"
 
+      responseHeaderBinders Response {headers} =
+        mempty
+
       decl =
         "instance" <+> "ToResponse" <+> toApiResponseTypeName operationName <+> "where" <> PP.line
           <> PP.indent
             4
             ( PP.vsep $
-                [ "toResponse" <+> "(" <> toApiResponseConstructorName operationName statusCode <+> bodyBinder response <> ")"
-                    <+> "="
+                [ "toResponse" <+> "("
+                    <> toApiResponseConstructorName operationName statusCode <+> bodyBinder response
+                      <+> responseHeaderBinders response
+                    <> ")"
+                      <+> "="
                     <> PP.line
                     <> PP.indent
                       4
@@ -100,7 +118,7 @@ codegenToResponses operationName responses defaultResponse =
                       )
                   | (statusCode, response) <- responses
                 ]
-                  ++ [ "toResponse" <+> "(" <> toApiDefaultResponseConstructorName operationName <+> "status" <+> bodyBinder response <> ")"
+                  ++ [ "toResponse" <+> "(" <> toApiDefaultResponseConstructorName operationName <+> "status" <+> bodyBinder response <+> responseHeaderBinders response <> ")"
                          <+> "="
                          <> PP.line
                          <> PP.indent

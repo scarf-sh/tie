@@ -158,13 +158,13 @@ instance Data.Aeson.FromJSON ListPackagesResponseBody200 where
             _ -> fail "invalid enum value"
 
 data ListPackagesResponse
-    = ListPackagesResponse200 ListPackagesResponseBody200
+    = ListPackagesResponse200 ListPackagesResponseBody200 
     deriving (Show)
 
 instance Control.Exception.Exception ListPackagesResponse
 
 instance ToResponse ListPackagesResponse where
-    toResponse (ListPackagesResponse200 x) =
+    toResponse (ListPackagesResponse200 x ) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Response/ListPackages.hs
@@ -202,13 +202,13 @@ import Test.Response
 
 
 data ListPackagesResponse
-    = ListPackagesResponse200 Package
+    = ListPackagesResponse200 Package 
     deriving (Show)
 
 instance Control.Exception.Exception ListPackagesResponse
 
 instance ToResponse ListPackagesResponse where
-    toResponse (ListPackagesResponse200 x) =
+    toResponse (ListPackagesResponse200 x ) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Schemas/Package.hs

@@ -165,15 +165,15 @@ import Test.Response
 
 data CreatePetsResponse
     = CreatePetsResponse201 
-    | CreatePetsDefaultResponse Network.HTTP.Types.Status Error
+    | CreatePetsDefaultResponse Network.HTTP.Types.Status Error 
     deriving (Show)
 
 instance Control.Exception.Exception CreatePetsResponse
 
 instance ToResponse CreatePetsResponse where
-    toResponse (CreatePetsResponse201 ) =
+    toResponse (CreatePetsResponse201  ) =
         Network.Wai.responseBuilder (toEnum 201) [] mempty
-    toResponse (CreatePetsDefaultResponse status x) =
+    toResponse (CreatePetsDefaultResponse status x ) =
         Network.Wai.responseBuilder status [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Response/ListPets.hs
@@ -212,16 +212,16 @@ import Test.Response
 
 
 data ListPetsResponse
-    = ListPetsResponse200 Pets
-    | ListPetsDefaultResponse Network.HTTP.Types.Status Error
+    = ListPetsResponse200 Pets Data.Maybe.Maybe (Data.Text.Text)
+    | ListPetsDefaultResponse Network.HTTP.Types.Status Error 
     deriving (Show)
 
 instance Control.Exception.Exception ListPetsResponse
 
 instance ToResponse ListPetsResponse where
-    toResponse (ListPetsResponse200 x) =
+    toResponse (ListPetsResponse200 x ) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
-    toResponse (ListPetsDefaultResponse status x) =
+    toResponse (ListPetsDefaultResponse status x ) =
         Network.Wai.responseBuilder status [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Response/ShowPetById.hs
@@ -260,16 +260,16 @@ import Test.Response
 
 
 data ShowPetByIdResponse
-    = ShowPetByIdResponse200 Pet
-    | ShowPetByIdDefaultResponse Network.HTTP.Types.Status Error
+    = ShowPetByIdResponse200 Pet 
+    | ShowPetByIdDefaultResponse Network.HTTP.Types.Status Error 
     deriving (Show)
 
 instance Control.Exception.Exception ShowPetByIdResponse
 
 instance ToResponse ShowPetByIdResponse where
-    toResponse (ShowPetByIdResponse200 x) =
+    toResponse (ShowPetByIdResponse200 x ) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
-    toResponse (ShowPetByIdDefaultResponse status x) =
+    toResponse (ShowPetByIdDefaultResponse status x ) =
         Network.Wai.responseBuilder status [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Schemas/Error.hs
