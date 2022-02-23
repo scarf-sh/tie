@@ -60,18 +60,20 @@ application run api notFound request respond =
         [ "pets" ] ->
             case Network.Wai.requestMethod request of
                 "POST" ->
-                    run request $ do
+                    run request (do
                         response <- Control.Monad.Catch.handle pure (createPets api  )
                         Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                    )
                 "GET" ->
                     case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "limit" (Network.Wai.queryString request))) of
                         Just (Left err) ->
                             invalidRequest err
                         _x ->
                             let !limit = fmap (\(Right _x) -> _x) _x in
-                                run request $ do
+                                run request (do
                                     response <- Control.Monad.Catch.handle pure (listPets api limit )
                                     Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                                )
                 x ->
                     unsupportedMethod x
 
@@ -81,9 +83,10 @@ application run api notFound request respond =
                 Right petId ->
                     case Network.Wai.requestMethod request of
                         "GET" ->
-                            run request $ do
+                            run request (do
                                 response <- Control.Monad.Catch.handle pure (showPetById api petId )
                                 Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                            )
                         x ->
                             unsupportedMethod x
 

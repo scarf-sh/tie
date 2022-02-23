@@ -54,27 +54,30 @@ application run api notFound request respond =
         [ "packages" ] ->
             case Network.Wai.requestMethod request of
                 "GET" ->
-                    run request $ do
+                    run request (do
                         response <- Control.Monad.Catch.handle pure (listPackages api  )
                         Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                    )
                 x ->
                     unsupportedMethod x
 
         [ "packages2" ] ->
             case Network.Wai.requestMethod request of
                 "GET" ->
-                    run request $ do
+                    run request (do
                         response <- Control.Monad.Catch.handle pure (listPackages2 api  )
                         Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                    )
                 x ->
                     unsupportedMethod x
 
         [ "packages3" ] ->
             case Network.Wai.requestMethod request of
                 "GET" ->
-                    run request $ do
+                    run request (do
                         response <- Control.Monad.Catch.handle pure (listPackages3 api  )
                         Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                    )
                 x ->
                     unsupportedMethod x
 

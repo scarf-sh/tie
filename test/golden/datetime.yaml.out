@@ -44,9 +44,10 @@ application run api notFound request respond =
         [ "test" ] ->
             case Network.Wai.requestMethod request of
                 "GET" ->
-                    run request $ do
+                    run request (do
                         response <- Control.Monad.Catch.handle pure (test api  )
                         Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                    )
                 x ->
                     unsupportedMethod x
 
