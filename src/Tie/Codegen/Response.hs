@@ -38,8 +38,7 @@ import Tie.Resolve (Resolver)
 -- | Generate code for the responses of an 'Operation'.
 codegenResponses :: Monad m => Resolver m -> Operation -> m (Doc ann)
 codegenResponses resolver Operation {..} = do
-  let 
-      responseHeaderTypes Response {headers} =
+  let responseHeaderTypes Response {headers} =
         PP.hsep (map codegenHeaderSchema headers)
 
       decl =

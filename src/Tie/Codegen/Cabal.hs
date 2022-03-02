@@ -22,6 +22,7 @@ codegenCabalFile packageName exposedModules =
                         [ "," <+> "aeson",
                           "," <+> "attoparsec",
                           "," <+> "base",
+                          "," <+> "bytestring",
                           "," <+> "exceptions",
                           "," <+> "ghc-prim",
                           "," <+> "http-api-data",

@@ -11,12 +11,13 @@ module Tie.Codegen.Imports
   )
 where
 
-import Prettyprinter (Doc, (<+>))
+import Prettyprinter (Doc, vsep, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
 import Tie.Name
   ( ApiName,
     Name,
+    requestHaskellModuleName,
     responseHaskellModuleName,
     toResponseHaskellModuleName,
     toSchemaHaskellModuleName,
@@ -75,7 +76,10 @@ codegenModuleHeader moduleName =
 
 codegenExtraApiModuleDependencies :: ApiName -> Doc ann
 codegenExtraApiModuleDependencies apiName =
-  "import" <+> PP.pretty (responseHaskellModuleName apiName)
+  vsep
+    [ "import" <+> PP.pretty (requestHaskellModuleName apiName),
+      "import" <+> PP.pretty (responseHaskellModuleName apiName)
+    ]
 
 codegenExtraResponseModuleDependencies :: ApiName -> Doc ann
 codegenExtraResponseModuleDependencies apiName =

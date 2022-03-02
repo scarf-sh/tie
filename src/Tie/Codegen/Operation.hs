@@ -223,14 +223,9 @@ codegenPathGuard path continuation =
 
 codegenPathParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
 codegenPathParamGuard Param {name} continuation =
-  "case" <+> "Web.HttpApiData.parseUrlPiece" <+> toParamBinder name <+> "of" <> PP.line
-    <> PP.indent
-      4
-      ( "Left" <+> "_" <+> "->" <+> "invalidRequest" <+> "\"" <> toParamName name <> "\"" <> PP.line
-          <> "Right" <+> toParamBinder name <+> "->"
-          <> PP.line
-          <> PP.indent 4 continuation
-      )
+  "pathVariable" <+> toParamBinder name <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
+    <> PP.indent 4 continuation
+    <> ")" <+> "request" <+> "respond"
 
 codegenPathPattern :: Path -> PP.Doc ann
 codegenPathPattern path =
@@ -262,31 +257,12 @@ codegenMethodGuard methodBodies =
 
 codegenRequestBodyGuard :: Maybe RequestBody -> PP.Doc ann -> PP.Doc ann
 codegenRequestBodyGuard requestBody continuation = case requestBody of
-  Nothing -> continuation
+  Nothing ->
+    continuation
   Just _body ->
-    "do"
-      <+> PP.align
-        ( "result" <+> "<-" <+> "Data.Attoparsec.ByteString.parseWith" <+> "(" <> "Network.Wai.getRequestBodyChunk" <+> "request" <> ")" <+> "Data.Aeson.Parser.json'" <+> "mempty" <> PP.line
-            <> "case" <+> "Data.Attoparsec.ByteString.eitherResult" <+> "result" <+> "of"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "Left" <+> "err" <+> "->" <+> "invalidRequest" <+> "err" <> PP.line
-                  <> "Right" <+> "bodyValue" <+> "->"
-                  <> PP.line
-                  <> PP.indent
-                    4
-                    ( "case" <+> "Data.Aeson.Types.parseEither" <+> "Data.Aeson.parseJSON" <+> "bodyValue" <+> "of" <> PP.line
-                        <> PP.indent
-                          4
-                          ( "Left" <+> "err" <+> "->" <+> "invalidRequest" <+> "err" <> PP.line
-                              <> "Right" <+> "body" <+> "->"
-                              <> PP.line
-                              <> PP.indent 4 continuation
-                          )
-                    )
-              )
-        )
+    "parseRequestBodyJSON" <+> "(" <> "\\" <> "body" <+> "request" <+> "respond" <+> "->" <> PP.line
+      <> PP.indent 4 continuation
+      <> ")" <+> "request" <+> "respond"
 
 codegenQueryParamsGuard :: [Param] -> PP.Doc ann -> PP.Doc ann
 codegenQueryParamsGuard params continuation =
@@ -298,72 +274,10 @@ codegenQueryParamsGuard params continuation =
 codegenQueryParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
 codegenQueryParamGuard Param {name, required} continuation
   | required =
-    "case" <+> "Control.Monad.join" <+> "(" <> "fmap" <+> "(" <> "fmap" <+> "(" <> "Web.HttpApiData.parseUrlPiece" <+> "." <+> "Data.Text.Encoding.decodeUtf8" <> ")" <> ")" <+> "("
-      <> "Data.List.lookup" <+> "\""
-      <> toParamName name
-      <> "\"" <+> "("
-      <> "Network.Wai.queryString" <+> "request"
-      <> ")"
-      <> ")"
-      <> ")" <+> "of"
-      <> PP.line
-      <> PP.indent
-        4
-        ( "Nothing" <+> "->" <> PP.line
-            <> PP.indent
-              4
-              ( "invalidRequest" <+> "\"request body\""
-              )
-            <> PP.line
-            <> "Just" <+> "("
-            <> "Left" <+> "err"
-            <> ")" <+> "->"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "invalidRequest" <+> "\"request body\""
-              )
-            <> PP.line
-            <> "Just" <+> "("
-            <> "Right" <+> toParamBinder name
-            <> ")" <+> "->"
-            <> PP.line
-            <> PP.indent
-              4
-              ( continuation
-              )
-        )
+    "requiredQueryParameter" <+> "\"" <> toParamName name <> "\"" <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
+      <> PP.indent 4 continuation
+      <> ")" <+> "request" <+> "respond"
   | otherwise =
-    "case" <+> "Control.Monad.join" <+> "(" <> "fmap" <+> "(" <> "fmap" <+> "(" <> "Web.HttpApiData.parseUrlPiece" <+> "." <+> "Data.Text.Encoding.decodeUtf8" <> ")" <> ")" <+> "("
-      <> "Data.List.lookup" <+> "\""
-      <> toParamName name
-      <> "\"" <+> "("
-      <> "Network.Wai.queryString" <+> "request"
-      <> ")"
-      <> ")"
-      <> ")" <+> "of"
-      <> PP.line
-      <> PP.indent
-        4
-        ( "Just" <+> "(" <> "Left" <+> "err" <> ")" <+> "->" <> PP.line
-            <> PP.indent
-              4
-              ( "invalidRequest" <+> "err"
-              )
-            <> PP.line
-            <> "_x" <+> "->"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "let" <+> "!" <> toParamBinder name <+> "=" <+> "fmap" <+> "(" <> "\\"
-                  <> "("
-                  <> "Right" <+> "_x"
-                  <> ")" <+> "->" <+> "_x"
-                  <> ")" <+> "_x" <+> "in"
-                  <> PP.line
-                  <> PP.indent
-                    4
-                    ( continuation
-                    )
-              )
-        )
+    "optionalQueryParameter" <+> "\"" <> toParamName name <> "\"" <+> "False" <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
+      <> PP.indent 4 continuation
+      <> ")" <+> "request" <+> "respond"

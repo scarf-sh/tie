@@ -26,6 +26,7 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
+import Test.Request
 import Test.Response
 
 import Test.Schemas.Vehicle
@@ -64,54 +65,26 @@ application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO
 application run api notFound request respond =
     case Network.Wai.pathInfo request of
         [ "users", id, "create", name ] ->
-            case Web.HttpApiData.parseUrlPiece id of
-                Left _ -> invalidRequest "id"
-                Right id ->
-                    case Web.HttpApiData.parseUrlPiece name of
-                        Left _ -> invalidRequest "name"
-                        Right name ->
-                            case Network.Wai.requestMethod request of
-                                "POST" ->
-                                    case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "page" (Network.Wai.queryString request))) of
-                                        Nothing ->
-                                            invalidRequest "request body"
-                                        Just (Left err) ->
-                                            invalidRequest "request body"
-                                        Just (Right page) ->
-                                            case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "offset" (Network.Wai.queryString request))) of
-                                                Just (Left err) ->
-                                                    invalidRequest err
-                                                _x ->
-                                                    let !offset = fmap (\(Right _x) -> _x) _x in
-                                                        do result <- Data.Attoparsec.ByteString.parseWith (Network.Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
-                                                           case Data.Attoparsec.ByteString.eitherResult result of
-                                                               Left err -> invalidRequest err
-                                                               Right bodyValue ->
-                                                                   case Data.Aeson.Types.parseEither Data.Aeson.parseJSON bodyValue of
-                                                                       Left err -> invalidRequest err
-                                                                       Right body ->
-                                                                           run request (do
-                                                                               response <- Control.Monad.Catch.handle pure (createUser api id name page offset body)
-                                                                               Control.Monad.IO.Class.liftIO (respond (toResponse response))
-                                                                           )
-                                "GET" ->
-                                    case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "page" (Network.Wai.queryString request))) of
-                                        Nothing ->
-                                            invalidRequest "request body"
-                                        Just (Left err) ->
-                                            invalidRequest "request body"
-                                        Just (Right page) ->
-                                            case Control.Monad.join (fmap (fmap (Web.HttpApiData.parseUrlPiece . Data.Text.Encoding.decodeUtf8)) (Data.List.lookup "offset" (Network.Wai.queryString request))) of
-                                                Just (Left err) ->
-                                                    invalidRequest err
-                                                _x ->
-                                                    let !offset = fmap (\(Right _x) -> _x) _x in
-                                                        run request (do
-                                                            response <- Control.Monad.Catch.handle pure (getUser api id name page offset )
-                                                            Control.Monad.IO.Class.liftIO (respond (toResponse response))
-                                                        )
-                                x ->
-                                    unsupportedMethod x
+            pathVariable id (\id request respond ->
+                pathVariable name (\name request respond ->
+                    case Network.Wai.requestMethod request of
+                        "POST" ->
+                            requiredQueryParameter "page" (\page request respond ->
+                                optionalQueryParameter "offset" False (\offset request respond ->
+                                    parseRequestBodyJSON (\body request respond ->
+                                        run request (do
+                                            response <- Control.Monad.Catch.handle pure (createUser api id name page offset body)
+                                            Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                                        )) request respond) request respond) request respond
+                        "GET" ->
+                            requiredQueryParameter "page" (\page request respond ->
+                                optionalQueryParameter "offset" False (\offset request respond ->
+                                    run request (do
+                                        response <- Control.Monad.Catch.handle pure (getUser api id name page offset )
+                                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                                    )) request respond) request respond
+                        x ->
+                            unsupportedMethod x) request respond) request respond
 
         _ ->
             notFound request respond
@@ -120,6 +93,108 @@ application run api notFound request respond =
             respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
         invalidRequest _ =
             respond (Network.Wai.responseBuilder (toEnum 400) [] mempty)
+---------------------
+Test/Request.hs
+
+{-# LANGUAGE OverloadedStrings #-}
+
+module Test.Request
+  ( pathVariable,
+    requiredQueryParameter,
+    optionalQueryParameter,
+    parseRequestBodyJSON,
+  )
+where
+
+import Data.Aeson (FromJSON, parseJSON)
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import Data.Attoparsec.ByteString (eitherResult, parseWith)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as ByteString
+import qualified Data.List as List
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import qualified Network.Wai as Wai
+import Web.HttpApiData
+  ( FromHttpApiData,
+    parseQueryParam,
+    parseUrlPiece,
+  )
+
+pathVariable ::
+  FromHttpApiData a =>
+  -- | Path variable value
+  Text ->
+  (a -> Wai.Application) ->
+  Wai.Application
+pathVariable value withVariable = \request respond ->
+  case parseUrlPiece value of
+    Left err ->
+      undefined
+    Right x ->
+      withVariable x request respond
+
+requiredQueryParameter ::
+  FromHttpApiData a =>
+  ByteString ->
+  (a -> Wai.Application) ->
+  Wai.Application
+requiredQueryParameter name withParam = \request respond ->
+  case List.lookup name (Wai.queryString request) of
+    Nothing ->
+      undefined
+    Just Nothing ->
+      undefined
+    Just (Just value) ->
+      case parseQueryParam (Text.decodeUtf8 value) of
+        Left err ->
+          undefined
+        Right x ->
+          withParam x request respond
+
+optionalQueryParameter ::
+  FromHttpApiData a =>
+  ByteString ->
+  -- | Allow empty, e.g. "x="
+  Bool ->
+  (Maybe a -> Wai.Application) ->
+  Wai.Application
+optionalQueryParameter name allowEmpty withParam = \request respond ->
+  case List.lookup name (Wai.queryString request) of
+    Nothing ->
+      withParam Nothing request respond
+    Just Nothing
+      | allowEmpty ->
+        withParam Nothing request respond
+      | otherwise ->
+        undefined
+    Just (Just value) ->
+      case parseQueryParam (Text.decodeUtf8 value) of
+        Left err ->
+          undefined
+        Right x ->
+          withParam (Just x) request respond
+
+parseRequestBodyJSON :: FromJSON a => (a -> Wai.Application) -> Wai.Application
+parseRequestBodyJSON withBody = \request respond ->
+  case List.lookup "Content-Type" (Wai.requestHeaders request) of
+    Just "application/json" -> do
+      result <- parseWith (Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
+      case eitherResult result of
+        Left err ->
+          undefined
+        Right value ->
+          case Data.Aeson.Types.parseEither Data.Aeson.parseJSON value of
+            Left err ->
+              undefined
+            Right body ->
+              withBody body request respond
+    _ ->
+      -- unsupported media type
+      undefined
+
 ---------------------
 Test/Response.hs
 
@@ -465,23 +540,6 @@ instance Data.Aeson.FromJSON PackageIdOneOf4 where
             <*> o Data.Aeson..:? "list"
             <*> o Data.Aeson..: "name"
 
-newtype PackageIdOneOf4List = PackageIdOneOf4List
-    {
-        cool :: Data.Maybe.Maybe (Data.Text.Text)
-    }
-    deriving (Show)
-
-instance Data.Aeson.ToJSON PackageIdOneOf4List where
-    toJSON PackageIdOneOf4List {..} = Data.Aeson.object
-        [
-            "cool" Data.Aeson..= cool
-        ]
-
-instance Data.Aeson.FromJSON PackageIdOneOf4List where
-    parseJSON = Data.Aeson.withObject "PackageIdOneOf4List" $ \o ->
-        PackageIdOneOf4List
-            <$> o Data.Aeson..:? "cool"
-
 data PackageIdOneOf4Enum
     = PackageIdOneOf4EnumA
     | PackageIdOneOf4EnumB
@@ -498,6 +556,23 @@ instance Data.Aeson.FromJSON PackageIdOneOf4Enum where
             "A" -> pure PackageIdOneOf4EnumA
             "B" -> pure PackageIdOneOf4EnumB
             _ -> fail "invalid enum value"
+
+newtype PackageIdOneOf4List = PackageIdOneOf4List
+    {
+        cool :: Data.Maybe.Maybe (Data.Text.Text)
+    }
+    deriving (Show)
+
+instance Data.Aeson.ToJSON PackageIdOneOf4List where
+    toJSON PackageIdOneOf4List {..} = Data.Aeson.object
+        [
+            "cool" Data.Aeson..= cool
+        ]
+
+instance Data.Aeson.FromJSON PackageIdOneOf4List where
+    parseJSON = Data.Aeson.withObject "PackageIdOneOf4List" $ \o ->
+        PackageIdOneOf4List
+            <$> o Data.Aeson..:? "cool"
 
 data PackageId
     = PackageIdPlane Plane
@@ -655,6 +730,7 @@ library
     , aeson
     , attoparsec
     , base
+    , bytestring
     , exceptions
     , ghc-prim
     , http-api-data
@@ -664,6 +740,7 @@ library
     , wai
   exposed-modules:
     Test.Api
+    Test.Request
     Test.Response
     Test.Response.CreateUser
     Test.Response.GetUser

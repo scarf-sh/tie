@@ -30,6 +30,8 @@ module Tie.Name
     toEnumConstructorName,
     apiHaskellModuleName,
     apiHaskellFileName,
+    requestHaskellModuleName,
+    requestHaskellFileName,
     responseHaskellModuleName,
     responseHaskellFileName,
     inlineObjectTypeName,
@@ -71,6 +73,14 @@ apiHaskellModuleName apiName =
 apiHaskellFileName :: ApiName -> FilePath
 apiHaskellFileName apiName =
   haskellModuleToFilePath apiName <> "/Api.hs"
+
+requestHaskellModuleName :: ApiName -> Text
+requestHaskellModuleName apiName =
+  apiName <> ".Request"
+
+requestHaskellFileName :: ApiName -> FilePath
+requestHaskellFileName apiName =
+  haskellModuleToFilePath apiName <> "/Request.hs"
 
 responseHaskellModuleName :: ApiName -> Text
 responseHaskellModuleName apiName =

@@ -15,6 +15,7 @@ import qualified Data.OpenApi as OpenApi
 import qualified Data.Set as Set
 import Data.Yaml (decodeFileThrow)
 import Prettyprinter (Doc, vsep)
+import Prettyprinter.Internal (unsafeTextWithoutNewlines)
 import Tie.Codegen.Cabal (codegenCabalFile)
 import Tie.Codegen.Imports
   ( codegenExtraApiModuleDependencies,
@@ -27,6 +28,7 @@ import Tie.Codegen.Operation
   ( codegenOperation,
     codegenOperations,
   )
+import Tie.Codegen.Request (codegenRequestAuxFile)
 import Tie.Codegen.Response (codegenResponseAuxFile, codegenResponses)
 import Tie.Codegen.Schema (codegenSchema)
 import Tie.Name
@@ -38,6 +40,8 @@ import Tie.Name
     inlineArrayElementTypeName,
     inlineObjectTypeName,
     inlineVariantTypeName,
+    requestHaskellFileName,
+    requestHaskellModuleName,
     responseHaskellFileName,
     responseHaskellModuleName,
     toOperationHaskellFileName,
@@ -218,6 +222,12 @@ generate write packageName apiName inputFile = do
         codegenResponseAuxFile
       ]
 
+  -- Generate auxliary definitions in Request.hs
+  let path = requestHaskellFileName apiName
+  write path $
+    unsafeTextWithoutNewlines $
+      codegenRequestAuxFile (requestHaskellModuleName apiName)
+
   -- Generate a single Api.hs module containing the server for the api
 
   -- Normalize operations, to give all anonymous types a name
@@ -267,7 +277,8 @@ generate write packageName apiName inputFile = do
           map (toSchemaHaskellModuleName apiName) allReferencedSchemas
             ++ foldMap (map (toResponseHaskellModuleName apiName) . operationResponseDependencies) operations
             ++ [ apiHaskellModuleName apiName,
-                 responseHaskellModuleName apiName
+                 responseHaskellModuleName apiName,
+                 requestHaskellModuleName apiName
                ]
 
       path = cabalFileName packageName

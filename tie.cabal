@@ -26,16 +26,22 @@ version:            0.1.0.0
 extra-source-files: CHANGELOG.md
 
 data-files: 
+  Request.template.hs
   test/golden/**/*.yaml
   test/golden/**/*.out
 
 library
+    autogen-modules: Paths_tie
+
+    other-modules: Paths_tie
+
     exposed-modules:  Tie 
                       Tie.Resolve
                       Tie.Type
                       Tie.Operation
                       Tie.Codegen.Imports
                       Tie.Codegen.Operation
+                      Tie.Codegen.Request
                       Tie.Codegen.Response
                       Tie.Codegen.Schema
                       Tie.Name
