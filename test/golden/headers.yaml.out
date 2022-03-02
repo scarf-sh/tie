@@ -50,7 +50,7 @@ application run api notFound request respond =
                     optionalHeader "x-next" (\__x_next request respond ->
                         run request (do
                             response <- Control.Monad.Catch.handle pure (test api __x_next )
-                            Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                            Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )) request respond
                 x ->
                     unsupportedMethod x

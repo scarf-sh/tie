@@ -57,7 +57,7 @@ application run api notFound request respond =
                 "GET" ->
                     run request (do
                         response <- Control.Monad.Catch.handle pure (listPackages api  )
-                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
                     unsupportedMethod x
@@ -67,7 +67,7 @@ application run api notFound request respond =
                 "GET" ->
                     run request (do
                         response <- Control.Monad.Catch.handle pure (listPackages2 api  )
-                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
                     unsupportedMethod x
@@ -77,7 +77,7 @@ application run api notFound request respond =
                 "GET" ->
                     run request (do
                         response <- Control.Monad.Catch.handle pure (listPackages3 api  )
-                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
                     unsupportedMethod x

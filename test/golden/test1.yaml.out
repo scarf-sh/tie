@@ -74,14 +74,14 @@ application run api notFound request respond =
                                     parseRequestBodyJSON (\body request respond ->
                                         run request (do
                                             response <- Control.Monad.Catch.handle pure (createUser api __id __name __page __offset body)
-                                            Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                                            Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                                         )) request respond) request respond) request respond
                         "GET" ->
                             requiredQueryParameter "page" (\__page request respond ->
                                 optionalQueryParameter "offset" False (\__offset request respond ->
                                     run request (do
                                         response <- Control.Monad.Catch.handle pure (getUser api __id __name __page __offset )
-                                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                                     )) request respond) request respond
                         x ->
                             unsupportedMethod x) request respond) request respond
