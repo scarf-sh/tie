@@ -4,6 +4,8 @@ module Tie.Template.Request_
   ( pathVariable,
     requiredQueryParameter,
     optionalQueryParameter,
+    requiredHeader,
+    optionalHeader,
     parseRequestBodyJSON,
   )
 where
@@ -18,9 +20,11 @@ import qualified Data.List as List
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
+import Network.HTTP.Types (HeaderName, hContentType)
 import qualified Network.Wai as Wai
 import Web.HttpApiData
   ( FromHttpApiData,
+    parseHeader,
     parseQueryParam,
     parseUrlPiece,
   )
@@ -82,9 +86,43 @@ optionalQueryParameter name allowEmpty withParam = \request respond ->
           withParam (Just x) request respond
 {-# INLINEABLE optionalQueryParameter #-}
 
+optionalHeader ::
+  FromHttpApiData a =>
+  HeaderName ->
+  (Maybe a -> Wai.Application) ->
+  Wai.Application
+optionalHeader name withHeader = \request respond ->
+  case List.lookup name (Wai.requestHeaders request) of
+    Nothing ->
+      withHeader Nothing request respond
+    Just value ->
+      case parseHeader value of
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right x ->
+          withHeader (Just x) request respond
+{-# INLINEABLE optionalHeader #-}
+
+requiredHeader ::
+  FromHttpApiData a =>
+  HeaderName ->
+  (a -> Wai.Application) ->
+  Wai.Application
+requiredHeader name withHeader = \request respond ->
+  case List.lookup name (Wai.requestHeaders request) of
+    Nothing ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+    Just value ->
+      case parseHeader value of
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right x ->
+          withHeader x request respond
+{-# INLINEABLE requiredHeader #-}
+
 parseRequestBodyJSON :: FromJSON a => (a -> Wai.Application) -> Wai.Application
 parseRequestBodyJSON withBody = \request respond ->
-  case List.lookup "Content-Type" (Wai.requestHeaders request) of
+  case List.lookup hContentType (Wai.requestHeaders request) of
     Just "application/json" -> do
       result <- parseWith (Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
       case eitherResult result of

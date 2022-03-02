@@ -119,6 +119,9 @@ codegenApiTypeOperation resolver Operation {..} = do
         ++ [ codegenParamSchemaAndComment param
              | param@Param {summary} <- queryParams
            ]
+        ++ [ codegenParamSchemaAndComment param
+             | param@Param {summary} <- headerParams
+           ]
   pure $
     codegenApiMemberComment summary
       <> toApiMemberName name <+> "::"
@@ -163,22 +166,24 @@ codegenOperation resolver operations@(Operation {path} : _) =
       codegenMethodGuard
         [ ( method,
             codegenQueryParamsGuard queryParams $
-              codegenRequestBodyGuard requestBody $
-                ( codegenCallApiMember name path queryParams requestBody
-                )
+              codegenHeaderParamsGuard headerParams $
+                codegenRequestBodyGuard requestBody $
+                  ( codegenCallApiMember name path queryParams headerParams requestBody
+                  )
           )
           | operation@Operation
               { name,
                 path,
                 queryParams,
+                headerParams,
                 method,
                 requestBody
               } <-
               operations
         ]
 
-codegenCallApiMember :: Name -> Path -> [Param] -> Maybe RequestBody -> PP.Doc ann
-codegenCallApiMember operationName path queryParams requestBody =
+codegenCallApiMember :: Name -> Path -> [Param] -> [Param] -> Maybe RequestBody -> PP.Doc ann
+codegenCallApiMember operationName path queryParams headerParams requestBody =
   "run" <+> "request" <+> "(" <> "do" <> PP.line
     <> PP.indent
       4
@@ -187,6 +192,7 @@ codegenCallApiMember operationName path queryParams requestBody =
           <+> PP.hsep
             ( [toParamBinder name | VariableSegment Param {name} <- path]
                 ++ [toParamBinder name | Param {name} <- queryParams]
+                ++ [toParamBinder name | Param {name} <- headerParams]
             )
           <+> (maybe mempty (\_ -> "body") requestBody)
             <> ")"
@@ -204,17 +210,11 @@ codegenPathGuard path continuation =
   codegenPathPattern path <+> "->" <> PP.line
     <> PP.indent
       4
-      ( foldr
-          ($)
+      ( codegenParamsGuard
+          codegenPathParamGuard
+          [param | VariableSegment param <- path]
           continuation
-          [codegenPathParamGuard param | VariableSegment param <- path]
       )
-
-codegenPathParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
-codegenPathParamGuard Param {name} continuation =
-  "pathVariable" <+> toParamBinder name <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
-    <> PP.indent 4 continuation
-    <> ")" <+> "request" <+> "respond"
 
 codegenPathPattern :: Path -> PP.Doc ann
 codegenPathPattern path =
@@ -254,11 +254,25 @@ codegenRequestBodyGuard requestBody continuation = case requestBody of
       <> ")" <+> "request" <+> "respond"
 
 codegenQueryParamsGuard :: [Param] -> PP.Doc ann -> PP.Doc ann
-codegenQueryParamsGuard params continuation =
+codegenQueryParamsGuard =
+  codegenParamsGuard codegenQueryParamGuard
+
+codegenHeaderParamsGuard :: [Param] -> PP.Doc ann -> PP.Doc ann
+codegenHeaderParamsGuard =
+  codegenParamsGuard codegenHeaderGuard
+
+codegenParamsGuard :: (Param -> PP.Doc ann -> PP.Doc ann) -> [Param] -> PP.Doc ann -> PP.Doc ann
+codegenParamsGuard codegenParam params continuation =
   foldr
     ($)
     continuation
-    [codegenQueryParamGuard param | param <- params]
+    [codegenParam param | param <- params]
+
+codegenPathParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
+codegenPathParamGuard Param {name} continuation =
+  "pathVariable" <+> toParamBinder name <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
+    <> PP.indent 4 continuation
+    <> ")" <+> "request" <+> "respond"
 
 codegenQueryParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
 codegenQueryParamGuard Param {name, required} continuation
@@ -268,5 +282,16 @@ codegenQueryParamGuard Param {name, required} continuation
       <> ")" <+> "request" <+> "respond"
   | otherwise =
     "optionalQueryParameter" <+> "\"" <> toParamName name <> "\"" <+> "False" <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
+      <> PP.indent 4 continuation
+      <> ")" <+> "request" <+> "respond"
+
+codegenHeaderGuard :: Param -> PP.Doc ann -> PP.Doc ann
+codegenHeaderGuard Param {name, required} continuation
+  | required =
+    "requiredHeader" <+> "\"" <> toParamName name <> "\"" <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
+      <> PP.indent 4 continuation
+      <> ")" <+> "request" <+> "respond"
+  | otherwise =
+    "optionalHeader" <+> "\"" <> toParamName name <> "\"" <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
       <> PP.indent 4 continuation
       <> ")" <+> "request" <+> "respond"

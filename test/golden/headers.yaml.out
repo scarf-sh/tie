@@ -36,6 +36,8 @@ import Test.Response.Test
 data Api m = Api {
     -- | test
     test ::
+        -- @x-next@ How many items to return at one time (max 100)
+        Data.Maybe.Maybe (GHC.Types.Int) ->
         m TestResponse
 }
 
@@ -45,10 +47,11 @@ application run api notFound request respond =
         ["test"] ->
             case Network.Wai.requestMethod request of
                 "GET" ->
-                    run request (do
-                        response <- Control.Monad.Catch.handle pure (test api  )
-                        Control.Monad.IO.Class.liftIO (respond (toResponse response))
-                    )
+                    optionalHeader "x-next" (\__x_next request respond ->
+                        run request (do
+                            response <- Control.Monad.Catch.handle pure (test api __x_next )
+                            Control.Monad.IO.Class.liftIO (respond (toResponse response))
+                        )) request respond
                 x ->
                     unsupportedMethod x
 

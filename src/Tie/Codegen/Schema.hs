@@ -97,7 +97,7 @@ codegenSchema typName typ
   | Just elemType <- isArrayType typ =
     pure (codegenArrayType typName elemType)
   | otherwise =
-    undefined
+    error "impossible: unknown type"
 
 -- | Generate code for basic, primitive types
 codegenBasicType :: Name -> BasicType -> Doc ann

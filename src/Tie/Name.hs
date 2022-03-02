@@ -243,7 +243,7 @@ capitalizeFirstLetter [] = []
 capitalizeFirstLetter (x : xs) = toUpper x : xs
 
 escapeKeyword :: String -> String
-escapeKeyword input = case input of
+escapeKeyword input = haskelify $ case input of
   "type" -> "type'"
   "class" -> "class'"
   "where" -> "where'"
@@ -256,3 +256,11 @@ escapeKeyword input = case input of
   "instance" -> "instance'"
   "module" -> "module'"
   _ -> input
+
+haskelify :: String -> String
+haskelify xs = 
+  [ case x of
+      '-' -> '_'
+      _ -> x
+  | x <- xs
+  ]
