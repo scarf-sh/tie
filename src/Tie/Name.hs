@@ -158,7 +158,7 @@ toParamName =
 
 toParamBinder :: Name -> PP.Doc ann
 toParamBinder =
-  PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . Text.unpack . unName
+  PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . ("__" <>) . Text.unpack . unName
 
 operationParamTypeName :: Name -> Name -> Name
 operationParamTypeName (Name operationName) (Name paramName) =

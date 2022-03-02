@@ -91,17 +91,6 @@ codegenOperations resolver operations = do
                               <+> "[]"
                               <+> "mempty" <> ")"
                           )
-                        <> PP.line
-                        <> "invalidRequest" <+> "_" <+> "="
-                        <> PP.line
-                        <> PP.indent
-                          4
-                          ( "respond" <+> "(" <> "Network.Wai.responseBuilder"
-                              <+> "(" <> "toEnum"
-                              <+> "400" <> ")"
-                              <+> "[]"
-                              <+> "mempty" <> ")"
-                          )
                     )
               )
 
@@ -153,9 +142,9 @@ codegenApiTypeOperation resolver Operation {..} = do
 
     codegenParamComment Param {name, summary} = case summary of
       Nothing ->
-        "--" <+> "@" <> toParamBinder name <> "@" <> PP.line
+        "--" <+> "@" <> toParamName name <> "@" <> PP.line
       Just comment ->
-        "--" <+> "@" <> toParamBinder name <> "@" <+> PP.pretty comment <> PP.line
+        "--" <+> "@" <> toParamName name <> "@" <+> PP.pretty comment <> PP.line
 
     codegenRequestBodyComment RequestBody {description} = case description of
       Nothing ->
@@ -230,10 +219,10 @@ codegenPathParamGuard Param {name} continuation =
 codegenPathPattern :: Path -> PP.Doc ann
 codegenPathPattern path =
   "["
-    <+> PP.concatWith
+    <> PP.concatWith
       (\x y -> x <> "," <+> y)
       (map codegenPathSegmentPattern path)
-    <+> "]"
+    <> "]"
 
 codegenPathSegmentPattern :: PathSegment Param -> PP.Doc ann
 codegenPathSegmentPattern segment = case segment of

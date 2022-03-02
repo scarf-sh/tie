@@ -33,10 +33,11 @@ pathVariable ::
   Wai.Application
 pathVariable value withVariable = \request respond ->
   case parseUrlPiece value of
-    Left err ->
-      undefined
+    Left _err ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Right x ->
       withVariable x request respond
+{-# INLINEABLE pathVariable #-}
 
 requiredQueryParameter ::
   FromHttpApiData a =>
@@ -46,15 +47,16 @@ requiredQueryParameter ::
 requiredQueryParameter name withParam = \request respond ->
   case List.lookup name (Wai.queryString request) of
     Nothing ->
-      undefined
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Just Nothing ->
-      undefined
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Just (Just value) ->
       case parseQueryParam (Text.decodeUtf8 value) of
-        Left err ->
-          undefined
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
         Right x ->
           withParam x request respond
+{-# INLINEABLE requiredQueryParameter #-}
 
 optionalQueryParameter ::
   FromHttpApiData a =>
@@ -71,13 +73,14 @@ optionalQueryParameter name allowEmpty withParam = \request respond ->
       | allowEmpty ->
         withParam Nothing request respond
       | otherwise ->
-        undefined
+        respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Just (Just value) ->
       case parseQueryParam (Text.decodeUtf8 value) of
-        Left err ->
-          undefined
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
         Right x ->
           withParam (Just x) request respond
+{-# INLINEABLE optionalQueryParameter #-}
 
 parseRequestBodyJSON :: FromJSON a => (a -> Wai.Application) -> Wai.Application
 parseRequestBodyJSON withBody = \request respond ->
@@ -85,14 +88,14 @@ parseRequestBodyJSON withBody = \request respond ->
     Just "application/json" -> do
       result <- parseWith (Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
       case eitherResult result of
-        Left err ->
-          undefined
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
         Right value ->
           case Data.Aeson.Types.parseEither Data.Aeson.parseJSON value of
-            Left err ->
-              undefined
+            Left _err ->
+              respond (Wai.responseBuilder (toEnum 400) [] mempty)
             Right body ->
               withBody body request respond
     _ ->
-      -- unsupported media type
-      undefined
+      respond (Wai.responseBuilder (toEnum 415) [] mempty)
+{-# INLINEABLE parseRequestBodyJSON #-}

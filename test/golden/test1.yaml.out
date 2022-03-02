@@ -64,23 +64,23 @@ data Api m = Api {
 application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
 application run api notFound request respond =
     case Network.Wai.pathInfo request of
-        [ "users", id, "create", name ] ->
-            pathVariable id (\id request respond ->
-                pathVariable name (\name request respond ->
+        ["users", __id, "create", __name] ->
+            pathVariable __id (\__id request respond ->
+                pathVariable __name (\__name request respond ->
                     case Network.Wai.requestMethod request of
                         "POST" ->
-                            requiredQueryParameter "page" (\page request respond ->
-                                optionalQueryParameter "offset" False (\offset request respond ->
+                            requiredQueryParameter "page" (\__page request respond ->
+                                optionalQueryParameter "offset" False (\__offset request respond ->
                                     parseRequestBodyJSON (\body request respond ->
                                         run request (do
-                                            response <- Control.Monad.Catch.handle pure (createUser api id name page offset body)
+                                            response <- Control.Monad.Catch.handle pure (createUser api __id __name __page __offset body)
                                             Control.Monad.IO.Class.liftIO (respond (toResponse response))
                                         )) request respond) request respond) request respond
                         "GET" ->
-                            requiredQueryParameter "page" (\page request respond ->
-                                optionalQueryParameter "offset" False (\offset request respond ->
+                            requiredQueryParameter "page" (\__page request respond ->
+                                optionalQueryParameter "offset" False (\__offset request respond ->
                                     run request (do
-                                        response <- Control.Monad.Catch.handle pure (getUser api id name page offset )
+                                        response <- Control.Monad.Catch.handle pure (getUser api __id __name __page __offset )
                                         Control.Monad.IO.Class.liftIO (respond (toResponse response))
                                     )) request respond) request respond
                         x ->
@@ -91,8 +91,6 @@ application run api notFound request respond =
     where
         unsupportedMethod _ =
             respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
-        invalidRequest _ =
-            respond (Network.Wai.responseBuilder (toEnum 400) [] mempty)
 ---------------------
 Test/Request.hs
 
@@ -131,10 +129,11 @@ pathVariable ::
   Wai.Application
 pathVariable value withVariable = \request respond ->
   case parseUrlPiece value of
-    Left err ->
-      undefined
+    Left _err ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Right x ->
       withVariable x request respond
+{-# INLINEABLE pathVariable #-}
 
 requiredQueryParameter ::
   FromHttpApiData a =>
@@ -144,15 +143,16 @@ requiredQueryParameter ::
 requiredQueryParameter name withParam = \request respond ->
   case List.lookup name (Wai.queryString request) of
     Nothing ->
-      undefined
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Just Nothing ->
-      undefined
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Just (Just value) ->
       case parseQueryParam (Text.decodeUtf8 value) of
-        Left err ->
-          undefined
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
         Right x ->
           withParam x request respond
+{-# INLINEABLE requiredQueryParameter #-}
 
 optionalQueryParameter ::
   FromHttpApiData a =>
@@ -169,13 +169,14 @@ optionalQueryParameter name allowEmpty withParam = \request respond ->
       | allowEmpty ->
         withParam Nothing request respond
       | otherwise ->
-        undefined
+        respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Just (Just value) ->
       case parseQueryParam (Text.decodeUtf8 value) of
-        Left err ->
-          undefined
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
         Right x ->
           withParam (Just x) request respond
+{-# INLINEABLE optionalQueryParameter #-}
 
 parseRequestBodyJSON :: FromJSON a => (a -> Wai.Application) -> Wai.Application
 parseRequestBodyJSON withBody = \request respond ->
@@ -183,18 +184,17 @@ parseRequestBodyJSON withBody = \request respond ->
     Just "application/json" -> do
       result <- parseWith (Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
       case eitherResult result of
-        Left err ->
-          undefined
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
         Right value ->
           case Data.Aeson.Types.parseEither Data.Aeson.parseJSON value of
-            Left err ->
-              undefined
+            Left _err ->
+              respond (Wai.responseBuilder (toEnum 400) [] mempty)
             Right body ->
               withBody body request respond
     _ ->
-      -- unsupported media type
-      undefined
-
+      respond (Wai.responseBuilder (toEnum 415) [] mempty)
+{-# INLINEABLE parseRequestBodyJSON #-}
 ---------------------
 Test/Response.hs
 
