@@ -258,9 +258,9 @@ escapeKeyword input = haskelify $ case input of
   _ -> input
 
 haskelify :: String -> String
-haskelify xs = 
+haskelify xs =
   [ case x of
       '-' -> '_'
       _ -> x
-  | x <- xs
+    | x <- xs
   ]

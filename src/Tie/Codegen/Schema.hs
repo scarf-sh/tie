@@ -30,8 +30,10 @@ import Tie.Operation (Header (..), Param (..))
 import Tie.Type
   ( BasicType (..),
     Enumeration (..),
+    IntegerFormat (..),
     Name,
     Named (..),
+    NumberFormat (..),
     ObjectType (..),
     StringFormat (..),
     Type (..),
@@ -272,8 +274,28 @@ codegenFieldType namedType = case namedType of
           -- TODO consider other formats
           "Data.Text.Text"
       TyEnum {} -> "error: Enum"
-      TyNumber -> "GHC.Types.Double"
-      TyInteger -> "GHC.Types.Int"
+      TyNumber format -> case format of
+        Nothing ->
+          "GHC.Types.Double"
+        Just FormatDouble ->
+          "GHC.Types.Double"
+        Just FormatFloat ->
+          "GHC.Types.Float"
+        Just (NumberFormatUnknown _) ->
+          -- Default to Double in case of unknown
+          -- TODO warn about unknown formats
+          "GHC.Types.Double"
+      TyInteger format -> case format of
+        Nothing ->
+          "GHC.Types.Int"
+        Just FormatInt32 ->
+          "GHC.Types.Int32"
+        Just FormatInt64 ->
+          "GHC.Types.Int64"
+        Just (IntegerFormatUnknown _) ->
+          -- Default to Int in case of unknown
+          -- TODO warn about unknown formats
+          "GHC.Types.Int"
       TyBoolean -> "GHC.Types.Bool"
     Object objectType -> "Data.Aeson.Value"
     Array elemType -> "[" <+> codegenFieldType elemType <+> "]"

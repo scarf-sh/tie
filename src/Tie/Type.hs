@@ -1,6 +1,7 @@
 {-# LANGUAGE DeriveFoldable #-}
 {-# LANGUAGE DeriveFunctor #-}
 {-# LANGUAGE DeriveTraversable #-}
+{-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE FlexibleInstances #-}
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
@@ -8,6 +9,8 @@
 
 module Tie.Type
   ( StringFormat (..),
+    NumberFormat (..),
+    IntegerFormat (..),
     BasicType (..),
     ObjectType (..),
     Type (..),
@@ -65,6 +68,18 @@ data StringFormat
   | FormatUnknown Text
   deriving (Eq, Ord, Show)
 
+data NumberFormat
+  = FormatFloat
+  | FormatDouble
+  | NumberFormatUnknown Text
+  deriving (Eq, Ord, Show)
+
+data IntegerFormat
+  = FormatInt32
+  | FormatInt64
+  | IntegerFormatUnknown Text
+  deriving (Eq, Ord, Show)
+
 -- | Represents an OpenAPI enumeration.
 data Enumeration = Enumeration
   { -- | The allowed values for this 'Enum'.
@@ -76,10 +91,10 @@ data Enumeration = Enumeration
 
 -- | Basic types OpenAPI data types.
 data BasicType
-  = TyString {format :: Maybe StringFormat}
+  = TyString (Maybe StringFormat)
   | TyEnum Enumeration
-  | TyNumber
-  | TyInteger
+  | TyNumber (Maybe NumberFormat)
+  | TyInteger (Maybe IntegerFormat)
   | TyBoolean
   deriving (Eq, Ord, Show)
 
@@ -174,9 +189,9 @@ schemaToType resolver schema
       OpenApi.OpenApiString ->
         pure (Basic (schemaToStringyType schema))
       OpenApi.OpenApiNumber ->
-        pure (Basic TyNumber)
+        pure (Basic (schemaToNumberType schema))
       OpenApi.OpenApiInteger ->
-        pure (Basic TyInteger)
+        pure (Basic (schemaToIntegerType schema))
       OpenApi.OpenApiBoolean ->
         pure (Basic TyBoolean)
       OpenApi.OpenApiArray
@@ -237,17 +252,39 @@ schemaToStringyType schema
           includeNull = Aeson.Null `elem` enum
         }
   | otherwise =
-    TyString
-      { format = case OpenApi._schemaFormat schema of
-          Nothing ->
-            Nothing
-          Just "date" ->
-            Just FormatDate
-          Just "date-time" ->
-            Just FormatDateTime
-          Just unknown ->
-            Just (FormatUnknown unknown)
-      }
+    TyString $ case OpenApi._schemaFormat schema of
+      Nothing ->
+        Nothing
+      Just "date" ->
+        Just FormatDate
+      Just "date-time" ->
+        Just FormatDateTime
+      Just unknown ->
+        Just (FormatUnknown unknown)
+
+schemaToNumberType :: OpenApi.Schema -> BasicType
+schemaToNumberType schema =
+  TyNumber $ case OpenApi._schemaFormat schema of
+    Nothing ->
+      Nothing
+    Just "float" ->
+      Just FormatFloat
+    Just "double" ->
+      Just FormatDouble
+    Just unknown ->
+      Just (NumberFormatUnknown unknown)
+
+schemaToIntegerType :: OpenApi.Schema -> BasicType
+schemaToIntegerType schema =
+  TyInteger $ case OpenApi._schemaFormat schema of
+    Nothing ->
+      Nothing
+    Just "int32" ->
+      Just FormatInt32
+    Just "int64" ->
+      Just FormatInt64
+    Just unknown ->
+      Just (IntegerFormatUnknown unknown)
 
 -- | Extracts the shallow dependencies of a 'Type' by traversing the 'Type' and
 -- until we hit a 'Named' type.

@@ -199,7 +199,8 @@ codegenCallApiMember operationName path queryParams headerParams requestBody =
             <> PP.line
             <> "Control.Monad.IO.Class.liftIO"
           <+> "(" <> "respond"
-          <+> "$!" <+> "(" <> "toResponse"
+          <+> "$!"
+          <+> "(" <> "toResponse"
           <+> "response" <> ")" <> ")"
       )
     <> PP.line
