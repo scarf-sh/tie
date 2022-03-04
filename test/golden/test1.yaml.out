@@ -496,7 +496,7 @@ instance Data.Aeson.FromJSON NISEValue where
 data NISE = NISE
     {
         description :: PackageId,
-        id :: GHC.Types.Int,
+        id :: GHC.Types.Int64,
         name :: Data.Text.Text,
         ports :: [ GHC.Types.Int ],
         value :: Data.Maybe.Maybe (NISEValue)
@@ -579,23 +579,6 @@ instance Data.Aeson.FromJSON PackageIdOneOf4 where
             <*> o Data.Aeson..:? "list"
             <*> o Data.Aeson..: "name"
 
-data PackageIdOneOf4Enum
-    = PackageIdOneOf4EnumA
-    | PackageIdOneOf4EnumB
-    deriving (Eq, Show)
-
-instance Data.Aeson.ToJSON PackageIdOneOf4Enum where
-    toJSON x = case x of
-        PackageIdOneOf4EnumA -> "A"
-        PackageIdOneOf4EnumB -> "B"
-
-instance Data.Aeson.FromJSON PackageIdOneOf4Enum where
-    parseJSON = Data.Aeson.withText "PackageIdOneOf4Enum" $ \s ->
-        case s of
-            "A" -> pure PackageIdOneOf4EnumA
-            "B" -> pure PackageIdOneOf4EnumB
-            _ -> fail "invalid enum value"
-
 newtype PackageIdOneOf4List = PackageIdOneOf4List
     {
         cool :: Data.Maybe.Maybe (Data.Text.Text)
@@ -612,6 +595,23 @@ instance Data.Aeson.FromJSON PackageIdOneOf4List where
     parseJSON = Data.Aeson.withObject "PackageIdOneOf4List" $ \o ->
         PackageIdOneOf4List
             <$> o Data.Aeson..:? "cool"
+
+data PackageIdOneOf4Enum
+    = PackageIdOneOf4EnumA
+    | PackageIdOneOf4EnumB
+    deriving (Eq, Show)
+
+instance Data.Aeson.ToJSON PackageIdOneOf4Enum where
+    toJSON x = case x of
+        PackageIdOneOf4EnumA -> "A"
+        PackageIdOneOf4EnumB -> "B"
+
+instance Data.Aeson.FromJSON PackageIdOneOf4Enum where
+    parseJSON = Data.Aeson.withText "PackageIdOneOf4Enum" $ \s ->
+        case s of
+            "A" -> pure PackageIdOneOf4EnumA
+            "B" -> pure PackageIdOneOf4EnumB
+            _ -> fail "invalid enum value"
 
 data PackageId
     = PackageIdPlane Plane
