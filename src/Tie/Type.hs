@@ -41,7 +41,7 @@ module Tie.Type
   )
 where
 
-import Control.Monad.Writer (runWriterT, tell)
+import Control.Monad.Writer (WriterT (..), runWriterT)
 import qualified Data.Aeson as Aeson
 import Data.Foldable (foldr1)
 import qualified Data.HashMap.Strict as HashMap
@@ -436,11 +436,10 @@ normalizeObjectType ::
 normalizeObjectType assignObjectFieldTypeName objectType@ObjectType {..} = do
   (properties, newTypes) <- runWriterT $
     flip HashMap.traverseWithKey properties $ \fieldName fieldType -> do
-      (normedType, inlineDefinitions) <-
-        lift $
-          normalizeNamedType (assignObjectFieldTypeName fieldName) fieldType
-      tell inlineDefinitions
-      pure normedType
+      WriterT $
+        normalizeNamedType
+          (assignObjectFieldTypeName fieldName)
+          fieldType
   pure (objectType {properties}, newTypes)
 
 normalizeVariants ::
@@ -449,11 +448,11 @@ normalizeVariants ::
   [Named Type] ->
   m ([Named Type], [(Name, Type)])
 normalizeVariants assignName variants = runWriterT $
-  forM (zip [1 ..] variants) $ \(i, variant) -> do
-    (normedVariant, inlineDefinitions) <-
-      lift $ normalizeNamedType (assignName i) variant
-    tell inlineDefinitions
-    pure normedVariant
+  forM (zip [1 ..] variants) $ \(i, variant) ->
+    WriterT $
+      normalizeNamedType
+        (assignName i)
+        variant
 
 -- | Normalizes a 'Type' by assigning each anonymous, inline definition a name.
 -- Returns the normalized 'Type' alongside with the additional inline definitions.
