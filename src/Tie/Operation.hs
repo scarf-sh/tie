@@ -441,30 +441,31 @@ normalizeRequestBody name body@RequestBody {..} = do
   pure (body {jsonRequestBodyContent = normedType}, inlineDefinitions)
 
 normalizeOperation :: Monad m => Operation -> m (Operation, [(Name, Type)])
-normalizeOperation operation@Operation {..} = runWriterT $ do
-  queryParams <-
-    traverse
-      (WriterT . normalizeParam name)
-      queryParams
-  headerParams <-
-    traverse
-      (WriterT . normalizeParam name)
-      headerParams
-  requestBody <-
-    traverse
-      (WriterT . normalizeRequestBody name)
-      requestBody
-  defaultResponse <-
-    traverse
-      (WriterT . normalizeResponse (apiDefaultResponseConstructorName name))
-      defaultResponse
-  responses <-
-    traverse
-      ( \(status, response) ->
-          ( (status,)
-              <$> WriterT
-                (normalizeResponse (apiResponseConstructorName name status) response)
-          )
-      )
-      responses
-  pure Operation {..}
+normalizeOperation operation@Operation {..} =
+  fmap (second (sortOn fst)) $ runWriterT $ do
+    queryParams <-
+      traverse
+        (WriterT . normalizeParam name)
+        queryParams
+    headerParams <-
+      traverse
+        (WriterT . normalizeParam name)
+        headerParams
+    requestBody <-
+      traverse
+        (WriterT . normalizeRequestBody name)
+        requestBody
+    defaultResponse <-
+      traverse
+        (WriterT . normalizeResponse (apiDefaultResponseConstructorName name))
+        defaultResponse
+    responses <-
+      traverse
+        ( \(status, response) ->
+            ( (status,)
+                <$> WriterT
+                  (normalizeResponse (apiResponseConstructorName name status) response)
+            )
+        )
+        responses
+    pure Operation {..}

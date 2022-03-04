@@ -548,4 +548,4 @@ normalizeType
               ((inlineDefName, normedInlineDefType) : moreInlineDefinitions)
         )
         inlineDefinitions
-    pure (normedType, normalizedInlineDefinitions)
+    pure (normedType, sortOn fst normalizedInlineDefinitions)

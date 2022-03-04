@@ -579,23 +579,6 @@ instance Data.Aeson.FromJSON PackageIdOneOf4 where
             <*> o Data.Aeson..:? "list"
             <*> o Data.Aeson..: "name"
 
-newtype PackageIdOneOf4List = PackageIdOneOf4List
-    {
-        cool :: Data.Maybe.Maybe (Data.Text.Text)
-    }
-    deriving (Show)
-
-instance Data.Aeson.ToJSON PackageIdOneOf4List where
-    toJSON PackageIdOneOf4List {..} = Data.Aeson.object
-        [
-            "cool" Data.Aeson..= cool
-        ]
-
-instance Data.Aeson.FromJSON PackageIdOneOf4List where
-    parseJSON = Data.Aeson.withObject "PackageIdOneOf4List" $ \o ->
-        PackageIdOneOf4List
-            <$> o Data.Aeson..:? "cool"
-
 data PackageIdOneOf4Enum
     = PackageIdOneOf4EnumA
     | PackageIdOneOf4EnumB
@@ -612,6 +595,23 @@ instance Data.Aeson.FromJSON PackageIdOneOf4Enum where
             "A" -> pure PackageIdOneOf4EnumA
             "B" -> pure PackageIdOneOf4EnumB
             _ -> fail "invalid enum value"
+
+newtype PackageIdOneOf4List = PackageIdOneOf4List
+    {
+        cool :: Data.Maybe.Maybe (Data.Text.Text)
+    }
+    deriving (Show)
+
+instance Data.Aeson.ToJSON PackageIdOneOf4List where
+    toJSON PackageIdOneOf4List {..} = Data.Aeson.object
+        [
+            "cool" Data.Aeson..= cool
+        ]
+
+instance Data.Aeson.FromJSON PackageIdOneOf4List where
+    parseJSON = Data.Aeson.withObject "PackageIdOneOf4List" $ \o ->
+        PackageIdOneOf4List
+            <$> o Data.Aeson..:? "cool"
 
 data PackageId
     = PackageIdPlane Plane

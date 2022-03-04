@@ -140,7 +140,6 @@ components:
                 properties: 
                   cool: 
                     type: string
-                sub:
               properties: 
                 subProperty:
                   type: string
