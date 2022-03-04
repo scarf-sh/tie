@@ -11,6 +11,7 @@ module Tie
 where
 
 import qualified Data.HashMap.Strict.InsOrd as InsOrd
+import qualified Data.HashSet as HashSet
 import qualified Data.OpenApi as OpenApi
 import qualified Data.Set as Set
 import Data.Yaml (decodeFileThrow)
@@ -150,9 +151,10 @@ generate write packageName apiName inputFile = do
         transitiveDependencies
 
   -- Transitive closure of all the referenced Schemas
-  let allReferencedSchemas :: [Name]
+  let allReferencedSchemas :: HashSet.HashSet Name
       allReferencedSchemas =
-        foldMap (operationSchemaDependencies transitive) operations
+        HashSet.fromList $
+          foldMap (operationSchemaDependencies transitive) operations
 
   -- Walk through all the available Schemas and generate code for the
   -- referenced ones.
@@ -160,7 +162,7 @@ generate write packageName apiName inputFile = do
     let name' = fromText name
         path = toSchemaHaskellFileName apiName name'
         header = codegenModuleHeader (toSchemaHaskellModuleName apiName name')
-    when (name' `elem` allReferencedSchemas) $ do
+    when (name' `HashSet.member` allReferencedSchemas) $ do
       type_ <- schemaToType resolver schema
       let dependencyCode =
             codegenSchemaDependencies apiName $
@@ -274,7 +276,7 @@ generate write packageName apiName inputFile = do
   let allReferencedModules :: [Text]
       allReferencedModules =
         nubOrd $
-          map (toSchemaHaskellModuleName apiName) allReferencedSchemas
+          map (toSchemaHaskellModuleName apiName) (toList allReferencedSchemas)
             ++ foldMap (map (toResponseHaskellModuleName apiName) . operationResponseDependencies) operations
             ++ [ apiHaskellModuleName apiName,
                  responseHaskellModuleName apiName,
