@@ -43,7 +43,7 @@ data Api m = Api {
     -- | List all pets
     listPets ::
         -- @limit@ How many items to return at one time (max 100)
-        Data.Maybe.Maybe (GHC.Types.Int) ->
+        Data.Maybe.Maybe (GHC.Types.Int32) ->
         m ListPetsResponse,
     -- | Create a pet
     createPets ::
@@ -442,7 +442,7 @@ import qualified Web.HttpApiData
 
 data Error = Error
     {
-        code :: GHC.Types.Int,
+        code :: GHC.Types.Int32,
         message :: Data.Text.Text
     }
     deriving (Show)
@@ -494,7 +494,7 @@ import qualified Web.HttpApiData
 
 data Pet = Pet
     {
-        id :: GHC.Types.Int,
+        id :: GHC.Types.Int64,
         name :: Data.Text.Text,
         tag :: Data.Maybe.Maybe (Data.Text.Text)
     }

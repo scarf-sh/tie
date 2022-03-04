@@ -37,7 +37,7 @@ data Api m = Api {
     -- | test
     test ::
         -- @x-next@ How many items to return at one time (max 100)
-        Data.Maybe.Maybe (GHC.Types.Int) ->
+        Data.Maybe.Maybe (GHC.Types.Int32) ->
         m TestResponse
 }
 
