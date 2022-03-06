@@ -71,7 +71,7 @@ data RequestBody = RequestBody
   }
 
 data Header = Header
-  { name :: Text,
+  { name :: Name,
     description :: Maybe Text,
     schema :: Maybe (Named Type),
     required :: Bool
@@ -380,8 +380,8 @@ headerToHeader resolver Errors {..} name referencedHeader = do
   schema <- traverse (schemaRefToType resolver) _headerSchema
   pure
     Header
-      { name,
-        schema,
+      { schema,
+        name = fromText name,
         description = _headerDescription,
         required = fromMaybe False _headerRequired
       }

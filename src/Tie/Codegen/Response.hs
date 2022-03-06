@@ -26,7 +26,8 @@ import Tie.Name
     toParamName,
   )
 import Tie.Operation
-  ( Operation (..),
+  ( Header (..),
+    Operation (..),
     Param (..),
     Path,
     PathSegment (..),
@@ -89,14 +90,25 @@ codegenToResponses operationName responses defaultResponse =
         | otherwise =
           "mempty"
 
-      responseHeaders Response {jsonResponseContent}
-        | Just {} <- jsonResponseContent =
-          "[(Network.HTTP.Types.hContentType, \"application/json\")]"
-        | otherwise =
-          "[]"
+      responseHeaders response@Response {jsonResponseContent, headers} =
+        let contentType
+              | Just _ <- jsonResponseContent =
+                ["(Network.HTTP.Types.hContentType, \"application/json\")"]
+              | otherwise =
+                []
+
+            otherHeaders =
+              [ "(\"" <> toParamName name <> "\"," <+> "Web.HttpApiData.toHeader" <+> toParamBinder name <> ")"
+                | Header {name} <- headers
+              ]
+         in "["
+              <> PP.concatWith
+                (\x y -> x <> "," <+> y)
+                (contentType ++ otherHeaders)
+              <> "]"
 
       responseHeaderBinders Response {headers} =
-        mempty
+        PP.vsep [toParamBinder name | Header {name} <- headers]
 
       decl =
         "instance" <+> "ToResponse" <+> toApiResponseTypeName operationName <+> "where" <> PP.line

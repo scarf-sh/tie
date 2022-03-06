@@ -21,7 +21,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -224,7 +225,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -255,7 +257,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -299,7 +302,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -310,12 +314,12 @@ import qualified Web.HttpApiData
 
 data Test = Test
     {
-        a :: Data.Maybe.Maybe (GHC.Types.Int32),
-        b :: Data.Maybe.Maybe (GHC.Types.Int64),
-        c :: Data.Maybe.Maybe (GHC.Types.Double),
-        d :: Data.Maybe.Maybe (GHC.Types.Float),
-        e :: Data.Maybe.Maybe (GHC.Types.Double),
-        f :: Data.Maybe.Maybe (GHC.Types.Int)
+        a :: (Data.Maybe.Maybe (GHC.Int.Int32)),
+        b :: (Data.Maybe.Maybe (GHC.Int.Int64)),
+        c :: (Data.Maybe.Maybe (GHC.Float.Double)),
+        d :: (Data.Maybe.Maybe (GHC.Float.Float)),
+        e :: (Data.Maybe.Maybe (GHC.Float.Double)),
+        f :: (Data.Maybe.Maybe (GHC.Int.Int))
     }
     deriving (Show)
 

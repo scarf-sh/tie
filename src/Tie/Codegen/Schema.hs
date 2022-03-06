@@ -250,7 +250,7 @@ codegenObjectType typName ObjectType {..} = do
 
 codegenRequiredOptionalFieldType :: Bool -> Doc ann -> Doc ann
 codegenRequiredOptionalFieldType True doc = doc
-codegenRequiredOptionalFieldType False doc = "Data.Maybe.Maybe" <+> "(" <> doc <> ")"
+codegenRequiredOptionalFieldType False doc = "(" <> "Data.Maybe.Maybe" <+> "(" <> doc <> ")" <> ")"
 
 codegenFieldType :: Named Type -> Doc ann
 codegenFieldType namedType = case namedType of
@@ -276,26 +276,26 @@ codegenFieldType namedType = case namedType of
       TyEnum {} -> "error: Enum"
       TyNumber format -> case format of
         Nothing ->
-          "GHC.Types.Double"
+          "GHC.Float.Double"
         Just FormatDouble ->
-          "GHC.Types.Double"
+          "GHC.Float.Double"
         Just FormatFloat ->
-          "GHC.Types.Float"
+          "GHC.Float.Float"
         Just (NumberFormatUnknown _) ->
           -- Default to Double in case of unknown
           -- TODO warn about unknown formats
-          "GHC.Types.Double"
+          "GHC.Float.Double"
       TyInteger format -> case format of
         Nothing ->
-          "GHC.Types.Int"
+          "GHC.Int.Int"
         Just FormatInt32 ->
-          "GHC.Types.Int32"
+          "GHC.Int.Int32"
         Just FormatInt64 ->
-          "GHC.Types.Int64"
+          "GHC.Int.Int64"
         Just (IntegerFormatUnknown _) ->
           -- Default to Int in case of unknown
           -- TODO warn about unknown formats
-          "GHC.Types.Int"
+          "GHC.Int.Int"
       TyBoolean -> "GHC.Types.Bool"
     Object objectType -> "Data.Aeson.Value"
     Array elemType -> "[" <+> codegenFieldType elemType <+> "]"

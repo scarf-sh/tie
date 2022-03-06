@@ -21,7 +21,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -38,24 +39,24 @@ import Test.Response.CreateUser
 data Api m = Api {
     getUser ::
         -- @id@ Uniquely identifies a user
-        GHC.Types.Int ->
+        GHC.Int.Int ->
         -- @name@ Name of a user
         Data.Text.Text ->
         -- @page@
-        GHC.Types.Int ->
+        GHC.Int.Int ->
         -- @offset@
-        Data.Maybe.Maybe (GHC.Types.Int) ->
+        (Data.Maybe.Maybe (GHC.Int.Int)) ->
         m GetUserResponse,
     -- | Adds a new user
     createUser ::
         -- @id@ Uniquely identifies a user
-        GHC.Types.Int ->
+        GHC.Int.Int ->
         -- @name@ Name of a user
         Data.Text.Text ->
         -- @page@
-        GHC.Types.Int ->
+        GHC.Int.Int ->
         -- @offset@
-        Data.Maybe.Maybe (GHC.Types.Int) ->
+        (Data.Maybe.Maybe (GHC.Int.Int)) ->
         -- Some nice request body
         CreateUserRequestBody ->
         m CreateUserResponse
@@ -258,7 +259,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -289,7 +291,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -300,7 +303,7 @@ import Test.Response
 
 newtype CreateUserRequestBody = CreateUserRequestBody
     {
-        nise :: Data.Maybe.Maybe (NISE)
+        nise :: (Data.Maybe.Maybe (NISE))
     }
     deriving (Show)
 
@@ -316,7 +319,7 @@ instance Data.Aeson.FromJSON CreateUserRequestBody where
             <$> o Data.Aeson..:? "nise"
 newtype CreateUserResponseBody200 = CreateUserResponseBody200
     {
-        name :: Data.Maybe.Maybe (Data.Text.Text)
+        name :: (Data.Maybe.Maybe (Data.Text.Text))
     }
     deriving (Show)
 
@@ -364,7 +367,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -408,7 +412,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -419,10 +424,10 @@ import Test.Schemas.Vehicle
 
 data Car = Car
     {
-        has_4_wheel_drive :: Data.Maybe.Maybe (GHC.Types.Bool),
-        id :: GHC.Types.Int,
-        model :: Data.Maybe.Maybe (Data.Text.Text),
-        name :: Data.Maybe.Maybe (Data.Text.Text),
+        has_4_wheel_drive :: (Data.Maybe.Maybe (GHC.Types.Bool)),
+        id :: GHC.Int.Int,
+        model :: (Data.Maybe.Maybe (Data.Text.Text)),
+        name :: (Data.Maybe.Maybe (Data.Text.Text)),
         type' :: Data.Text.Text
     }
     deriving (Show)
@@ -469,7 +474,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -478,7 +484,7 @@ import Test.Schemas.PackageId
 
 newtype NISEValue = NISEValue
     {
-        name :: Data.Maybe.Maybe (Data.Text.Text)
+        name :: (Data.Maybe.Maybe (Data.Text.Text))
     }
     deriving (Show)
 
@@ -496,10 +502,10 @@ instance Data.Aeson.FromJSON NISEValue where
 data NISE = NISE
     {
         description :: PackageId,
-        id :: GHC.Types.Int64,
+        id :: GHC.Int.Int64,
         name :: Data.Text.Text,
-        ports :: [ GHC.Types.Int ],
-        value :: Data.Maybe.Maybe (NISEValue)
+        ports :: [ GHC.Int.Int ],
+        value :: (Data.Maybe.Maybe (NISEValue))
     }
     deriving (Show)
 
@@ -545,7 +551,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -555,9 +562,9 @@ import Test.Schemas.Plane
 
 data PackageIdOneOf4 = PackageIdOneOf4
     {
-        age :: Data.Maybe.Maybe (GHC.Types.Int),
+        age :: (Data.Maybe.Maybe (GHC.Int.Int)),
         enum :: PackageIdOneOf4Enum,
-        list :: Data.Maybe.Maybe ([ PackageIdOneOf4List ]),
+        list :: (Data.Maybe.Maybe ([ PackageIdOneOf4List ])),
         name :: Data.Text.Text
     }
     deriving (Show)
@@ -598,7 +605,7 @@ instance Data.Aeson.FromJSON PackageIdOneOf4Enum where
 
 newtype PackageIdOneOf4List = PackageIdOneOf4List
     {
-        cool :: Data.Maybe.Maybe (Data.Text.Text)
+        cool :: (Data.Maybe.Maybe (Data.Text.Text))
     }
     deriving (Show)
 
@@ -616,7 +623,7 @@ instance Data.Aeson.FromJSON PackageIdOneOf4List where
 data PackageId
     = PackageIdPlane Plane
     | PackageIdCar Car
-    | PackageIdPackageIdOneOf3 GHC.Types.Int
+    | PackageIdPackageIdOneOf3 GHC.Int.Int
     | PackageIdPackageIdOneOf4 PackageIdOneOf4
     deriving (Show)
 
@@ -656,7 +663,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -668,13 +676,13 @@ import Test.Schemas.Vehicle
 
 data Plane = Plane
     {
-        car :: Data.Maybe.Maybe (Car),
-        has_reactor :: Data.Maybe.Maybe (GHC.Types.Bool),
-        id :: Data.Maybe.Maybe (GHC.Types.Int),
-        model :: Data.Maybe.Maybe (Data.Text.Text),
-        name :: Data.Maybe.Maybe (Data.Text.Text),
-        nb_passengers :: Data.Maybe.Maybe (GHC.Types.Int),
-        type' :: Data.Maybe.Maybe (Data.Text.Text)
+        car :: (Data.Maybe.Maybe (Car)),
+        has_reactor :: (Data.Maybe.Maybe (GHC.Types.Bool)),
+        id :: (Data.Maybe.Maybe (GHC.Int.Int)),
+        model :: (Data.Maybe.Maybe (Data.Text.Text)),
+        name :: (Data.Maybe.Maybe (Data.Text.Text)),
+        nb_passengers :: (Data.Maybe.Maybe (GHC.Int.Int)),
+        type' :: (Data.Maybe.Maybe (Data.Text.Text))
     }
     deriving (Show)
 
@@ -724,7 +732,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -735,9 +744,9 @@ import qualified Web.HttpApiData
 
 data Vehicle = Vehicle
     {
-        id :: GHC.Types.Int,
-        model :: Data.Maybe.Maybe (Data.Text.Text),
-        name :: Data.Maybe.Maybe (Data.Text.Text),
+        id :: GHC.Int.Int,
+        model :: (Data.Maybe.Maybe (Data.Text.Text)),
+        name :: (Data.Maybe.Maybe (Data.Text.Text)),
         type' :: Data.Text.Text
     }
     deriving (Show)

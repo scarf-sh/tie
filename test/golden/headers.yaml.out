@@ -21,7 +21,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -37,7 +38,7 @@ data Api m = Api {
     -- | test
     test ::
         -- @x-next@ How many items to return at one time (max 100)
-        Data.Maybe.Maybe (GHC.Types.Int32) ->
+        (Data.Maybe.Maybe (GHC.Int.Int32)) ->
         m TestResponse
 }
 
@@ -227,7 +228,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -258,7 +260,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -302,7 +305,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -313,8 +317,8 @@ import qualified Web.HttpApiData
 
 data Test = Test
     {
-        dateProp :: Data.Maybe.Maybe (Data.Time.Day),
-        dateTimeProp :: Data.Maybe.Maybe (Data.Time.UTCTime)
+        dateProp :: (Data.Maybe.Maybe (Data.Time.Day)),
+        dateTimeProp :: (Data.Maybe.Maybe (Data.Time.UTCTime))
     }
     deriving (Show)
 

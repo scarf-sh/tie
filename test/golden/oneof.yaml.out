@@ -21,7 +21,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -254,7 +255,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -285,7 +287,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -329,7 +332,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -373,7 +377,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -417,7 +422,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -425,7 +431,7 @@ import qualified Web.HttpApiData
 import Test.Schemas.Package
 
 data InlineValue
-    = InlineValueInlineValueOneOf1 GHC.Types.Int
+    = InlineValueInlineValueOneOf1 GHC.Int.Int
     | InlineValueInlineValueOneOf2 Data.Text.Text
     | InlineValuePackage Package
     deriving (Show)
@@ -443,7 +449,7 @@ instance Data.Aeson.FromJSON InlineValue where
 
 newtype Inline = Inline
     {
-        value :: Data.Maybe.Maybe (InlineValue)
+        value :: (Data.Maybe.Maybe (InlineValue))
     }
     deriving (Show)
 
@@ -481,7 +487,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -489,7 +496,7 @@ import qualified Web.HttpApiData
 import Test.Schemas.Package
 
 data Inline2Value
-    = Inline2ValueInline2ValueOneOf1 GHC.Types.Int
+    = Inline2ValueInline2ValueOneOf1 GHC.Int.Int
     | Inline2ValueInline2ValueOneOf2 Data.Text.Text
     | Inline2ValueInline2ValueOneOf3 Inline2ValueOneOf3
     deriving (Show)
@@ -506,7 +513,7 @@ instance Data.Aeson.FromJSON Inline2Value where
         (Inline2ValueInline2ValueOneOf3 <$> Data.Aeson.parseJSON x)
 
 data Inline2ValueOneOf3
-    = Inline2ValueOneOf3Inline2ValueOneOf3OneOf1 GHC.Types.Double
+    = Inline2ValueOneOf3Inline2ValueOneOf3OneOf1 GHC.Float.Double
     | Inline2ValueOneOf3Package Package
     deriving (Show)
 
@@ -521,7 +528,7 @@ instance Data.Aeson.FromJSON Inline2ValueOneOf3 where
 
 newtype Inline2 = Inline2
     {
-        value :: Data.Maybe.Maybe (Inline2Value)
+        value :: (Data.Maybe.Maybe (Inline2Value))
     }
     deriving (Show)
 
@@ -559,7 +566,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
@@ -570,7 +578,7 @@ import qualified Web.HttpApiData
 
 newtype Package = Package
     {
-        name :: Data.Maybe.Maybe (Data.Text.Text)
+        name :: (Data.Maybe.Maybe (Data.Text.Text))
     }
     deriving (Show)
 
@@ -608,7 +616,8 @@ import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
 import qualified Data.Text.Encoding
-import qualified GHC.Types
+import qualified GHC.Float
+import qualified GHC.Int
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
