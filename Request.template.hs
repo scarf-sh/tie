@@ -1,12 +1,14 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module Tie.Template.Request_
+module OpenAPI.Request
   ( pathVariable,
     requiredQueryParameter,
     optionalQueryParameter,
     requiredHeader,
     optionalHeader,
-    parseRequestBodyJSON,
+    parseRequestBody,
+    jsonBodyParser,
+    formBodyParser,
   )
 where
 
@@ -16,12 +18,16 @@ import qualified Data.Aeson.Types
 import Data.Attoparsec.ByteString (eitherResult, parseWith)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Lazy as LBS
 import qualified Data.List as List
+import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
 import Network.HTTP.Types (HeaderName, hContentType)
 import qualified Network.Wai as Wai
+import System.IO.Unsafe (unsafeInterleaveIO)
+import Web.FormUrlEncoded (FromForm, urlDecodeAsForm)
 import Web.HttpApiData
   ( FromHttpApiData,
     parseHeader,
@@ -120,20 +126,66 @@ requiredHeader name withHeader = \request respond ->
           withHeader x request respond
 {-# INLINEABLE requiredHeader #-}
 
+data BodyParser a = BodyParser ByteString ((a -> Wai.Application) -> Wai.Application)
+
+jsonBodyParser :: FromJSON a => BodyParser a
+jsonBodyParser = BodyParser "application/json" parseRequestBodyJSON
+{-# INLINE jsonBodyParser #-}
+
+formBodyParser :: FromForm a => BodyParser a
+formBodyParser = BodyParser "application/xxx-form-urlencoded" parseRequestBodyForm
+{-# INLINE formBodyParser #-}
+
+parseRequestBody :: [BodyParser a] -> (a -> Wai.Application) -> Wai.Application
+parseRequestBody parsers withBody = \request respond -> do
+  let contentType =
+        fromMaybe
+          "text/html"
+          (List.lookup hContentType (Wai.requestHeaders request))
+
+      bodyParser =
+        List.find
+          (\(BodyParser expectedContentType _) -> expectedContentType == contentType)
+          parsers
+
+  case bodyParser of
+    Just (BodyParser _ parseBody) ->
+      parseBody withBody request respond
+    Nothing ->
+      respond (Wai.responseBuilder (toEnum 415) [] mempty)
+{-# INLINE parseRequestBody #-}
+
 parseRequestBodyJSON :: FromJSON a => (a -> Wai.Application) -> Wai.Application
-parseRequestBodyJSON withBody = \request respond ->
-  case List.lookup hContentType (Wai.requestHeaders request) of
-    Just "application/json" -> do
-      result <- parseWith (Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
-      case eitherResult result of
+parseRequestBodyJSON withBody = \request respond -> do
+  result <- parseWith (Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
+  case eitherResult result of
+    Left _err ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+    Right value ->
+      case Data.Aeson.Types.parseEither Data.Aeson.parseJSON value of
         Left _err ->
           respond (Wai.responseBuilder (toEnum 400) [] mempty)
-        Right value ->
-          case Data.Aeson.Types.parseEither Data.Aeson.parseJSON value of
-            Left _err ->
-              respond (Wai.responseBuilder (toEnum 400) [] mempty)
-            Right body ->
-              withBody body request respond
-    _ ->
-      respond (Wai.responseBuilder (toEnum 415) [] mempty)
+        Right body ->
+          withBody body request respond
 {-# INLINEABLE parseRequestBodyJSON #-}
+
+parseRequestBodyForm :: FromForm a => (a -> Wai.Application) -> Wai.Application
+parseRequestBodyForm withBody = \request respond -> do
+  -- Reads the body using lazy IO. Not great but it gets us
+  -- going and is pretty local.
+  let getBodyBytes :: IO [ByteString]
+      getBodyBytes = do
+        chunk <- Wai.getRequestBodyChunk request
+        case chunk of
+          "" -> pure []
+          _ -> do
+            rest <- unsafeInterleaveIO getBodyBytes
+            pure (chunk : rest)
+
+  bytes <- getBodyBytes
+  case urlDecodeAsForm (LBS.fromChunks bytes) of
+    Left _err ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+    Right form ->
+      withBody form request respond
+{-# INLINEABLE parseRequestBodyForm #-}

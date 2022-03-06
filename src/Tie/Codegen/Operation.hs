@@ -249,10 +249,16 @@ codegenRequestBodyGuard :: Maybe RequestBody -> PP.Doc ann -> PP.Doc ann
 codegenRequestBodyGuard requestBody continuation = case requestBody of
   Nothing ->
     continuation
-  Just _body ->
-    "parseRequestBodyJSON" <+> "(" <> "\\" <> "body" <+> "request" <+> "respond" <+> "->" <> PP.line
-      <> PP.indent 4 continuation
-      <> ")" <+> "request" <+> "respond"
+  Just RequestBody {jsonRequestBodyContent} ->
+    let parsers =
+          -- TODO support forms
+          ["jsonBodyParser"]
+
+        parsersList =
+          "[" <> PP.concatWith (\x y -> x <> "," <+> y) parsers <> "]"
+     in "parseRequestBody" <+> parsersList <+> "(" <> "\\" <> "body" <+> "request" <+> "respond" <+> "->" <> PP.line
+          <> PP.indent 4 continuation
+          <> ")" <+> "request" <+> "respond"
 
 codegenQueryParamsGuard :: [Param] -> PP.Doc ann -> PP.Doc ann
 codegenQueryParamsGuard =

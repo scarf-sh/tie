@@ -70,6 +70,8 @@ codegenModuleHeader moduleName =
     <> PP.line
     <> "import" <+> "qualified" <+> "GHC.Int"
     <> PP.line
+    <> "import" <+> "qualified" <+> "GHC.Types"
+    <> PP.line
     <> "import" <+> "qualified" <+> "Network.HTTP.Types"
     <> PP.line
     <> "import" <+> "qualified" <+> "Network.Wai"
