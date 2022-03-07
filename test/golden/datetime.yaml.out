@@ -13,6 +13,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -270,6 +271,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -303,6 +305,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -349,6 +352,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -381,6 +385,11 @@ instance Data.Aeson.ToJSON Test where
             "dateProp" Data.Aeson..= dateProp,
             "dateTimeProp" Data.Aeson..= dateTimeProp
         ]
+
+    toEncoding Test {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "dateProp" (Data.Aeson.toEncoding dateProp) <>
+          Data.Aeson.Encoding.pair "dateTimeProp" (Data.Aeson.toEncoding dateTimeProp)
+        )
 
 instance Data.Aeson.FromJSON Test where
     parseJSON = Data.Aeson.withObject "Test" $ \o ->

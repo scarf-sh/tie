@@ -13,6 +13,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -270,6 +271,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -303,6 +305,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -349,6 +352,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -389,6 +393,15 @@ instance Data.Aeson.ToJSON Test where
             "e" Data.Aeson..= e,
             "f" Data.Aeson..= f
         ]
+
+    toEncoding Test {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "a" (Data.Aeson.toEncoding a) <>
+          Data.Aeson.Encoding.pair "b" (Data.Aeson.toEncoding b) <>
+          Data.Aeson.Encoding.pair "c" (Data.Aeson.toEncoding c) <>
+          Data.Aeson.Encoding.pair "d" (Data.Aeson.toEncoding d) <>
+          Data.Aeson.Encoding.pair "e" (Data.Aeson.toEncoding e) <>
+          Data.Aeson.Encoding.pair "f" (Data.Aeson.toEncoding f)
+        )
 
 instance Data.Aeson.FromJSON Test where
     parseJSON = Data.Aeson.withObject "Test" $ \o ->

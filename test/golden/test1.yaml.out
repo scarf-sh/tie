@@ -13,6 +13,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -304,6 +305,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -337,6 +339,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -368,6 +371,10 @@ instance Data.Aeson.ToJSON CreateUserRequestBody where
             "nise" Data.Aeson..= nise
         ]
 
+    toEncoding CreateUserRequestBody {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "nise" (Data.Aeson.toEncoding nise)
+        )
+
 instance Data.Aeson.FromJSON CreateUserRequestBody where
     parseJSON = Data.Aeson.withObject "CreateUserRequestBody" $ \o ->
         CreateUserRequestBody
@@ -383,6 +390,10 @@ instance Data.Aeson.ToJSON CreateUserResponseBody200 where
         [
             "name" Data.Aeson..= name
         ]
+
+    toEncoding CreateUserResponseBody200 {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        )
 
 instance Data.Aeson.FromJSON CreateUserResponseBody200 where
     parseJSON = Data.Aeson.withObject "CreateUserResponseBody200" $ \o ->
@@ -414,6 +425,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -460,6 +472,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -499,6 +512,14 @@ instance Data.Aeson.ToJSON Car where
             "type" Data.Aeson..= type'
         ]
 
+    toEncoding Car {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "has_4_wheel_drive" (Data.Aeson.toEncoding has_4_wheel_drive) <>
+          Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
+          Data.Aeson.Encoding.pair "model" (Data.Aeson.toEncoding model) <>
+          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
+          Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
+        )
+
 instance Data.Aeson.FromJSON Car where
     parseJSON = Data.Aeson.withObject "Car" $ \o ->
         Car
@@ -523,6 +544,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -552,6 +574,10 @@ instance Data.Aeson.ToJSON NISEValue where
             "name" Data.Aeson..= name
         ]
 
+    toEncoding NISEValue {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        )
+
 instance Data.Aeson.FromJSON NISEValue where
     parseJSON = Data.Aeson.withObject "NISEValue" $ \o ->
         NISEValue
@@ -577,6 +603,14 @@ instance Data.Aeson.ToJSON NISE where
             "value" Data.Aeson..= value
         ]
 
+    toEncoding NISE {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "description" (Data.Aeson.toEncoding description) <>
+          Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
+          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
+          Data.Aeson.Encoding.pair "ports" (Data.Aeson.toEncoding ports) <>
+          Data.Aeson.Encoding.pair "value" (Data.Aeson.toEncoding value)
+        )
+
 instance Data.Aeson.FromJSON NISE where
     parseJSON = Data.Aeson.withObject "NISE" $ \o ->
         NISE
@@ -601,6 +635,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -637,6 +672,13 @@ instance Data.Aeson.ToJSON PackageIdOneOf4 where
             "name" Data.Aeson..= name
         ]
 
+    toEncoding PackageIdOneOf4 {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "age" (Data.Aeson.toEncoding age) <>
+          Data.Aeson.Encoding.pair "enum" (Data.Aeson.toEncoding enum) <>
+          Data.Aeson.Encoding.pair "list" (Data.Aeson.toEncoding list) <>
+          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        )
+
 instance Data.Aeson.FromJSON PackageIdOneOf4 where
     parseJSON = Data.Aeson.withObject "PackageIdOneOf4" $ \o ->
         PackageIdOneOf4
@@ -654,6 +696,10 @@ instance Data.Aeson.ToJSON PackageIdOneOf4Enum where
     toJSON x = case x of
         PackageIdOneOf4EnumA -> "A"
         PackageIdOneOf4EnumB -> "B"
+
+    toEncoding x = case x of
+        PackageIdOneOf4EnumA -> Data.Aeson.Encoding.text "A"
+        PackageIdOneOf4EnumB -> Data.Aeson.Encoding.text "B"
 
 instance Data.Aeson.FromJSON PackageIdOneOf4Enum where
     parseJSON = Data.Aeson.withText "PackageIdOneOf4Enum" $ \s ->
@@ -674,6 +720,10 @@ instance Data.Aeson.ToJSON PackageIdOneOf4List where
             "cool" Data.Aeson..= cool
         ]
 
+    toEncoding PackageIdOneOf4List {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "cool" (Data.Aeson.toEncoding cool)
+        )
+
 instance Data.Aeson.FromJSON PackageIdOneOf4List where
     parseJSON = Data.Aeson.withObject "PackageIdOneOf4List" $ \o ->
         PackageIdOneOf4List
@@ -691,6 +741,11 @@ instance Data.Aeson.ToJSON PackageId where
     toJSON (PackageIdCar x) = Data.Aeson.toJSON x
     toJSON (PackageIdPackageIdOneOf3 x) = Data.Aeson.toJSON x
     toJSON (PackageIdPackageIdOneOf4 x) = Data.Aeson.toJSON x
+
+    toEncoding (PackageIdPlane x) = Data.Aeson.toEncoding x
+    toEncoding (PackageIdCar x) = Data.Aeson.toEncoding x
+    toEncoding (PackageIdPackageIdOneOf3 x) = Data.Aeson.toEncoding x
+    toEncoding (PackageIdPackageIdOneOf4 x) = Data.Aeson.toEncoding x
 
 instance Data.Aeson.FromJSON PackageId where
     parseJSON x =
@@ -714,6 +769,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -758,6 +814,16 @@ instance Data.Aeson.ToJSON Plane where
             "type" Data.Aeson..= type'
         ]
 
+    toEncoding Plane {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "car" (Data.Aeson.toEncoding car) <>
+          Data.Aeson.Encoding.pair "has_reactor" (Data.Aeson.toEncoding has_reactor) <>
+          Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
+          Data.Aeson.Encoding.pair "model" (Data.Aeson.toEncoding model) <>
+          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
+          Data.Aeson.Encoding.pair "nb_passengers" (Data.Aeson.toEncoding nb_passengers) <>
+          Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
+        )
+
 instance Data.Aeson.FromJSON Plane where
     parseJSON = Data.Aeson.withObject "Plane" $ \o ->
         Plane
@@ -784,6 +850,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -820,6 +887,13 @@ instance Data.Aeson.ToJSON Vehicle where
             "name" Data.Aeson..= name,
             "type" Data.Aeson..= type'
         ]
+
+    toEncoding Vehicle {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
+          Data.Aeson.Encoding.pair "model" (Data.Aeson.toEncoding model) <>
+          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
+          Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
+        )
 
 instance Data.Aeson.FromJSON Vehicle where
     parseJSON = Data.Aeson.withObject "Vehicle" $ \o ->

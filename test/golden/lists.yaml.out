@@ -13,6 +13,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -300,6 +301,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -333,6 +335,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -379,6 +382,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -425,6 +429,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -471,6 +476,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -500,6 +506,10 @@ instance Data.Aeson.ToJSON InlineElem where
             "name" Data.Aeson..= name
         ]
 
+    toEncoding InlineElem {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        )
+
 instance Data.Aeson.FromJSON InlineElem where
     parseJSON = Data.Aeson.withObject "InlineElem" $ \o ->
         InlineElem
@@ -522,6 +532,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -553,6 +564,10 @@ instance Data.Aeson.ToJSON Package where
             "name" Data.Aeson..= name
         ]
 
+    toEncoding Package {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        )
+
 instance Data.Aeson.FromJSON Package where
     parseJSON = Data.Aeson.withObject "Package" $ \o ->
         Package
@@ -573,6 +588,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString

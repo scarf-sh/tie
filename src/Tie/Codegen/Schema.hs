@@ -151,6 +151,14 @@ codegenOneOfType typName variants = do
                     <+> "x"
                   | (variantName, _) <- variantConstructors
                 ]
+                <> PP.line
+                <> PP.line
+                <> PP.vsep
+                  [ "toEncoding" <+> "(" <> variantName <+> "x" <> ")" <+> "="
+                      <+> "Data.Aeson.toEncoding"
+                      <+> "x"
+                    | (variantName, _) <- variantConstructors
+                  ]
             )
 
       fromJson =
@@ -222,6 +230,25 @@ codegenObjectType typName ObjectType {..} = do
                         )
                       <> PP.line
                       <> "]"
+                  )
+                <> PP.line
+                <> PP.line
+                <> "toEncoding" <+> toConstructorName typName <+> "{..}" <+> "=" <+> "Data.Aeson.Encoding.pairs"
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( "("
+                      <+> PP.align
+                        ( PP.concatWith
+                            (\x y -> x <+> "<>" <> PP.line <> y)
+                            [ "Data.Aeson.Encoding.pair" <+> "\"" <> toJsonFieldName field <> "\""
+                                <+> "(" <> "Data.Aeson.toEncoding"
+                                <+> toFieldName field <> ")"
+                              | (field, _) <- orderedProperties
+                            ]
+                        )
+                      <> PP.line
+                      <> ")"
                   )
             )
 
@@ -327,6 +354,17 @@ codegenEnumeration typName alternatives _includeNull =
                   4
                   ( PP.vsep
                       [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
+                        | alt <- alternatives
+                      ]
+                  )
+                <> PP.line
+                <> PP.line
+                <> "toEncoding" <+> "x" <+> "=" <+> "case" <+> "x" <+> "of"
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( PP.vsep
+                      [ toEnumConstructorName typName alt <+> "->" <+> "Data.Aeson.Encoding.text" <+> "\"" <> PP.pretty alt <> "\""
                         | alt <- alternatives
                       ]
                   )

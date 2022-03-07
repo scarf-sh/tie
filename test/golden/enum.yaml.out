@@ -13,6 +13,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -285,6 +286,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -318,6 +320,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -348,6 +351,11 @@ instance Data.Aeson.ToJSON ListPackagesResponseBody200 where
         ListPackagesResponseBody200A -> "A"
         ListPackagesResponseBody200B -> "B"
         ListPackagesResponseBody200C -> "C"
+
+    toEncoding x = case x of
+        ListPackagesResponseBody200A -> Data.Aeson.Encoding.text "A"
+        ListPackagesResponseBody200B -> Data.Aeson.Encoding.text "B"
+        ListPackagesResponseBody200C -> Data.Aeson.Encoding.text "C"
 
 instance Data.Aeson.FromJSON ListPackagesResponseBody200 where
     parseJSON = Data.Aeson.withText "ListPackagesResponseBody200" $ \s ->
@@ -382,6 +390,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -428,6 +437,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -458,6 +468,11 @@ instance Data.Aeson.ToJSON Package where
         PackageDOCKER -> "DOCKER"
         PackagePYTHON -> "PYTHON"
         PackageNPM -> "NPM"
+
+    toEncoding x = case x of
+        PackageDOCKER -> Data.Aeson.Encoding.text "DOCKER"
+        PackagePYTHON -> Data.Aeson.Encoding.text "PYTHON"
+        PackageNPM -> Data.Aeson.Encoding.text "NPM"
 
 instance Data.Aeson.FromJSON Package where
     parseJSON = Data.Aeson.withText "Package" $ \s ->

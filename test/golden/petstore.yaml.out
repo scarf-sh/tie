@@ -13,6 +13,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -303,6 +304,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -336,6 +338,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -385,6 +388,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -435,6 +439,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -485,6 +490,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -518,6 +524,11 @@ instance Data.Aeson.ToJSON Error where
             "message" Data.Aeson..= message
         ]
 
+    toEncoding Error {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "code" (Data.Aeson.toEncoding code) <>
+          Data.Aeson.Encoding.pair "message" (Data.Aeson.toEncoding message)
+        )
+
 instance Data.Aeson.FromJSON Error where
     parseJSON = Data.Aeson.withObject "Error" $ \o ->
         Error
@@ -539,6 +550,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
@@ -574,6 +586,12 @@ instance Data.Aeson.ToJSON Pet where
             "tag" Data.Aeson..= tag
         ]
 
+    toEncoding Pet {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
+          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
+          Data.Aeson.Encoding.pair "tag" (Data.Aeson.toEncoding tag)
+        )
+
 instance Data.Aeson.FromJSON Pet where
     parseJSON = Data.Aeson.withObject "Pet" $ \o ->
         Pet
@@ -596,6 +614,7 @@ import qualified Control.Monad
 import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
