@@ -36,7 +36,26 @@ paths:
                 enum: 
                   - A
                   - B
-                  - C                  
+                  - C   
+  /packages3:
+    parameters:
+      - name: order
+        in: query
+        required: false
+        schema: 
+          type: string
+          enum: 
+            - asc
+            - desc
+    get:
+      summary: List all packages
+      operationId: listPackages
+      tags:
+        - packages
+      responses:
+        '201':
+          description: Cool!
+
 components:
   schemas:
     Package: 

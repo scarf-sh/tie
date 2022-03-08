@@ -388,4 +388,37 @@ codegenEnumeration typName alternatives _includeNull =
                         )
                   )
             )
-   in PP.vsep [dataDecl, mempty, toJSON, mempty, fromJSON]
+      toHttpApiData =
+        "instance" <+> "Web.HttpApiData.ToHttpApiData" <+> toDataTypeName typName <+> "where" <> PP.line
+          <> PP.indent
+            4
+            ( "toQueryParam" <+> "x" <+> "=" <+> "case" <+> "x" <+> "of" <> PP.line
+                <> PP.indent
+                  4
+                  ( PP.vsep
+                      [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
+                        | alt <- alternatives
+                      ]
+                  )
+            )
+      fromHttpApiData =
+        "instance" <+> "Web.HttpApiData.FromHttpApiData" <+> toDataTypeName typName <+> "where" <> PP.line
+          <> PP.indent
+            4
+            ( "parseUrlPiece" <+> "x" <+> "=" <> PP.line
+                <> PP.indent
+                  4
+                  ( "case" <+> "x" <+> "of" <> PP.line
+                      <> PP.indent
+                        4
+                        ( PP.vsep
+                            ( [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> "pure" <+> toEnumConstructorName typName alt
+                                | alt <- alternatives
+                              ]
+                                ++ ["_" <+> "->" <+> "Left" <+> "\"invalid enum value\""]
+                            )
+                        )
+                  )
+            )
+
+   in PP.vsep [dataDecl, mempty, toJSON, mempty, fromJSON, mempty, toHttpApiData, mempty, fromHttpApiData]

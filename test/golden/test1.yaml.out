@@ -708,6 +708,18 @@ instance Data.Aeson.FromJSON PackageIdOneOf4Enum where
             "B" -> pure PackageIdOneOf4EnumB
             _ -> fail "invalid enum value"
 
+instance Web.HttpApiData.ToHttpApiData PackageIdOneOf4Enum where
+    toQueryParam x = case x of
+        PackageIdOneOf4EnumA -> "A"
+        PackageIdOneOf4EnumB -> "B"
+
+instance Web.HttpApiData.FromHttpApiData PackageIdOneOf4Enum where
+    parseUrlPiece x =
+        case x of
+            "A" -> pure PackageIdOneOf4EnumA
+            "B" -> pure PackageIdOneOf4EnumB
+            _ -> Left "invalid enum value"
+
 newtype PackageIdOneOf4List = PackageIdOneOf4List
     {
         cool :: (Data.Maybe.Maybe (Data.Text.Text))
