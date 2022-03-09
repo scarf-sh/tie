@@ -132,11 +132,15 @@ generate write packageName apiName inputFile = do
           (\_ -> error "could not resolve reference")
 
   -- Extract all the Operations from the spec
-  operations <-
+  operations' <-
     pathItemsToOperation
       resolver
       errors
       (specPaths openApi)
+  let operations =
+        sortOn
+          (\Operation {name} -> name)
+          operations'
 
   -- Only extract the direct, shallow dependencies. This is used to get a precise
   -- import list for the api and schema modules.

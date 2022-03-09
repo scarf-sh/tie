@@ -33,12 +33,12 @@ import Test.Request
 import Test.Response
 
 import Test.Schemas.Packages
-import Test.Schemas.Inline2
 import Test.Schemas.Inline
+import Test.Schemas.Inline2
 
 import Test.Response.ListPackages
 import Test.Response.ListPackages2
-import Test.Response.ListPackages2
+import Test.Response.ListPackages3
 
 data Api m = Api {
     -- | List all packages
@@ -48,8 +48,8 @@ data Api m = Api {
     listPackages2 ::
         m ListPackages2Response,
     -- | List all packages
-    listPackages2 ::
-        m ListPackages2Response
+    listPackages3 ::
+        m ListPackages3Response
 }
 
 application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
@@ -79,7 +79,7 @@ application run api notFound request respond =
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (listPackages2 api  )
+                        response <- Control.Monad.Catch.handle pure (listPackages3 api  )
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -414,14 +414,14 @@ instance ToResponse ListPackages2Response where
     toResponse (ListPackages2Response200 x ) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
-Test/Response/ListPackages2.hs
+Test/Response/ListPackages3.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module Test.Response.ListPackages2 where
+module Test.Response.ListPackages3 where
 
 import qualified Control.Applicative
 import qualified Control.Exception
@@ -451,14 +451,14 @@ import Test.Response
 
 
 
-data ListPackages2Response
-    = ListPackages2Response200 Inline2 
+data ListPackages3Response
+    = ListPackages3Response200 Inline2 
     deriving (Show)
 
-instance Control.Exception.Exception ListPackages2Response
+instance Control.Exception.Exception ListPackages3Response
 
-instance ToResponse ListPackages2Response where
-    toResponse (ListPackages2Response200 x ) =
+instance ToResponse ListPackages3Response where
+    toResponse (ListPackages3Response200 x ) =
         Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Schemas/Inline.hs
@@ -760,6 +760,7 @@ library
     Test.Response
     Test.Response.ListPackages
     Test.Response.ListPackages2
+    Test.Response.ListPackages3
     Test.Schemas.Inline
     Test.Schemas.Inline2
     Test.Schemas.Package

@@ -36,7 +36,7 @@ paths:
   /packages3:
     get:
       summary: List all packages
-      operationId: listPackages2
+      operationId: listPackages3
       tags:
         - packages
       responses:

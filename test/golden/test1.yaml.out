@@ -32,23 +32,13 @@ import qualified Web.HttpApiData
 import Test.Request
 import Test.Response
 
-import Test.Schemas.Vehicle
 import Test.Schemas.NISE
+import Test.Schemas.Vehicle
 
-import Test.Response.GetUser
 import Test.Response.CreateUser
+import Test.Response.GetUser
 
 data Api m = Api {
-    getUser ::
-        -- @id@ Uniquely identifies a user
-        GHC.Int.Int ->
-        -- @name@ Name of a user
-        Data.Text.Text ->
-        -- @page@
-        GHC.Int.Int ->
-        -- @offset@
-        (Data.Maybe.Maybe (GHC.Int.Int)) ->
-        m GetUserResponse,
     -- | Adds a new user
     createUser ::
         -- @id@ Uniquely identifies a user
@@ -61,7 +51,17 @@ data Api m = Api {
         (Data.Maybe.Maybe (GHC.Int.Int)) ->
         -- Some nice request body
         CreateUserRequestBody ->
-        m CreateUserResponse
+        m CreateUserResponse,
+    getUser ::
+        -- @id@ Uniquely identifies a user
+        GHC.Int.Int ->
+        -- @name@ Name of a user
+        Data.Text.Text ->
+        -- @page@
+        GHC.Int.Int ->
+        -- @offset@
+        (Data.Maybe.Maybe (GHC.Int.Int)) ->
+        m GetUserResponse
 }
 
 application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
@@ -71,6 +71,13 @@ application run api notFound request respond =
             pathVariable __id (\__id request respond ->
                 pathVariable __name (\__name request respond ->
                     case Network.Wai.requestMethod request of
+                        "GET" ->
+                            requiredQueryParameter "page" (\__page request respond ->
+                                optionalQueryParameter "offset" False (\__offset request respond ->
+                                    run request (do
+                                        response <- Control.Monad.Catch.handle pure (getUser api __id __name __page __offset )
+                                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
+                                    )) request respond) request respond
                         "POST" ->
                             requiredQueryParameter "page" (\__page request respond ->
                                 optionalQueryParameter "offset" False (\__offset request respond ->
@@ -79,13 +86,6 @@ application run api notFound request respond =
                                             response <- Control.Monad.Catch.handle pure (createUser api __id __name __page __offset body)
                                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                                         )) request respond) request respond) request respond
-                        "GET" ->
-                            requiredQueryParameter "page" (\__page request respond ->
-                                optionalQueryParameter "offset" False (\__offset request respond ->
-                                    run request (do
-                                        response <- Control.Monad.Catch.handle pure (getUser api __id __name __page __offset )
-                                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
-                                    )) request respond) request respond
                         x ->
                             unsupportedMethod x) request respond) request respond
 

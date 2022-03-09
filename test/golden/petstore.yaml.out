@@ -33,24 +33,24 @@ import Test.Request
 import Test.Response
 
 import Test.Schemas.Error
-import Test.Schemas.Pets
 import Test.Schemas.Error
+import Test.Schemas.Pets
 import Test.Schemas.Error
 import Test.Schemas.Pet
 
-import Test.Response.ListPets
 import Test.Response.CreatePets
+import Test.Response.ListPets
 import Test.Response.ShowPetById
 
 data Api m = Api {
+    -- | Create a pet
+    createPets ::
+        m CreatePetsResponse,
     -- | List all pets
     listPets ::
         -- @limit@ How many items to return at one time (max 100)
         (Data.Maybe.Maybe (GHC.Int.Int32)) ->
         m ListPetsResponse,
-    -- | Create a pet
-    createPets ::
-        m CreatePetsResponse,
     -- | Info for a specific pet
     showPetById ::
         -- @petId@ The id of the pet to retrieve
@@ -63,17 +63,17 @@ application run api notFound request respond =
     case Network.Wai.pathInfo request of
         ["pets"] ->
             case Network.Wai.requestMethod request of
-                "POST" ->
-                    run request (do
-                        response <- Control.Monad.Catch.handle pure (createPets api  )
-                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
-                    )
                 "GET" ->
                     optionalQueryParameter "limit" False (\__limit request respond ->
                         run request (do
                             response <- Control.Monad.Catch.handle pure (listPets api __limit )
                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )) request respond
+                "POST" ->
+                    run request (do
+                        response <- Control.Monad.Catch.handle pure (createPets api  )
+                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
+                    )
                 x ->
                     unsupportedMethod x
 

@@ -38,8 +38,8 @@ import Test.Schemas.Package
 import Test.Schemas.Order
 
 import Test.Response.ListPackages
-import Test.Response.ListPackages3
 import Test.Response.ListPackages2
+import Test.Response.ListPackages3
 import Test.Response.ListPackages4
 
 data Api m = Api {
@@ -47,13 +47,13 @@ data Api m = Api {
     listPackages ::
         m ListPackagesResponse,
     -- | List all packages
+    listPackages2 ::
+        m ListPackages2Response,
+    -- | List all packages
     listPackages3 ::
         -- @order@
         (Data.Maybe.Maybe (ListPackages3OrderParam)) ->
         m ListPackages3Response,
-    -- | List all packages
-    listPackages2 ::
-        m ListPackages2Response,
     -- | List all packages
     listPackages4 ::
         -- @order@

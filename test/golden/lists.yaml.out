@@ -33,23 +33,23 @@ import Test.Request
 import Test.Response
 
 import Test.Schemas.Packages
-import Test.Schemas.Inline
 import Test.Schemas.Package
+import Test.Schemas.Inline
 
 import Test.Response.ListPackages
-import Test.Response.ListPackages3
 import Test.Response.ListPackages2
+import Test.Response.ListPackages3
 
 data Api m = Api {
     -- | List all packages
     listPackages ::
         m ListPackagesResponse,
     -- | List all packages
-    listPackages3 ::
-        m ListPackages3Response,
-    -- | List all packages
     listPackages2 ::
-        m ListPackages2Response
+        m ListPackages2Response,
+    -- | List all packages
+    listPackages3 ::
+        m ListPackages3Response
 }
 
 application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
