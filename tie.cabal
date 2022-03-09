@@ -55,7 +55,7 @@ library
     -- other-extensions:
     build-depends:    aeson, 
                       base,
-                      bytestring >= 0.11.2.0,
+                      bytestring,
                       containers,
                       text,
                       directory,

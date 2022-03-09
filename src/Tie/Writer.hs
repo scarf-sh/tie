@@ -9,13 +9,14 @@ module Tie.Writer
   )
 where
 
-import Data.ByteString.Builder (Builder, writeFile)
+import Data.ByteString.Builder (Builder, hPutBuilder)
 import Data.Text.Lazy.Encoding (encodeUtf8Builder)
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
 import System.Directory (createDirectoryIfMissing)
 import System.FilePath (takeDirectory, (</>))
+import System.IO (IOMode (WriteMode), withBinaryFile)
 
 -- | Abstraction for storing generated code on disk.
 type Writer m = forall ann. FilePath -> Doc ann -> m ()
@@ -32,7 +33,8 @@ fileWriter :: MonadIO m => FilePath -> Writer m
 fileWriter outputDirectory path doc = liftIO $ do
   let fullPath = outputDirectory </> path
   createDirectoryIfMissing True (takeDirectory fullPath)
-  Data.ByteString.Builder.writeFile fullPath (render doc)
+  withBinaryFile fullPath WriteMode $ \file ->
+    Data.ByteString.Builder.hPutBuilder file (render doc)
 
 -- | Collects all the FilePath and Doc pairs and returns them concatenated
 -- in one output
