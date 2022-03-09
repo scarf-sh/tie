@@ -236,7 +236,8 @@ schemaToObjectType resolver schema = do
   pure $
     ObjectType
       { freeFormObjectType,
-        properties = HashMap.mapKeys fromText properties,
+        properties =
+          HashMap.fromList (map (first fromText) (HashMap.toList properties)),
         requiredProperties =
           HashSet.fromList (map fromText (OpenApi._schemaRequired schema))
       }
