@@ -1,6 +1,6 @@
 {-# LANGUAGE OverloadedStrings #-}
 
-module OpenAPI.Request
+module Tie.Template.Request_
   ( pathVariable,
     requiredQueryParameter,
     optionalQueryParameter,

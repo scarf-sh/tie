@@ -116,7 +116,7 @@ Test/Request.hs
 
 {-# LANGUAGE OverloadedStrings #-}
 
-module OpenAPI.Request
+module Test.Request
   ( pathVariable,
     requiredQueryParameter,
     optionalQueryParameter,
