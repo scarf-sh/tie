@@ -494,7 +494,7 @@ import Test.Schemas.Vehicle
 
 data Car = Car
     {
-        has_4_wheel_drive :: (Data.Maybe.Maybe (GHC.Types.Bool)),
+        has4WheelDrive :: (Data.Maybe.Maybe (GHC.Types.Bool)),
         id :: GHC.Int.Int,
         model :: (Data.Maybe.Maybe (Data.Text.Text)),
         name :: (Data.Maybe.Maybe (Data.Text.Text)),
@@ -505,7 +505,7 @@ data Car = Car
 instance Data.Aeson.ToJSON Car where
     toJSON Car {..} = Data.Aeson.object
         [
-            "has_4_wheel_drive" Data.Aeson..= has_4_wheel_drive,
+            "has_4_wheel_drive" Data.Aeson..= has4WheelDrive,
             "id" Data.Aeson..= id,
             "model" Data.Aeson..= model,
             "name" Data.Aeson..= name,
@@ -513,7 +513,7 @@ instance Data.Aeson.ToJSON Car where
         ]
 
     toEncoding Car {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "has_4_wheel_drive" (Data.Aeson.toEncoding has_4_wheel_drive) <>
+        ( Data.Aeson.Encoding.pair "has_4_wheel_drive" (Data.Aeson.toEncoding has4WheelDrive) <>
           Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
           Data.Aeson.Encoding.pair "model" (Data.Aeson.toEncoding model) <>
           Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
@@ -805,11 +805,11 @@ import Test.Schemas.Vehicle
 data Plane = Plane
     {
         car :: (Data.Maybe.Maybe (Car)),
-        has_reactor :: (Data.Maybe.Maybe (GHC.Types.Bool)),
+        hasReactor :: (Data.Maybe.Maybe (GHC.Types.Bool)),
         id :: (Data.Maybe.Maybe (GHC.Int.Int)),
         model :: (Data.Maybe.Maybe (Data.Text.Text)),
         name :: (Data.Maybe.Maybe (Data.Text.Text)),
-        nb_passengers :: (Data.Maybe.Maybe (GHC.Int.Int)),
+        nbPassengers :: (Data.Maybe.Maybe (GHC.Int.Int)),
         type' :: (Data.Maybe.Maybe (Data.Text.Text))
     }
     deriving (Show)
@@ -818,21 +818,21 @@ instance Data.Aeson.ToJSON Plane where
     toJSON Plane {..} = Data.Aeson.object
         [
             "car" Data.Aeson..= car,
-            "has_reactor" Data.Aeson..= has_reactor,
+            "has_reactor" Data.Aeson..= hasReactor,
             "id" Data.Aeson..= id,
             "model" Data.Aeson..= model,
             "name" Data.Aeson..= name,
-            "nb_passengers" Data.Aeson..= nb_passengers,
+            "nb_passengers" Data.Aeson..= nbPassengers,
             "type" Data.Aeson..= type'
         ]
 
     toEncoding Plane {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "car" (Data.Aeson.toEncoding car) <>
-          Data.Aeson.Encoding.pair "has_reactor" (Data.Aeson.toEncoding has_reactor) <>
+          Data.Aeson.Encoding.pair "has_reactor" (Data.Aeson.toEncoding hasReactor) <>
           Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
           Data.Aeson.Encoding.pair "model" (Data.Aeson.toEncoding model) <>
           Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
-          Data.Aeson.Encoding.pair "nb_passengers" (Data.Aeson.toEncoding nb_passengers) <>
+          Data.Aeson.Encoding.pair "nb_passengers" (Data.Aeson.toEncoding nbPassengers) <>
           Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
         )
 

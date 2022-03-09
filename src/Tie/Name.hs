@@ -146,11 +146,11 @@ toConstructorName = toDataTypeName
 
 toFunctionName :: Name -> PP.Doc ann
 toFunctionName =
-  PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . Text.unpack . unName
+  PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . toCamelCase . Text.unpack . unName
 
 toFieldName :: Name -> PP.Doc ann
 toFieldName =
-  PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . Text.unpack . unName
+  PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . toCamelCase . Text.unpack . unName
 
 toParamName :: Name -> PP.Doc ann
 toParamName =
@@ -179,7 +179,7 @@ operationRequestBodyName (Name operationName) =
 
 toApiMemberName :: Name -> PP.Doc ann
 toApiMemberName =
-  PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . Text.unpack . unName
+  PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . toCamelCase . Text.unpack . unName
 
 toApiResponseTypeName :: Name -> PP.Doc ann
 toApiResponseTypeName =
@@ -264,3 +264,11 @@ haskelify xs =
       _ -> x
     | x <- xs
   ]
+
+toCamelCase :: String -> String
+toCamelCase input =
+  (prefix <>) . (<> suffix) . concat . map (capitalizeFirstLetter . Text.unpack) . Text.split (== '_') . Text.pack $ input
+  where
+    -- Preserve leading and trailing _
+    prefix = takeWhile ('_' ==) input
+    suffix = takeWhile ('_' ==) (reverse input)

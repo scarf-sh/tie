@@ -178,10 +178,10 @@ operationSchemaDependencies getDependencies Operation {..} =
            | (_, Response {jsonResponseContent = Just jsonContent}) <- responses
          ]
       ++ [ getDependencies schema
-          | Param{schema} <- queryParams
+           | Param {schema} <- queryParams
          ]
       ++ [ getDependencies schema
-          | Param{schema} <- headerParams
+           | Param {schema} <- headerParams
          ]
 
 -- | Dependencies in the Response.* modules.

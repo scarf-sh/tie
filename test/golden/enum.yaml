@@ -67,7 +67,7 @@ paths:
         '201':
           description: Cool!
 components:
-  parameters: 
+  parameters:
     order: 
       name: order
       in: query

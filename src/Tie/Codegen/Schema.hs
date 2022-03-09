@@ -420,5 +420,4 @@ codegenEnumeration typName alternatives _includeNull =
                         )
                   )
             )
-
    in PP.vsep [dataDecl, mempty, toJSON, mempty, fromJSON, mempty, toHttpApiData, mempty, fromHttpApiData]
