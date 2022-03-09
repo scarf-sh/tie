@@ -1,0 +1,85 @@
+openapi: "3.0.0"
+info:
+  version: 2.0.0
+  title: Scarf API
+  license:
+    name: MIT
+servers:
+  - url: http://api.scarf.sh
+paths:
+  /v2/{entity}/packages:
+    parameters:
+      - "$ref": "#/components/parameters/entity"
+    get: 
+      operationId: dummy
+      summary: Dummy route
+      responses:
+        '200':
+          description: Dummy response
+          content:
+            application/json:
+              schema:
+                "$ref": "#/components/schemas/Package"
+components:
+  parameters:
+    entity: 
+      name: entity
+      in: path
+      required: true
+      schema: 
+        type: string
+  schemas:
+    PackageType:
+      type: string
+      enum:
+        - docker
+        - file
+        - python
+        - npm
+    PackageBase:
+      type: object
+      required:
+        - id
+        - name
+        - short_description
+        - type
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        short_description:
+          type: string
+        long_description:
+          type: string
+        website:
+          type: string
+        type:
+          "$ref": "#/components/schemas/PackageType"
+    FilePackage:
+   
+      allOf:
+        - "$ref": "#/components/schemas/PackageBase"
+        - required:
+            - incoming_path
+            - outgoing_url
+          properties:
+            incoming_path: 
+              type: string
+            outgoing_url: 
+              type: string
+    DockerPackage:
+      required:
+        - image
+        - backend_registry
+      allOf:
+        - "$ref": "#/components/schemas/PackageBase"
+        - properties:
+            image: 
+              type: string
+            backend_registry:
+              type: string
+    Package:
+        oneOf: 
+          - "$ref": "#/components/schemas/FilePackage"
+          - "$ref": "#/components/schemas/DockerPackage"

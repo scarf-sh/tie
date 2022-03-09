@@ -1,0 +1,749 @@
+Test/Api.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Api where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Request
+import Test.Response
+
+import Test.Schemas.Package
+
+import Test.Response.Dummy
+
+data Api m = Api {
+    -- | Dummy route
+    dummy ::
+        -- @entity@
+        Data.Text.Text ->
+        m DummyResponse
+}
+
+application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
+application run api notFound request respond =
+    case Network.Wai.pathInfo request of
+        ["v2", __entity, "packages"] ->
+            pathVariable __entity (\__entity request respond ->
+                case Network.Wai.requestMethod request of
+                    "GET" ->
+                        run request (do
+                            response <- Control.Monad.Catch.handle pure (dummy api __entity )
+                            Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
+                        )
+                    x ->
+                        unsupportedMethod x) request respond
+
+        _ ->
+            notFound request respond
+    where
+        unsupportedMethod _ =
+            respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
+---------------------
+Test/Request.hs
+
+{-# LANGUAGE OverloadedStrings #-}
+
+module Test.Request
+  ( pathVariable,
+    requiredQueryParameter,
+    optionalQueryParameter,
+    requiredHeader,
+    optionalHeader,
+    parseRequestBody,
+    jsonBodyParser,
+    formBodyParser,
+  )
+where
+
+import Data.Aeson (FromJSON, parseJSON)
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import Data.Attoparsec.ByteString (eitherResult, parseWith)
+import Data.ByteString (ByteString)
+import qualified Data.ByteString as ByteString
+import qualified Data.ByteString.Lazy as LBS
+import qualified Data.List as List
+import Data.Maybe (fromMaybe)
+import Data.Text (Text)
+import qualified Data.Text as Text
+import qualified Data.Text.Encoding as Text
+import Network.HTTP.Types (HeaderName, hContentType)
+import qualified Network.Wai as Wai
+import System.IO.Unsafe (unsafeInterleaveIO)
+import Web.FormUrlEncoded (FromForm, urlDecodeAsForm)
+import Web.HttpApiData
+  ( FromHttpApiData,
+    parseHeader,
+    parseQueryParam,
+    parseUrlPiece,
+  )
+
+pathVariable ::
+  FromHttpApiData a =>
+  -- | Path variable value
+  Text ->
+  (a -> Wai.Application) ->
+  Wai.Application
+pathVariable value withVariable = \request respond ->
+  case parseUrlPiece value of
+    Left _err ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+    Right x ->
+      withVariable x request respond
+{-# INLINEABLE pathVariable #-}
+
+requiredQueryParameter ::
+  FromHttpApiData a =>
+  ByteString ->
+  (a -> Wai.Application) ->
+  Wai.Application
+requiredQueryParameter name withParam = \request respond ->
+  case List.lookup name (Wai.queryString request) of
+    Nothing ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+    Just Nothing ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+    Just (Just value) ->
+      case parseQueryParam (Text.decodeUtf8 value) of
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right x ->
+          withParam x request respond
+{-# INLINEABLE requiredQueryParameter #-}
+
+optionalQueryParameter ::
+  FromHttpApiData a =>
+  ByteString ->
+  -- | Allow empty, e.g. "x="
+  Bool ->
+  (Maybe a -> Wai.Application) ->
+  Wai.Application
+optionalQueryParameter name allowEmpty withParam = \request respond ->
+  case List.lookup name (Wai.queryString request) of
+    Nothing ->
+      withParam Nothing request respond
+    Just Nothing
+      | allowEmpty ->
+        withParam Nothing request respond
+      | otherwise ->
+        respond (Wai.responseBuilder (toEnum 400) [] mempty)
+    Just (Just value) ->
+      case parseQueryParam (Text.decodeUtf8 value) of
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right x ->
+          withParam (Just x) request respond
+{-# INLINEABLE optionalQueryParameter #-}
+
+optionalHeader ::
+  FromHttpApiData a =>
+  HeaderName ->
+  (Maybe a -> Wai.Application) ->
+  Wai.Application
+optionalHeader name withHeader = \request respond ->
+  case List.lookup name (Wai.requestHeaders request) of
+    Nothing ->
+      withHeader Nothing request respond
+    Just value ->
+      case parseHeader value of
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right x ->
+          withHeader (Just x) request respond
+{-# INLINEABLE optionalHeader #-}
+
+requiredHeader ::
+  FromHttpApiData a =>
+  HeaderName ->
+  (a -> Wai.Application) ->
+  Wai.Application
+requiredHeader name withHeader = \request respond ->
+  case List.lookup name (Wai.requestHeaders request) of
+    Nothing ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+    Just value ->
+      case parseHeader value of
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right x ->
+          withHeader x request respond
+{-# INLINEABLE requiredHeader #-}
+
+data BodyParser a = BodyParser ByteString ((a -> Wai.Application) -> Wai.Application)
+
+jsonBodyParser :: FromJSON a => BodyParser a
+jsonBodyParser = BodyParser "application/json" parseRequestBodyJSON
+{-# INLINE jsonBodyParser #-}
+
+formBodyParser :: FromForm a => BodyParser a
+formBodyParser = BodyParser "application/xxx-form-urlencoded" parseRequestBodyForm
+{-# INLINE formBodyParser #-}
+
+parseRequestBody :: [BodyParser a] -> (a -> Wai.Application) -> Wai.Application
+parseRequestBody parsers withBody = \request respond -> do
+  let contentType =
+        fromMaybe
+          "text/html"
+          (List.lookup hContentType (Wai.requestHeaders request))
+
+      bodyParser =
+        List.find
+          (\(BodyParser expectedContentType _) -> expectedContentType == contentType)
+          parsers
+
+  case bodyParser of
+    Just (BodyParser _ parseBody) ->
+      parseBody withBody request respond
+    Nothing ->
+      respond (Wai.responseBuilder (toEnum 415) [] mempty)
+{-# INLINE parseRequestBody #-}
+
+parseRequestBodyJSON :: FromJSON a => (a -> Wai.Application) -> Wai.Application
+parseRequestBodyJSON withBody = \request respond -> do
+  result <- parseWith (Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
+  case eitherResult result of
+    Left _err ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+    Right value ->
+      case Data.Aeson.Types.parseEither Data.Aeson.parseJSON value of
+        Left _err ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right body ->
+          withBody body request respond
+{-# INLINEABLE parseRequestBodyJSON #-}
+
+parseRequestBodyForm :: FromForm a => (a -> Wai.Application) -> Wai.Application
+parseRequestBodyForm withBody = \request respond -> do
+  -- Reads the body using lazy IO. Not great but it gets us
+  -- going and is pretty local.
+  let getBodyBytes :: IO [ByteString]
+      getBodyBytes = do
+        chunk <- Wai.getRequestBodyChunk request
+        case chunk of
+          "" -> pure []
+          _ -> do
+            rest <- unsafeInterleaveIO getBodyBytes
+            pure (chunk : rest)
+
+  bytes <- getBodyBytes
+  case urlDecodeAsForm (LBS.fromChunks bytes) of
+    Left _err ->
+      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+    Right form ->
+      withBody form request respond
+{-# INLINEABLE parseRequestBodyForm #-}
+
+---------------------
+Test/Response.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Response where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+class ToResponse a where
+    toResponse :: a -> Network.Wai.Response
+---------------------
+Test/Response/Dummy.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Response.Dummy where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.Package
+
+import Test.Response
+
+
+
+data DummyResponse
+    = DummyResponse200 Package 
+    deriving (Show)
+
+instance Control.Exception.Exception DummyResponse
+
+instance ToResponse DummyResponse where
+    toResponse (DummyResponse200 x ) =
+        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+Test/Schemas/DockerPackage.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Schemas.DockerPackage where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.PackageBase
+import Test.Schemas.PackageType
+
+
+
+data DockerPackage = DockerPackage
+    {
+        backendRegistry :: (Data.Maybe.Maybe (Data.Text.Text)),
+        id :: Data.Text.Text,
+        image :: (Data.Maybe.Maybe (Data.Text.Text)),
+        longDescription :: (Data.Maybe.Maybe (Data.Text.Text)),
+        name :: Data.Text.Text,
+        shortDescription :: Data.Text.Text,
+        type' :: PackageType,
+        website :: (Data.Maybe.Maybe (Data.Text.Text))
+    }
+    deriving (Show)
+
+instance Data.Aeson.ToJSON DockerPackage where
+    toJSON DockerPackage {..} = Data.Aeson.object
+        [
+            "backend_registry" Data.Aeson..= backendRegistry,
+            "id" Data.Aeson..= id,
+            "image" Data.Aeson..= image,
+            "long_description" Data.Aeson..= longDescription,
+            "name" Data.Aeson..= name,
+            "short_description" Data.Aeson..= shortDescription,
+            "type" Data.Aeson..= type',
+            "website" Data.Aeson..= website
+        ]
+
+    toEncoding DockerPackage {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "backend_registry" (Data.Aeson.toEncoding backendRegistry) <>
+          Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
+          Data.Aeson.Encoding.pair "image" (Data.Aeson.toEncoding image) <>
+          Data.Aeson.Encoding.pair "long_description" (Data.Aeson.toEncoding longDescription) <>
+          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
+          Data.Aeson.Encoding.pair "short_description" (Data.Aeson.toEncoding shortDescription) <>
+          Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type') <>
+          Data.Aeson.Encoding.pair "website" (Data.Aeson.toEncoding website)
+        )
+
+instance Data.Aeson.FromJSON DockerPackage where
+    parseJSON = Data.Aeson.withObject "DockerPackage" $ \o ->
+        DockerPackage
+            <$> o Data.Aeson..:? "backend_registry"
+            <*> o Data.Aeson..: "id"
+            <*> o Data.Aeson..:? "image"
+            <*> o Data.Aeson..:? "long_description"
+            <*> o Data.Aeson..: "name"
+            <*> o Data.Aeson..: "short_description"
+            <*> o Data.Aeson..: "type"
+            <*> o Data.Aeson..:? "website"
+---------------------
+Test/Schemas/FilePackage.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Schemas.FilePackage where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.PackageBase
+import Test.Schemas.PackageType
+
+
+
+data FilePackage = FilePackage
+    {
+        id :: Data.Text.Text,
+        incomingPath :: Data.Text.Text,
+        longDescription :: (Data.Maybe.Maybe (Data.Text.Text)),
+        name :: Data.Text.Text,
+        outgoingUrl :: Data.Text.Text,
+        shortDescription :: Data.Text.Text,
+        type' :: PackageType,
+        website :: (Data.Maybe.Maybe (Data.Text.Text))
+    }
+    deriving (Show)
+
+instance Data.Aeson.ToJSON FilePackage where
+    toJSON FilePackage {..} = Data.Aeson.object
+        [
+            "id" Data.Aeson..= id,
+            "incoming_path" Data.Aeson..= incomingPath,
+            "long_description" Data.Aeson..= longDescription,
+            "name" Data.Aeson..= name,
+            "outgoing_url" Data.Aeson..= outgoingUrl,
+            "short_description" Data.Aeson..= shortDescription,
+            "type" Data.Aeson..= type',
+            "website" Data.Aeson..= website
+        ]
+
+    toEncoding FilePackage {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
+          Data.Aeson.Encoding.pair "incoming_path" (Data.Aeson.toEncoding incomingPath) <>
+          Data.Aeson.Encoding.pair "long_description" (Data.Aeson.toEncoding longDescription) <>
+          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
+          Data.Aeson.Encoding.pair "outgoing_url" (Data.Aeson.toEncoding outgoingUrl) <>
+          Data.Aeson.Encoding.pair "short_description" (Data.Aeson.toEncoding shortDescription) <>
+          Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type') <>
+          Data.Aeson.Encoding.pair "website" (Data.Aeson.toEncoding website)
+        )
+
+instance Data.Aeson.FromJSON FilePackage where
+    parseJSON = Data.Aeson.withObject "FilePackage" $ \o ->
+        FilePackage
+            <$> o Data.Aeson..: "id"
+            <*> o Data.Aeson..: "incoming_path"
+            <*> o Data.Aeson..:? "long_description"
+            <*> o Data.Aeson..: "name"
+            <*> o Data.Aeson..: "outgoing_url"
+            <*> o Data.Aeson..: "short_description"
+            <*> o Data.Aeson..: "type"
+            <*> o Data.Aeson..:? "website"
+---------------------
+Test/Schemas/Package.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Schemas.Package where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.DockerPackage
+import Test.Schemas.FilePackage
+
+
+
+data Package
+    = PackageFilePackage FilePackage
+    | PackageDockerPackage DockerPackage
+    deriving (Show)
+
+instance Data.Aeson.ToJSON Package where
+    toJSON (PackageFilePackage x) = Data.Aeson.toJSON x
+    toJSON (PackageDockerPackage x) = Data.Aeson.toJSON x
+
+    toEncoding (PackageFilePackage x) = Data.Aeson.toEncoding x
+    toEncoding (PackageDockerPackage x) = Data.Aeson.toEncoding x
+
+instance Data.Aeson.FromJSON Package where
+    parseJSON x =
+        (PackageFilePackage <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (PackageDockerPackage <$> Data.Aeson.parseJSON x)
+---------------------
+Test/Schemas/PackageBase.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Schemas.PackageBase where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.PackageType
+
+
+
+data PackageBase = PackageBase
+    {
+        id :: Data.Text.Text,
+        longDescription :: (Data.Maybe.Maybe (Data.Text.Text)),
+        name :: Data.Text.Text,
+        shortDescription :: Data.Text.Text,
+        type' :: PackageType,
+        website :: (Data.Maybe.Maybe (Data.Text.Text))
+    }
+    deriving (Show)
+
+instance Data.Aeson.ToJSON PackageBase where
+    toJSON PackageBase {..} = Data.Aeson.object
+        [
+            "id" Data.Aeson..= id,
+            "long_description" Data.Aeson..= longDescription,
+            "name" Data.Aeson..= name,
+            "short_description" Data.Aeson..= shortDescription,
+            "type" Data.Aeson..= type',
+            "website" Data.Aeson..= website
+        ]
+
+    toEncoding PackageBase {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
+          Data.Aeson.Encoding.pair "long_description" (Data.Aeson.toEncoding longDescription) <>
+          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
+          Data.Aeson.Encoding.pair "short_description" (Data.Aeson.toEncoding shortDescription) <>
+          Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type') <>
+          Data.Aeson.Encoding.pair "website" (Data.Aeson.toEncoding website)
+        )
+
+instance Data.Aeson.FromJSON PackageBase where
+    parseJSON = Data.Aeson.withObject "PackageBase" $ \o ->
+        PackageBase
+            <$> o Data.Aeson..: "id"
+            <*> o Data.Aeson..:? "long_description"
+            <*> o Data.Aeson..: "name"
+            <*> o Data.Aeson..: "short_description"
+            <*> o Data.Aeson..: "type"
+            <*> o Data.Aeson..:? "website"
+---------------------
+Test/Schemas/PackageType.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Schemas.PackageType where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+
+
+
+
+data PackageType
+    = PackageTypeDocker
+    | PackageTypeFile
+    | PackageTypePython
+    | PackageTypeNpm
+    deriving (Eq, Show)
+
+instance Data.Aeson.ToJSON PackageType where
+    toJSON x = case x of
+        PackageTypeDocker -> "docker"
+        PackageTypeFile -> "file"
+        PackageTypePython -> "python"
+        PackageTypeNpm -> "npm"
+
+    toEncoding x = case x of
+        PackageTypeDocker -> Data.Aeson.Encoding.text "docker"
+        PackageTypeFile -> Data.Aeson.Encoding.text "file"
+        PackageTypePython -> Data.Aeson.Encoding.text "python"
+        PackageTypeNpm -> Data.Aeson.Encoding.text "npm"
+
+instance Data.Aeson.FromJSON PackageType where
+    parseJSON = Data.Aeson.withText "PackageType" $ \s ->
+        case s of
+            "docker" -> pure PackageTypeDocker
+            "file" -> pure PackageTypeFile
+            "python" -> pure PackageTypePython
+            "npm" -> pure PackageTypeNpm
+            _ -> fail "invalid enum value"
+
+instance Web.HttpApiData.ToHttpApiData PackageType where
+    toQueryParam x = case x of
+        PackageTypeDocker -> "docker"
+        PackageTypeFile -> "file"
+        PackageTypePython -> "python"
+        PackageTypeNpm -> "npm"
+
+instance Web.HttpApiData.FromHttpApiData PackageType where
+    parseUrlPiece x =
+        case x of
+            "docker" -> pure PackageTypeDocker
+            "file" -> pure PackageTypeFile
+            "python" -> pure PackageTypePython
+            "npm" -> pure PackageTypeNpm
+            _ -> Left "invalid enum value"
+---------------------
+test.cabal
+
+cabal-version: 3.0
+name: test
+version: 0.1.0.0
+library
+  build-depends:
+    , aeson
+    , attoparsec
+    , base
+    , bytestring
+    , exceptions
+    , ghc-prim
+    , http-api-data
+    , http-types
+    , text
+    , time
+    , wai
+  exposed-modules:
+    Test.Api
+    Test.Request
+    Test.Response
+    Test.Response.Dummy
+    Test.Schemas.DockerPackage
+    Test.Schemas.FilePackage
+    Test.Schemas.Package
+    Test.Schemas.PackageBase
+    Test.Schemas.PackageType

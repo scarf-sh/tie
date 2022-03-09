@@ -295,9 +295,9 @@ typeDependencies getDependencies ty =
   -- we do in 'isObjectType'.
   case ty of
     AllOf allOfs ->
-      concatMap getDependencies allOfs
+      concatMap (allOfDependencies getDependencies) allOfs
     AnyOf anyOfs ->
-      concatMap getDependencies anyOfs
+      concatMap (allOfDependencies getDependencies) anyOfs
     OneOf oneOfs ->
       concatMap getDependencies oneOfs
     Not not ->
@@ -308,6 +308,16 @@ typeDependencies getDependencies ty =
       objectTypeDependencies getDependencies objectType
     Array elemType ->
       getDependencies elemType
+
+-- | @allOf@ require specialized traversal as it merges objects
+allOfDependencies :: (Named Type -> [Name]) -> Named Type -> [Name]
+allOfDependencies getDependencies named = case named of
+  Named name ty ->
+    -- Note down the name of the dependency but still decent
+    -- to collect the transitive dependencies.
+    name : typeDependencies getDependencies ty
+  Unnamed ty ->
+    typeDependencies getDependencies ty
 
 -- | Dependencies of a 'Named Type'. This doesn't return transitive
 -- dependencies.
