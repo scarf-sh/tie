@@ -23,7 +23,7 @@ paths:
   /packages2:
     get:
       summary: List all packages
-      operationId: listPackages
+      operationId: listPackages2
       tags:
         - packages
       responses:
@@ -49,21 +49,43 @@ paths:
             - desc
     get:
       summary: List all packages
-      operationId: listPackages
+      operationId: listPackages3
       tags:
         - packages
       responses:
         '201':
           description: Cool!
-
+  /packages4:
+    parameters:
+      - "$ref": "#/components/parameters/order"
+    get:
+      summary: List all packages
+      operationId: listPackages4
+      tags:
+        - packages
+      responses:
+        '201':
+          description: Cool!
 components:
+  parameters: 
+    order: 
+      name: order
+      in: query
+      required: false
+      schema:
+        "$ref": "#/components/schemas/Order"
   schemas:
+    Order:
+      type: string
+      enum: 
+        - asc
+        - desc
     Package: 
-        type: string
-        enum: 
-          - DOCKER
-          - PYTHON
-          - NPM
+      type: string
+      enum: 
+        - DOCKER
+        - PYTHON
+        - NPM
     Packages:
       type: array
       items:
