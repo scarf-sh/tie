@@ -386,7 +386,7 @@ instance Control.Exception.Exception ListPackagesResponse
 
 instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x ) =
-        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+        Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Response/ListPackages2.hs
 
@@ -470,7 +470,7 @@ instance Control.Exception.Exception ListPackages2Response
 
 instance ToResponse ListPackages2Response where
     toResponse (ListPackages2Response200 x ) =
-        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+        Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Response/ListPackages3.hs
 
@@ -548,7 +548,7 @@ instance Control.Exception.Exception ListPackages3Response
 
 instance ToResponse ListPackages3Response where
     toResponse (ListPackages3Response201  ) =
-        Network.Wai.responseBuilder (toEnum 201) [] mempty
+        Network.Wai.responseBuilder (toEnum 201) ([]) mempty
 ---------------------
 Test/Response/ListPackages4.hs
 
@@ -595,7 +595,7 @@ instance Control.Exception.Exception ListPackages4Response
 
 instance ToResponse ListPackages4Response where
     toResponse (ListPackages4Response201  ) =
-        Network.Wai.responseBuilder (toEnum 201) [] mempty
+        Network.Wai.responseBuilder (toEnum 201) ([]) mempty
 ---------------------
 Test/Schemas/Order.hs
 

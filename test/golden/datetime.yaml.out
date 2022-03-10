@@ -335,7 +335,7 @@ instance Control.Exception.Exception TestResponse
 
 instance ToResponse TestResponse where
     toResponse (TestResponse200 x ) =
-        Network.Wai.responseBuilder (toEnum 200) [(Network.HTTP.Types.hContentType, "application/json")] (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+        Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Schemas/Test.hs
 

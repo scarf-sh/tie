@@ -38,6 +38,19 @@ paths:
               description: The package details URL
               schema:
                 type: string
+  /test2:
+    get:
+      summary: test
+      operationId: test2
+      responses:
+        '201':
+          description: Successfully created package
+          headers:
+            Location:
+              required: true
+              description: The package details URL
+              schema:
+                type: string
 components:
   schemas:
     Test: 

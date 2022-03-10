@@ -103,15 +103,32 @@ codegenToResponses operationName responses defaultResponse =
               | otherwise =
                 []
 
-            otherHeaders =
+            requiredHeaders =
               [ "(\"" <> toParamName name <> "\"," <+> "Web.HttpApiData.toHeader" <+> toParamBinder name <> ")"
-                | Header {name} <- headers
+                | Header {name, required = True} <- headers
               ]
-         in "["
+
+            optionalHeaders =
+              [ "[" <> "(\"" <> toParamName name <> "\"," <+> "Web.HttpApiData.toHeader" <+> toParamBinder name <> ")"
+                  <+> "|"
+                  <+> "Just"
+                  <+> toParamBinder name
+                  <+> "<-"
+                  <+> "[" <> toParamBinder name <> "]" <> "]"
+                | Header {name, required = False} <- headers
+              ]
+         in "("
               <> PP.concatWith
-                (\x y -> x <> "," <+> y)
-                (contentType ++ otherHeaders)
-              <> "]"
+                (\x y -> x <+> "++" <+> y)
+                ( optionalHeaders
+                    ++ [ "["
+                           <> PP.concatWith
+                             (\x y -> x <> "," <+> y)
+                             (contentType ++ requiredHeaders)
+                           <> "]"
+                       ]
+                )
+              <> ")"
 
       responseHeaderBinders Response {headers} =
         PP.vsep [toParamBinder name | Header {name} <- headers]
