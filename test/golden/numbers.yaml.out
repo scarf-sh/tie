@@ -328,7 +328,7 @@ import Test.Response
 
 
 data TestResponse
-    = TestResponse200 Test 
+    = TestResponse200 Test
     deriving (Show)
 
 instance Control.Exception.Exception TestResponse

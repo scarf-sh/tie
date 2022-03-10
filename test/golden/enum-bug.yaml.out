@@ -331,7 +331,7 @@ import Test.Response
 
 
 data DummyResponse
-    = DummyResponse200 Package 
+    = DummyResponse200 Package
     deriving (Show)
 
 instance Control.Exception.Exception DummyResponse

@@ -401,7 +401,7 @@ instance Data.Aeson.FromJSON CreateUserResponseBody200 where
             <$> o Data.Aeson..:? "name"
 
 data CreateUserResponse
-    = CreateUserResponse200 CreateUserResponseBody200 
+    = CreateUserResponse200 CreateUserResponseBody200
     deriving (Show)
 
 instance Control.Exception.Exception CreateUserResponse
@@ -448,7 +448,7 @@ import Test.Response
 
 
 data GetUserResponse
-    = GetUserResponse200 Vehicle 
+    = GetUserResponse200 Vehicle
     deriving (Show)
 
 instance Control.Exception.Exception GetUserResponse

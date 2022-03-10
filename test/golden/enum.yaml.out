@@ -379,7 +379,7 @@ import Test.Response
 
 
 data ListPackagesResponse
-    = ListPackagesResponse200 Package 
+    = ListPackagesResponse200 Package
     deriving (Show)
 
 instance Control.Exception.Exception ListPackagesResponse
@@ -463,7 +463,7 @@ instance Web.HttpApiData.FromHttpApiData ListPackages2ResponseBody200 where
             _ -> Left "invalid enum value"
 
 data ListPackages2Response
-    = ListPackages2Response200 ListPackages2ResponseBody200 
+    = ListPackages2Response200 ListPackages2ResponseBody200
     deriving (Show)
 
 instance Control.Exception.Exception ListPackages2Response
@@ -541,7 +541,7 @@ instance Web.HttpApiData.FromHttpApiData ListPackages3OrderParam where
             _ -> Left "invalid enum value"
 
 data ListPackages3Response
-    = ListPackages3Response201 
+    = ListPackages3Response201
     deriving (Show)
 
 instance Control.Exception.Exception ListPackages3Response
@@ -588,7 +588,7 @@ import Test.Response
 
 
 data ListPackages4Response
-    = ListPackages4Response201 
+    = ListPackages4Response201
     deriving (Show)
 
 instance Control.Exception.Exception ListPackages4Response

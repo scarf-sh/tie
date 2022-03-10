@@ -358,7 +358,7 @@ import Test.Response
 
 
 data ListPackagesResponse
-    = ListPackagesResponse200 Packages 
+    = ListPackagesResponse200 Packages
     deriving (Show)
 
 instance Control.Exception.Exception ListPackagesResponse
@@ -405,7 +405,7 @@ import Test.Response
 
 
 data ListPackages2Response
-    = ListPackages2Response200 [ Package ] 
+    = ListPackages2Response200 [ Package ]
     deriving (Show)
 
 instance Control.Exception.Exception ListPackages2Response
@@ -452,7 +452,7 @@ import Test.Response
 
 
 data ListPackages3Response
-    = ListPackages3Response200 [ Inline ] 
+    = ListPackages3Response200 [ Inline ]
     deriving (Show)
 
 instance Control.Exception.Exception ListPackages3Response

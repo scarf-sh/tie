@@ -361,8 +361,8 @@ import Test.Response
 
 
 data CreatePetsResponse
-    = CreatePetsResponse201 
-    | CreatePetsDefaultResponse Network.HTTP.Types.Status Error 
+    = CreatePetsResponse201
+    | CreatePetsDefaultResponse Network.HTTP.Types.Status Error
     deriving (Show)
 
 instance Control.Exception.Exception CreatePetsResponse
@@ -413,7 +413,7 @@ import Test.Response
 
 data ListPetsResponse
     = ListPetsResponse200 Pets (Data.Maybe.Maybe (Data.Text.Text))
-    | ListPetsDefaultResponse Network.HTTP.Types.Status Error 
+    | ListPetsDefaultResponse Network.HTTP.Types.Status Error
     deriving (Show)
 
 instance Control.Exception.Exception ListPetsResponse
@@ -463,8 +463,8 @@ import Test.Response
 
 
 data ShowPetByIdResponse
-    = ShowPetByIdResponse200 Pet 
-    | ShowPetByIdDefaultResponse Network.HTTP.Types.Status Error 
+    = ShowPetByIdResponse200 Pet
+    | ShowPetByIdDefaultResponse Network.HTTP.Types.Status Error
     deriving (Show)
 
 instance Control.Exception.Exception ShowPetByIdResponse

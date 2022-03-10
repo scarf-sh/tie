@@ -39,29 +39,35 @@ import Tie.Resolve (Resolver)
 -- | Generate code for the responses of an 'Operation'.
 codegenResponses :: Monad m => Resolver m -> Operation -> m (Doc ann)
 codegenResponses resolver Operation {..} = do
-  let responseHeaderTypes Response {headers} =
-        PP.hsep (map codegenHeaderSchema headers)
+  let responseBodyType Response {jsonResponseContent} = case jsonResponseContent of
+        Just jsonContent ->
+          [codegenFieldType jsonContent]
+        Nothing ->
+          []
+
+      responseHeaderTypes Response {headers} =
+        map codegenHeaderSchema headers
 
       decl =
         "data" <+> toApiResponseTypeName name <> PP.line
           <> PP.indent
             4
             ( PP.vsep $
-                [ op <+> toApiResponseConstructorName name statusCode <+> case jsonResponseContent of
-                    Nothing -> mempty
-                    Just jsonContent ->
-                      codegenFieldType jsonContent
-                        <+> responseHeaderTypes response
-                  | (op, (statusCode, response@Response {jsonResponseContent})) <- zip ("=" : repeat "|") responses
+                [ PP.hsep $
+                    concat
+                      [ [op, toApiResponseConstructorName name statusCode],
+                        responseBodyType response,
+                        responseHeaderTypes response
+                      ]
+                  | (op, (statusCode, response)) <- zip ("=" : repeat "|") responses
                 ]
-                  ++ [ "|" <+> toApiDefaultResponseConstructorName name
-                         <+> "Network.HTTP.Types.Status"
-                         <+> case jsonResponseContent of
-                           Nothing -> mempty
-                           Just jsonContent ->
-                             codegenFieldType jsonContent
-                               <+> responseHeaderTypes response
-                       | Just response@Response {jsonResponseContent} <- [defaultResponse]
+                  ++ [ PP.hsep $
+                         concat
+                           [ ["|", toApiDefaultResponseConstructorName name, "Network.HTTP.Types.Status"],
+                             responseBodyType response,
+                             responseHeaderTypes response
+                           ]
+                       | Just response <- [defaultResponse]
                      ]
                   ++ [ "deriving" <+> "(" <> "Show" <> ")"
                      ]
