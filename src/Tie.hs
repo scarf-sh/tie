@@ -255,13 +255,17 @@ generate write packageName apiName inputFile = do
       header =
         codegenModuleHeader (apiHaskellModuleName apiName)
       schemaDependencyCode =
-        map
-          (codegenSchemaDependencies apiName . nubOrd . operationSchemaDependencies shallow)
-          operations
+        codegenSchemaDependencies apiName $
+          nubOrd $
+            concatMap
+              (operationSchemaDependencies shallow)
+              operations
       responseDependencyCode =
-        map
-          (codegenResponseDependencies apiName . nubOrd . operationResponseDependencies)
-          operations
+        codegenResponseDependencies apiName $
+          nubOrd $
+            concatMap
+              operationResponseDependencies
+              operations
 
   write path $
     vsep
@@ -269,9 +273,9 @@ generate write packageName apiName inputFile = do
         mempty,
         codegenExtraApiModuleDependencies apiName,
         mempty,
-        vsep schemaDependencyCode,
+        schemaDependencyCode,
         mempty,
-        vsep responseDependencyCode,
+        responseDependencyCode,
         mempty,
         operationsCode
       ]

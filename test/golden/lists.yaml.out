@@ -32,9 +32,9 @@ import qualified Web.HttpApiData
 import Test.Request
 import Test.Response
 
-import Test.Schemas.Packages
-import Test.Schemas.Package
 import Test.Schemas.Inline
+import Test.Schemas.Package
+import Test.Schemas.Packages
 
 import Test.Response.ListPackages
 import Test.Response.ListPackages2

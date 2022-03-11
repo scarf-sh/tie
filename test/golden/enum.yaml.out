@@ -32,10 +32,8 @@ import qualified Web.HttpApiData
 import Test.Request
 import Test.Response
 
-import Test.Schemas.Package
-
-
 import Test.Schemas.Order
+import Test.Schemas.Package
 
 import Test.Response.ListPackages
 import Test.Response.ListPackages2
