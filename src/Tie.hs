@@ -129,7 +129,7 @@ generate write packageName apiName inputFile = do
   let resolver =
         newResolver
           (specComponents openApi)
-          (\_ -> error "could not resolve reference")
+          (\ref -> error ("could not resolve reference " <> show ref))
 
   -- Extract all the Operations from the spec
   operations' <-
