@@ -35,6 +35,8 @@ paths:
     get:
       operationId: getUser
       responses:
+        '404':
+          description: xxxx
         '200':
           description: xxxx
           content: 

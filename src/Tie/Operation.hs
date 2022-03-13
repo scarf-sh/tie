@@ -278,6 +278,7 @@ operationToOperation resolver errors@Errors {..} method path params OpenApi.Oper
     Operation
       { name = fromText operationId,
         summary = _operationSummary,
+        responses = sortOn fst responses,
         ..
       }
 
