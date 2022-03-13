@@ -52,7 +52,7 @@ application run api notFound request respond =
                 case Network.Wai.requestMethod request of
                     "GET" ->
                         run request (do
-                            response <- Control.Monad.Catch.handle pure (dummy api __entity )
+                            response <- Control.Monad.Catch.handle pure (dummy api __entity)
                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )
                     x ->

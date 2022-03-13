@@ -64,12 +64,12 @@ application run api notFound request respond =
                 "GET" ->
                     optionalQueryParameter "limit" False (\__limit request respond ->
                         run request (do
-                            response <- Control.Monad.Catch.handle pure (listPets api __limit )
+                            response <- Control.Monad.Catch.handle pure (listPets api __limit)
                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )) request respond
                 "POST" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (createPets api  )
+                        response <- Control.Monad.Catch.handle pure (createPets api)
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -80,7 +80,7 @@ application run api notFound request respond =
                 case Network.Wai.requestMethod request of
                     "GET" ->
                         run request (do
-                            response <- Control.Monad.Catch.handle pure (showPetById api __petId )
+                            response <- Control.Monad.Catch.handle pure (showPetById api __petId)
                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )
                     x ->

@@ -59,7 +59,7 @@ application run api notFound request respond =
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (listPackages api  )
+                        response <- Control.Monad.Catch.handle pure (listPackages api)
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -69,7 +69,7 @@ application run api notFound request respond =
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (listPackages2 api  )
+                        response <- Control.Monad.Catch.handle pure (listPackages2 api)
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -79,7 +79,7 @@ application run api notFound request respond =
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (listPackages3 api  )
+                        response <- Control.Monad.Catch.handle pure (listPackages3 api)
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->

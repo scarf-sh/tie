@@ -66,7 +66,7 @@ application run api notFound request respond =
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (listPackages api  )
+                        response <- Control.Monad.Catch.handle pure (listPackages api)
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -76,7 +76,7 @@ application run api notFound request respond =
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (listPackages2 api  )
+                        response <- Control.Monad.Catch.handle pure (listPackages2 api)
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -87,7 +87,7 @@ application run api notFound request respond =
                 "GET" ->
                     optionalQueryParameter "order" False (\__order request respond ->
                         run request (do
-                            response <- Control.Monad.Catch.handle pure (listPackages3 api __order )
+                            response <- Control.Monad.Catch.handle pure (listPackages3 api __order)
                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )) request respond
                 x ->
@@ -98,7 +98,7 @@ application run api notFound request respond =
                 "GET" ->
                     optionalQueryParameter "order" False (\__order request respond ->
                         run request (do
-                            response <- Control.Monad.Catch.handle pure (listPackages4 api __order )
+                            response <- Control.Monad.Catch.handle pure (listPackages4 api __order)
                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )) request respond
                 x ->

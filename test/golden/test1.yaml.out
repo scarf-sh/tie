@@ -75,7 +75,7 @@ application run api notFound request respond =
                             requiredQueryParameter "page" (\__page request respond ->
                                 optionalQueryParameter "offset" False (\__offset request respond ->
                                     run request (do
-                                        response <- Control.Monad.Catch.handle pure (getUser api __id __name __page __offset )
+                                        response <- Control.Monad.Catch.handle pure (getUser api __id __name __page __offset)
                                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                                     )) request respond) request respond
                         "POST" ->

@@ -187,14 +187,17 @@ codegenCallApiMember operationName path queryParams headerParams requestBody =
   "run" <+> "request" <+> "(" <> "do" <> PP.line
     <> PP.indent
       4
-      ( "response" <+> "<-" <+> "Control.Monad.Catch.handle" <+> "pure" <+> "(" <> toApiMemberName operationName
-          <+> "api"
-          <+> PP.hsep
-            ( [toParamBinder name | VariableSegment Param {name} <- path]
-                ++ [toParamBinder name | Param {name} <- queryParams]
-                ++ [toParamBinder name | Param {name} <- headerParams]
-            )
-          <+> (maybe mempty (\_ -> "body") requestBody)
+      ( "response" <+> "<-" <+> "Control.Monad.Catch.handle" <+> "pure"
+          <+> "("
+            <> PP.hsep
+              ( concat
+                  [ [toApiMemberName operationName, "api"],
+                    [toParamBinder name | VariableSegment Param {name} <- path],
+                    [toParamBinder name | Param {name} <- queryParams],
+                    [toParamBinder name | Param {name} <- headerParams],
+                    ["body" | Just {} <- [requestBody]]
+                  ]
+              )
             <> ")"
             <> PP.line
             <> "Control.Monad.IO.Class.liftIO"
