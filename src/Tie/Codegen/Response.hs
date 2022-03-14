@@ -87,8 +87,8 @@ codegenToResponses operationName responses defaultResponse =
         _ -> False
 
       bodyBinder response
-        | hasBody response = "x"
-        | otherwise = mempty
+        | hasBody response = ["x"]
+        | otherwise = []
 
       bodySerialize Response {jsonResponseContent}
         | Just {} <- jsonResponseContent =
@@ -130,17 +130,19 @@ codegenToResponses operationName responses defaultResponse =
                 )
               <> ")"
 
-      responseHeaderBinders Response {headers} =
-        PP.vsep [toParamBinder name | Header {name} <- headers]
-
       decl =
         "instance" <+> "ToResponse" <+> toApiResponseTypeName operationName <+> "where" <> PP.line
           <> PP.indent
             4
             ( PP.vsep $
                 [ "toResponse" <+> "("
-                    <> toApiResponseConstructorName operationName statusCode <+> bodyBinder response
-                      <+> responseHeaderBinders response
+                    <> PP.hsep
+                      ( concat
+                          [ [toApiResponseConstructorName operationName statusCode],
+                            bodyBinder response,
+                            [toParamBinder name | Header {name} <- headers]
+                          ]
+                      )
                     <> ")"
                       <+> "="
                     <> PP.line
@@ -150,9 +152,17 @@ codegenToResponses operationName responses defaultResponse =
                           <+> responseHeaders response
                           <+> bodySerialize response
                       )
-                  | (statusCode, response) <- responses
+                  | (statusCode, response@Response {headers}) <- responses
                 ]
-                  ++ [ "toResponse" <+> "(" <> toApiDefaultResponseConstructorName operationName <+> "status" <+> bodyBinder response <+> responseHeaderBinders response <> ")"
+                  ++ [ "toResponse" <+> "("
+                         <> PP.hsep
+                           ( concat
+                               [ [toApiDefaultResponseConstructorName operationName, "status"],
+                                 bodyBinder response,
+                                 [toParamBinder name | Header {name} <- headers]
+                               ]
+                           )
+                         <> ")"
                          <+> "="
                          <> PP.line
                          <> PP.indent
@@ -161,7 +171,7 @@ codegenToResponses operationName responses defaultResponse =
                                <+> responseHeaders response
                                <+> bodySerialize response
                            )
-                       | Just response@Response {jsonResponseContent} <- [defaultResponse]
+                       | Just response@Response {jsonResponseContent, headers} <- [defaultResponse]
                      ]
             )
    in decl

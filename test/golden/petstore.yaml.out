@@ -366,9 +366,9 @@ data CreatePetsResponse
 instance Control.Exception.Exception CreatePetsResponse
 
 instance ToResponse CreatePetsResponse where
-    toResponse (CreatePetsResponse201  ) =
+    toResponse (CreatePetsResponse201) =
         Network.Wai.responseBuilder (toEnum 201) ([]) mempty
-    toResponse (CreatePetsDefaultResponse status x ) =
+    toResponse (CreatePetsDefaultResponse status x) =
         Network.Wai.responseBuilder status ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Response/ListPets.hs
@@ -419,7 +419,7 @@ instance Control.Exception.Exception ListPetsResponse
 instance ToResponse ListPetsResponse where
     toResponse (ListPetsResponse200 x __x_next) =
         Network.Wai.responseBuilder (toEnum 200) ([("x-next", Web.HttpApiData.toHeader __x_next) | Just __x_next <- [__x_next]] ++ [(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
-    toResponse (ListPetsDefaultResponse status x ) =
+    toResponse (ListPetsDefaultResponse status x) =
         Network.Wai.responseBuilder status ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Response/ShowPetById.hs
@@ -468,9 +468,9 @@ data ShowPetByIdResponse
 instance Control.Exception.Exception ShowPetByIdResponse
 
 instance ToResponse ShowPetByIdResponse where
-    toResponse (ShowPetByIdResponse200 x ) =
+    toResponse (ShowPetByIdResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
-    toResponse (ShowPetByIdDefaultResponse status x ) =
+    toResponse (ShowPetByIdDefaultResponse status x) =
         Network.Wai.responseBuilder status ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Schemas/Error.hs

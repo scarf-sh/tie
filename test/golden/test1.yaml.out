@@ -407,7 +407,7 @@ data CreateUserResponse
 instance Control.Exception.Exception CreateUserResponse
 
 instance ToResponse CreateUserResponse where
-    toResponse (CreateUserResponse200 x ) =
+    toResponse (CreateUserResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 Test/Response/GetUser.hs
@@ -455,9 +455,9 @@ data GetUserResponse
 instance Control.Exception.Exception GetUserResponse
 
 instance ToResponse GetUserResponse where
-    toResponse (GetUserResponse200 x ) =
+    toResponse (GetUserResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
-    toResponse (GetUserResponse404  ) =
+    toResponse (GetUserResponse404) =
         Network.Wai.responseBuilder (toEnum 404) ([]) mempty
 ---------------------
 Test/Schemas/Car.hs
