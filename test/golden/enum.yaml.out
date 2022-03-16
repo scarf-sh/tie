@@ -32,6 +32,7 @@ import qualified Web.HttpApiData
 import Test.Request
 import Test.Response
 
+import Test.Schemas.InsightsTimeRange
 import Test.Schemas.Order
 import Test.Schemas.Package
 
@@ -39,6 +40,7 @@ import Test.Response.ListPackages
 import Test.Response.ListPackages2
 import Test.Response.ListPackages3
 import Test.Response.ListPackages4
+import Test.Response.ListPackages5
 
 data Api m = Api {
     -- | List all packages
@@ -56,7 +58,12 @@ data Api m = Api {
     listPackages4 ::
         -- @order@
         (Data.Maybe.Maybe (Order)) ->
-        m ListPackages4Response
+        m ListPackages4Response,
+    -- | List all packages
+    listPackages5 ::
+        -- @time_range@
+        InsightsTimeRange ->
+        m ListPackages5Response
 }
 
 application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
@@ -103,6 +110,17 @@ application run api notFound request respond =
                         )) request respond
                 x ->
                     unsupportedMethod x
+
+        ["packages5", __time_range] ->
+            pathVariable __time_range (\__time_range request respond ->
+                case Network.Wai.requestMethod request of
+                    "GET" ->
+                        run request (do
+                            response <- Control.Monad.Catch.handle pure (listPackages5 api __time_range)
+                            Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
+                        )
+                    x ->
+                        unsupportedMethod x) request respond
 
         _ ->
             notFound request respond
@@ -595,6 +613,127 @@ instance ToResponse ListPackages4Response where
     toResponse (ListPackages4Response201) =
         Network.Wai.responseBuilder (toEnum 201) ([]) mempty
 ---------------------
+Test/Response/ListPackages5.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Response.ListPackages5 where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.InsightsTimeRange
+
+import Test.Response
+
+
+
+data ListPackages5Response
+    = ListPackages5Response201
+    deriving (Show)
+
+instance Control.Exception.Exception ListPackages5Response
+
+instance ToResponse ListPackages5Response where
+    toResponse (ListPackages5Response201) =
+        Network.Wai.responseBuilder (toEnum 201) ([]) mempty
+---------------------
+Test/Schemas/InsightsTimeRange.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Schemas.InsightsTimeRange where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+
+
+
+
+data InsightsTimeRange
+    = InsightsTimeRangeLast_week
+    | InsightsTimeRangeLast_month
+    | InsightsTimeRangeLast_year
+    deriving (Eq, Show)
+
+instance Data.Aeson.ToJSON InsightsTimeRange where
+    toJSON x = case x of
+        InsightsTimeRangeLast_week -> "last-week"
+        InsightsTimeRangeLast_month -> "last-month"
+        InsightsTimeRangeLast_year -> "last-year"
+
+    toEncoding x = case x of
+        InsightsTimeRangeLast_week -> Data.Aeson.Encoding.text "last-week"
+        InsightsTimeRangeLast_month -> Data.Aeson.Encoding.text "last-month"
+        InsightsTimeRangeLast_year -> Data.Aeson.Encoding.text "last-year"
+
+instance Data.Aeson.FromJSON InsightsTimeRange where
+    parseJSON = Data.Aeson.withText "InsightsTimeRange" $ \s ->
+        case s of
+            "last-week" -> pure InsightsTimeRangeLast_week
+            "last-month" -> pure InsightsTimeRangeLast_month
+            "last-year" -> pure InsightsTimeRangeLast_year
+            _ -> fail "invalid enum value"
+
+instance Web.HttpApiData.ToHttpApiData InsightsTimeRange where
+    toQueryParam x = case x of
+        InsightsTimeRangeLast_week -> "last-week"
+        InsightsTimeRangeLast_month -> "last-month"
+        InsightsTimeRangeLast_year -> "last-year"
+
+instance Web.HttpApiData.FromHttpApiData InsightsTimeRange where
+    parseUrlPiece x =
+        case x of
+            "last-week" -> pure InsightsTimeRangeLast_week
+            "last-month" -> pure InsightsTimeRangeLast_month
+            "last-year" -> pure InsightsTimeRangeLast_year
+            _ -> Left "invalid enum value"
+---------------------
 Test/Schemas/Order.hs
 
 {-# LANGUAGE BangPatterns #-}
@@ -763,5 +902,7 @@ library
     Test.Response.ListPackages2
     Test.Response.ListPackages3
     Test.Response.ListPackages4
+    Test.Response.ListPackages5
+    Test.Schemas.InsightsTimeRange
     Test.Schemas.Order
     Test.Schemas.Package

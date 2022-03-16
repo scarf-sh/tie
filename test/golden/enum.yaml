@@ -66,6 +66,17 @@ paths:
       responses:
         '201':
           description: Cool!
+  /packages5/{time_range}:
+    parameters:
+      - "$ref": "#/components/parameters/time_range"
+    get:
+      summary: List all packages
+      operationId: listPackages5
+      tags:
+        - packages
+      responses:
+        '201':
+          description: Cool!
 components:
   parameters:
     order: 
@@ -74,7 +85,19 @@ components:
       required: false
       schema:
         "$ref": "#/components/schemas/Order"
+    time_range:
+      name: time_range
+      in: path
+      required: true
+      schema:
+        '$ref': '#/components/schemas/InsightsTimeRange'
   schemas:
+    InsightsTimeRange:
+      type: string
+      enum:
+        - last-week
+        - last-month
+        - last-year
     Order:
       type: string
       enum: 

@@ -171,6 +171,7 @@ operationSchemaDependencies getDependencies Operation {..} =
     [ getDependencies jsonRequestBodyContent
       | Just RequestBody {jsonRequestBodyContent} <- [requestBody]
     ]
+      ++ map getDependencies (pathDependencies path)
       ++ [ getDependencies jsonContent
            | Just Response {jsonResponseContent = Just jsonContent} <- [defaultResponse]
          ]
@@ -352,6 +353,10 @@ parsePath path =
         segments ->
           -- TODO this is probably an error
           map toPathSegment segments
+
+pathDependencies :: Path -> [Named Type]
+pathDependencies path =
+  [schema | VariableSegment Param {schema} <- path]
 
 paramToParam ::
   Monad m =>
