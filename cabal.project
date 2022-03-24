@@ -1,3 +1,9 @@
 packages: .
 
+source-repository-package
+    type: git
+    location: https://github.com/alexbiehl/openapi3.git
+    tag: 4793b3c09f8c146161f7e78f8c0924bc9b0ec395
+    --sha256: 0afmsid90sslb5mq2irwy158a2srzd3gs5w4dbhdmb06r5aks74l
+
 index-state: 2022-02-07T17:37:28Z

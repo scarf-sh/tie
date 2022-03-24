@@ -323,7 +323,10 @@ codegenFieldType namedType = case namedType of
           -- Default to Int in case of unknown
           -- TODO warn about unknown formats
           "GHC.Int.Int"
-      TyBoolean -> "GHC.Types.Bool"
+      TyBoolean ->
+        "GHC.Types.Bool"
+      TyHaskellType _ escapedHaskellType ->
+        PP.pretty escapedHaskellType
     Object objectType -> "Data.Aeson.Value"
     Array elemType -> "[" <+> codegenFieldType elemType <+> "]"
 

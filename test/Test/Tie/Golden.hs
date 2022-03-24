@@ -24,6 +24,7 @@ test_Golden_tests = do
                 writer
                 "test" -- package name
                 "Test" -- module name
+                [] -- No extra packages
                 input
             pure (toLazyByteString output)
         )

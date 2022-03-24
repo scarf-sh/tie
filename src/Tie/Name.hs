@@ -41,10 +41,12 @@ module Tie.Name
     operationRequestBodyName,
     apiResponseConstructorName,
     apiDefaultResponseConstructorName,
+    extractHaskellModule,
   )
 where
 
 import Data.Char (toLower, toUpper)
+import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Prettyprinter as PP
 
@@ -272,3 +274,18 @@ toCamelCase input =
     -- Preserve leading and trailing _
     prefix = takeWhile ('_' ==) input
     suffix = takeWhile ('_' ==) (reverse input)
+
+-- @
+--  extractHaskellModules "Int" = []
+--  extractHaskellModules "GHC.Types.Int" == ["GHC.Types"]
+--  extractHaskellModules "Scarf.Hashids.Hashid GHC.Types.Int == ["Scarf.Hashids", "GHC.Types"]"
+-- @
+extractHaskellModule :: Text -> [Text]
+extractHaskellModule =
+  let extractModule ty =
+        case List.init (Text.splitOn "." ty) of
+          [] ->
+            []
+          xs ->
+            [Text.intercalate "." xs]
+   in concatMap extractModule . Text.words

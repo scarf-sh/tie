@@ -31,6 +31,7 @@ module Tie.Operation
     -- * Dependencies
     operationSchemaDependencies,
     operationResponseDependencies,
+    operationExternalDependencies,
 
     -- * Normalization
     normalizeOperation,
@@ -58,6 +59,7 @@ import Tie.Type
     namedTypeDependencies,
     normalizeNamedType,
     schemaRefToType,
+    typeExternalDependencies,
   )
 import Prelude hiding (Type)
 
@@ -165,7 +167,7 @@ errors =
 
 -- | Returns the dependencies on schemas of an operation. Parameterized so
 -- that shallow vs. all transitive dependencies can be extracted.
-operationSchemaDependencies :: (Named Type -> [Name]) -> Operation -> [Name]
+operationSchemaDependencies :: (Named Type -> [a]) -> Operation -> [a]
 operationSchemaDependencies getDependencies Operation {..} =
   concat $
     [ getDependencies jsonRequestBodyContent
@@ -184,6 +186,10 @@ operationSchemaDependencies getDependencies Operation {..} =
       ++ [ getDependencies schema
            | Param {schema} <- headerParams
          ]
+
+operationExternalDependencies :: Operation -> [Text]
+operationExternalDependencies =
+  operationSchemaDependencies (typeExternalDependencies . namedType)
 
 -- | Dependencies in the Response.* modules.
 operationResponseDependencies :: Operation -> [Name]

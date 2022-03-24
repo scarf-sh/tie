@@ -1,0 +1,34 @@
+openapi: "3.0.0"
+info:
+  version: 1.0.0
+  title: Scarf
+  license:
+    name: AllRightsReserved
+servers:
+  - url: https://scarf.sh/api/v1
+paths:
+  /test/{xx}:
+    parameters:
+      - name: xx
+        required: true
+        in: path
+        schema: 
+          type: string
+          x-tie-haskell-type: Scarf.Hashids.Hashid GHC.Types.Int32
+    get:
+      summary: test
+      operationId: test
+      responses:
+        '200':
+          description: Successful response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Test"              
+components:
+  schemas:
+    Test: 
+      properties: 
+        test1: 
+          type: string
+          x-tie-haskell-type: Scarf.Hashids.Hashid Int32

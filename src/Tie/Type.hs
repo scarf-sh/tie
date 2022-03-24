@@ -38,18 +38,20 @@ module Tie.Type
     namedTypeDependencies,
     transitiveDependencies,
     typeDependencies,
+    typeExternalDependencies,
   )
 where
 
 import Control.Monad.Writer (WriterT (..), runWriterT)
 import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Types as Aeson
 import Data.Foldable (foldr1)
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.HashMap.Strict.InsOrd as InsOrd
 import qualified Data.HashSet as HashSet
 import qualified Data.OpenApi as OpenApi
 import qualified Data.Text as Text
-import Tie.Name (Name, fromText)
+import Tie.Name (Name, extractHaskellModule, fromText)
 import Tie.Resolve (Resolver, resolve)
 import Prelude hiding (Type)
 
@@ -96,6 +98,11 @@ data BasicType
   | TyNumber (Maybe NumberFormat)
   | TyInteger (Maybe IntegerFormat)
   | TyBoolean
+  | TyHaskellType
+      [Text]
+      -- ^ Haskell modules to import
+      Text
+      -- ^ Type to insert
   deriving (Eq, Ord, Show)
 
 -- | An object is a collection of property/value pairs.
@@ -186,6 +193,9 @@ schemaToType resolver schema
     Not <$> schemaRefToType resolver notOfRef
   | Just schemaType <- OpenApi._schemaType schema =
     case schemaType of
+      _
+        | Just haskellType <- schemaToExtHaskellType schema ->
+          pure (Basic haskellType)
       OpenApi.OpenApiString ->
         pure (Basic (schemaToStringyType schema))
       OpenApi.OpenApiNumber ->
@@ -263,6 +273,17 @@ schemaToStringyType schema
       Just unknown ->
         Just (FormatUnknown unknown)
 
+schemaToExtHaskellType :: OpenApi.Schema -> Maybe BasicType
+schemaToExtHaskellType schema
+  | let extensions = OpenApi._unDefs (OpenApi._schemaExtensions schema),
+    Just extensionValue <- InsOrd.lookup "tie-haskell-type" extensions,
+    Just haskellType <- Aeson.parseMaybe Aeson.parseJSON extensionValue =
+    let haskellModules =
+          extractHaskellModule haskellType
+     in pure (TyHaskellType haskellModules haskellType)
+  | otherwise =
+    Nothing
+
 schemaToNumberType :: OpenApi.Schema -> BasicType
 schemaToNumberType schema =
   TyNumber $ case OpenApi._schemaFormat schema of
@@ -286,6 +307,27 @@ schemaToIntegerType schema =
       Just FormatInt64
     Just unknown ->
       Just (IntegerFormatUnknown unknown)
+
+-- | Returns external, Haskell module dependencies for a given type.
+typeExternalDependencies :: Type -> [Text]
+typeExternalDependencies ty =
+  case ty of
+    AllOf allOfs ->
+      concatMap (typeExternalDependencies . namedType) allOfs
+    AnyOf anyOfs ->
+      concatMap (typeExternalDependencies . namedType) anyOfs
+    OneOf oneOfs ->
+      concatMap (typeExternalDependencies . namedType) oneOfs
+    Not not ->
+      typeExternalDependencies (namedType not)
+    Basic (TyHaskellType externalModules _) ->
+      externalModules
+    Basic {} ->
+      []
+    Object ObjectType {properties} ->
+      foldMap (typeExternalDependencies . namedType) properties
+    Array elemType ->
+      typeExternalDependencies (namedType elemType)
 
 -- | Extracts the shallow dependencies of a 'Type' by traversing the 'Type' and
 -- until we hit a 'Named' type.

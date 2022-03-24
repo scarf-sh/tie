@@ -8,6 +8,7 @@ module Tie.Codegen.Imports
     codegenResponseDependencies,
     codegenExtraApiModuleDependencies,
     codegenExtraResponseModuleDependencies,
+    codegenExternalHaskellDependencies,
   )
 where
 
@@ -102,5 +103,12 @@ codegenResponseDependencies :: ApiName -> [Name] -> Doc ann
 codegenResponseDependencies apiName dependencies =
   PP.vsep
     [ "import" <+> PP.pretty (toResponseHaskellModuleName apiName dependency)
+      | dependency <- dependencies
+    ]
+
+codegenExternalHaskellDependencies :: [Text] -> Doc ann
+codegenExternalHaskellDependencies dependencies =
+  PP.vsep
+    [ "import" <+> "qualified" <+> PP.pretty dependency
       | dependency <- dependencies
     ]

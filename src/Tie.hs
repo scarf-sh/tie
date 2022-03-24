@@ -19,7 +19,8 @@ import Prettyprinter (Doc, vsep)
 import Prettyprinter.Internal (unsafeTextWithoutNewlines)
 import Tie.Codegen.Cabal (codegenCabalFile)
 import Tie.Codegen.Imports
-  ( codegenExtraApiModuleDependencies,
+  ( codegenExternalHaskellDependencies,
+    codegenExtraApiModuleDependencies,
     codegenExtraResponseModuleDependencies,
     codegenModuleHeader,
     codegenResponseDependencies,
@@ -55,6 +56,7 @@ import Tie.Operation
   ( Operation (..),
     errors,
     normalizeOperation,
+    operationExternalDependencies,
     operationResponseDependencies,
     operationSchemaDependencies,
     pathItemsToOperation,
@@ -68,6 +70,7 @@ import Tie.Type
     schemaToType,
     transitiveDependencies,
     typeDependencies,
+    typeExternalDependencies,
   )
 import Tie.Writer (Writer, fileWriter, withTestWriter)
 import Prelude hiding (Type)
@@ -120,9 +123,11 @@ generate ::
   Text ->
   -- | Module name
   Text ->
+  -- | Extra cabal packages
+  [Text] ->
   FilePath ->
   m ()
-generate write packageName apiName inputFile = do
+generate write packageName apiName extraPackages inputFile = do
   openApi <- readOpenApiSpec inputFile
 
   -- Helper to resolve components in the spec.
@@ -168,9 +173,12 @@ generate write packageName apiName inputFile = do
         header = codegenModuleHeader (toSchemaHaskellModuleName apiName name')
     when (name' `HashSet.member` allReferencedSchemas) $ do
       type_ <- schemaToType resolver schema
-      let dependencyCode =
+      let schemaDependencyCode =
             codegenSchemaDependencies apiName $
               nubOrd (typeDependencies shallow type_)
+          externalDependencyCode =
+            codegenExternalHaskellDependencies $
+              nubOrd (typeExternalDependencies type_)
       -- Extract inline dependencies after dependency analysis. We
       -- will generate the code for the inline dependencies in the
       -- same file
@@ -182,10 +190,12 @@ generate write packageName apiName inputFile = do
       output <-
         codegenSchema name' normedType
       write path $
-        vsep
+        vsep $
           [ header,
             mempty,
-            dependencyCode,
+            externalDependencyCode,
+            mempty,
+            schemaDependencyCode,
             mempty,
             vsep (intersperse mempty codeForInlineDependencies),
             mempty,
@@ -260,6 +270,12 @@ generate write packageName apiName inputFile = do
             concatMap
               (operationSchemaDependencies shallow)
               operations
+      externalDependencyCode =
+        codegenExternalHaskellDependencies $
+          nubOrd $
+            concatMap
+              operationExternalDependencies
+              operations
       responseDependencyCode =
         codegenResponseDependencies apiName $
           nubOrd $
@@ -272,6 +288,8 @@ generate write packageName apiName inputFile = do
       [ header,
         mempty,
         codegenExtraApiModuleDependencies apiName,
+        mempty,
+        externalDependencyCode,
         mempty,
         schemaDependencyCode,
         mempty,
@@ -292,4 +310,4 @@ generate write packageName apiName inputFile = do
                ]
 
       path = cabalFileName packageName
-  write path (codegenCabalFile packageName allReferencedModules)
+  write path (codegenCabalFile packageName allReferencedModules extraPackages)

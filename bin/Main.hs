@@ -33,6 +33,7 @@ data Input = Input
   { outputDirectory :: FilePath,
     moduleName :: Text,
     packageName :: Text,
+    extraPackages :: [Text],
     inputFile :: FilePath
   }
 
@@ -61,6 +62,13 @@ options =
           <> showDefault
           <> value "open-api"
       )
+    <*> many
+      ( option
+          str
+          ( long "extra-package"
+              <> metavar "PACKAGE"
+          )
+      )
     <*> strArgument
       ( metavar "FILE"
       )
@@ -79,4 +87,5 @@ main = do
     (fileWriter outputDirectory)
     packageName
     moduleName
+    extraPackages
     inputFile
