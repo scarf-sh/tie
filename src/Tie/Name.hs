@@ -257,6 +257,7 @@ escapeKeyword input = haskelify $ case input of
   "as" -> "as'"
   "instance" -> "instance'"
   "module" -> "module'"
+  "pattern" -> "pattern'"
   _ -> input
 
 haskelify :: String -> String
