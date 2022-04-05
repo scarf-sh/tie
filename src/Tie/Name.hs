@@ -207,9 +207,9 @@ toEnumConstructorName :: Name -> Text -> PP.Doc ann
 toEnumConstructorName (Name typName) variant =
   PP.pretty $
     Text.pack $
-      escapeKeyword $
+      escapeKeyword $ toCamelCase $
         capitalizeFirstLetter (Text.unpack typName)
-          <> capitalizeFirstLetter (Text.unpack variant)
+            <> capitalizeFirstLetter (Text.unpack variant)
 
 -- | Constructs a name for an object defined inline. Based on the containing data
 -- type as well as the field name.
@@ -270,7 +270,8 @@ haskelify xs =
 
 toCamelCase :: String -> String
 toCamelCase input =
-  (prefix <>) . (<> suffix) . concat . map (capitalizeFirstLetter . Text.unpack) . Text.split (== '_') . Text.pack $ input
+  (prefix <>) . (<> suffix) . concat . map (capitalizeFirstLetter . Text.unpack) . 
+    Text.split (\c -> c == '_' || c == '-') . Text.pack $ input
   where
     -- Preserve leading and trailing _
     prefix = takeWhile ('_' ==) input
