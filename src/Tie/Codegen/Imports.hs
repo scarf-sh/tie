@@ -32,6 +32,8 @@ codegenModuleHeader moduleName =
     <> PP.line
     <> "{-#" <+> "LANGUAGE" <+> "OverloadedStrings" <+> "#-}"
     <> PP.line
+    <> "{-#" <+> "LANGUAGE" <+> "ScopedTypeVariables" <+> "#-}"
+    <> PP.line
     <> "{-#" <+> "LANGUAGE" <+> "RankNTypes" <+> "#-}"
     <> PP.line
     <> "{-#" <+> "LANGUAGE" <+> "RecordWildCards" <+> "#-}"

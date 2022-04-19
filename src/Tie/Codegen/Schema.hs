@@ -12,6 +12,8 @@ where
 
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.HashSet as HashSet
+import Data.List (lookup)
+import Data.OpenApi (HasPropertyName (propertyName))
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
@@ -29,6 +31,7 @@ import Tie.Name
 import Tie.Operation (Header (..), Param (..))
 import Tie.Type
   ( BasicType (..),
+    Discriminator (..),
     Enumeration (..),
     IntegerFormat (..),
     Name,
@@ -92,8 +95,15 @@ codegenSchema typName typ
     pure (codegenEnumeration typName alternatives includeNull)
   | Just basicType <- isBasicType typ =
     pure (codegenBasicType typName basicType)
-  | Just alternatives <- isOneOfType typ =
-    codegenOneOfType typName alternatives
+  | Just (discriminator, alternatives) <- isOneOfType typ = do
+    let discriminatorMapping
+          | Just Discriminator {propertyName, mapping} <- discriminator =
+            \variantTypeName -> do
+              value <- lookup variantTypeName mapping
+              pure (propertyName, value)
+          | otherwise =
+            \_variantTypeName -> Nothing
+    codegenOneOfType discriminatorMapping typName alternatives
   | Just objectType <- isObjectType typ =
     codegenObjectType typName objectType
   | Just elemType <- isArrayType typ =
@@ -111,15 +121,31 @@ codegenArrayType :: Name -> Named Type -> Doc ann
 codegenArrayType typeName elemType =
   "type" <+> toDataTypeName typeName <+> "=" <+> "[" <+> codegenFieldType elemType <+> "]"
 
-codegenOneOfType :: Monad m => Name -> [Named Type] -> m (Doc ann)
-codegenOneOfType typName variants = do
+codegenOneOfType ::
+  Monad m =>
+  -- | Given a variant type name, returns the discrimintor property
+  -- and value, if any
+  (Name -> Maybe (Text, Text)) ->
+  -- | Name of the oneOf type
+  Name ->
+  -- | Variants of the oneOf type
+  [Named Type] ->
+  m (Doc ann)
+codegenOneOfType getDiscriminator typName variants = do
   let -- We derive the constructor names upfront. For unnamed types - which can still
       -- exists after normalization for e.g. basic types - we generate an inline variant
       -- type name.
       variantConstructors =
-        [ (name, variant)
+        [ (variantTypeName, name, variant)
           | (ith, variant) <- zip [1 ..] variants,
-            let name = case variant of
+            let variantTypeName = case variant of
+                  Named variantName _ ->
+                    variantName
+                  Unnamed typ ->
+                    -- This will probably never match anything but is a
+                    -- reasonable default for now
+                    inlineVariantTypeName typName ith
+                name = case variant of
                   Named variantName _ ->
                     toOneOfConstructorName typName variantName
                   Unnamed typ ->
@@ -134,7 +160,7 @@ codegenOneOfType typName variants = do
                 ( [ op
                       <+> variantName
                       <+> codegenFieldType variantType
-                    | (op, (variantName, variantType)) <- zip ("=" : repeat "|") variantConstructors
+                    | (op, (_, variantName, variantType)) <- zip ("=" : repeat "|") variantConstructors
                   ]
                     ++ [ "deriving" <+> "(" <> "Show" <> ")"
                        ]
@@ -149,7 +175,7 @@ codegenOneOfType typName variants = do
                 [ "toJSON" <+> "(" <> variantName <+> "x" <> ")" <+> "="
                     <+> "Data.Aeson.toJSON"
                     <+> "x"
-                  | (variantName, _) <- variantConstructors
+                  | (_, variantName, _) <- variantConstructors
                 ]
                 <> PP.line
                 <> PP.line
@@ -157,9 +183,28 @@ codegenOneOfType typName variants = do
                   [ "toEncoding" <+> "(" <> variantName <+> "x" <> ")" <+> "="
                       <+> "Data.Aeson.toEncoding"
                       <+> "x"
-                    | (variantName, _) <- variantConstructors
+                    | (_, variantName, _) <- variantConstructors
                   ]
             )
+
+      fromJsonVariant :: Name -> PP.Doc ann
+      fromJsonVariant variantName
+        | Just (property, value) <- getDiscriminator variantName =
+          "(" <> "Data.Aeson.Types.withObject" <+> "\"" <> toDataTypeName variantName <> "\"" <+> "$" <+> "\\" <> "o" <+> "->" <> PP.line
+            <> PP.indent
+              4
+              ( "do"
+                  <+> PP.align
+                    ( "(" <> "\"" <> PP.pretty value <> "\"" <+> "::" <+> "Data.Text.Text" <> ")" <+> "<-" <+> "o" <+> "Data.Aeson..:" <+> "\"" <> PP.pretty property <> "\"" <> PP.line
+                        <> "Data.Aeson.parseJSON" <+> "("
+                        <> "Data.Aeson.Object" <+> "o"
+                        <> ")"
+                    )
+              )
+            <> PP.line
+            <> ")" <+> "x"
+        | otherwise =
+          "Data.Aeson.parseJSON" <+> "x"
 
       fromJson =
         "instance" <+> "Data.Aeson.FromJSON" <+> toDataTypeName typName <+> "where" <> PP.line
@@ -170,8 +215,8 @@ codegenOneOfType typName variants = do
                   4
                   ( PP.concatWith
                       (\x y -> x <+> "Control.Applicative.<|>" <> PP.line <> y)
-                      [ "(" <> variantName <+> "<$>" <+> "Data.Aeson.parseJSON" <+> "x" <> ")"
-                        | (variantName, variantType) <- variantConstructors
+                      [ "(" <> variantConstructorName <+> "<$>" <+> fromJsonVariant variantName <> ")"
+                        | (variantName, variantConstructorName, _variantType) <- variantConstructors
                       ]
                   )
             )

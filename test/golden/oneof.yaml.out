@@ -3,6 +3,7 @@ Test/Api.hs
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 module Test.Api where
@@ -36,7 +37,7 @@ import Test.Response
 
 import Test.Schemas.Inline
 import Test.Schemas.Inline2
-import Test.Schemas.Packages
+import Test.Schemas.PetOrPackage
 
 import Test.Response.ListPackages
 import Test.Response.ListPackages2
@@ -293,6 +294,7 @@ Test/Response.hs
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 module Test.Response where
@@ -327,6 +329,7 @@ Test/Response/ListPackages.hs
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 module Test.Response.ListPackages where
@@ -353,14 +356,14 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import Test.Schemas.Packages
+import Test.Schemas.PetOrPackage
 
 import Test.Response
 
 
 
 data ListPackagesResponse
-    = ListPackagesResponse200 Packages
+    = ListPackagesResponse200 PetOrPackage
     deriving (Show)
 
 instance Control.Exception.Exception ListPackagesResponse
@@ -374,6 +377,7 @@ Test/Response/ListPackages2.hs
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 module Test.Response.ListPackages2 where
@@ -421,6 +425,7 @@ Test/Response/ListPackages3.hs
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 module Test.Response.ListPackages3 where
@@ -468,6 +473,7 @@ Test/Schemas/Inline.hs
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 module Test.Schemas.Inline where
@@ -545,6 +551,7 @@ Test/Schemas/Inline2.hs
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 module Test.Schemas.Inline2 where
@@ -639,6 +646,7 @@ Test/Schemas/Package.hs
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
 module Test.Schemas.Package where
@@ -673,33 +681,93 @@ import qualified Web.HttpApiData
 
 newtype Package = Package
     {
-        name :: (Data.Maybe.Maybe (Data.Text.Text))
+        type' :: (Data.Maybe.Maybe (Data.Text.Text))
     }
     deriving (Show)
 
 instance Data.Aeson.ToJSON Package where
     toJSON Package {..} = Data.Aeson.object
         [
-            "name" Data.Aeson..= name
+            "type" Data.Aeson..= type'
         ]
 
     toEncoding Package {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        ( Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
         )
 
 instance Data.Aeson.FromJSON Package where
     parseJSON = Data.Aeson.withObject "Package" $ \o ->
         Package
-            <$> o Data.Aeson..:? "name"
+            <$> o Data.Aeson..:? "type"
 ---------------------
-Test/Schemas/Packages.hs
+Test/Schemas/Pet.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module Test.Schemas.Packages where
+module Test.Schemas.Pet where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.Catch
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+
+
+
+
+
+
+newtype Pet = Pet
+    {
+        type' :: (Data.Maybe.Maybe (Data.Text.Text))
+    }
+    deriving (Show)
+
+instance Data.Aeson.ToJSON Pet where
+    toJSON Pet {..} = Data.Aeson.object
+        [
+            "type" Data.Aeson..= type'
+        ]
+
+    toEncoding Pet {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
+        )
+
+instance Data.Aeson.FromJSON Pet where
+    parseJSON = Data.Aeson.withObject "Pet" $ \o ->
+        Pet
+            <$> o Data.Aeson..:? "type"
+---------------------
+Test/Schemas/PetOrPackage.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Schemas.PetOrPackage where
 
 import qualified Control.Applicative
 import qualified Control.Exception
@@ -726,25 +794,32 @@ import qualified Web.HttpApiData
 
 
 import Test.Schemas.Package
+import Test.Schemas.Pet
 
 
 
-data Packages
-    = PackagesPackage Package
-    | PackagesPackage Package
+data PetOrPackage
+    = PetOrPackagePet Pet
+    | PetOrPackagePackage Package
     deriving (Show)
 
-instance Data.Aeson.ToJSON Packages where
-    toJSON (PackagesPackage x) = Data.Aeson.toJSON x
-    toJSON (PackagesPackage x) = Data.Aeson.toJSON x
+instance Data.Aeson.ToJSON PetOrPackage where
+    toJSON (PetOrPackagePet x) = Data.Aeson.toJSON x
+    toJSON (PetOrPackagePackage x) = Data.Aeson.toJSON x
 
-    toEncoding (PackagesPackage x) = Data.Aeson.toEncoding x
-    toEncoding (PackagesPackage x) = Data.Aeson.toEncoding x
+    toEncoding (PetOrPackagePet x) = Data.Aeson.toEncoding x
+    toEncoding (PetOrPackagePackage x) = Data.Aeson.toEncoding x
 
-instance Data.Aeson.FromJSON Packages where
+instance Data.Aeson.FromJSON PetOrPackage where
     parseJSON x =
-        (PackagesPackage <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
-        (PackagesPackage <$> Data.Aeson.parseJSON x)
+        (PetOrPackagePet <$> (Data.Aeson.Types.withObject "Pet" $ \o ->
+            do ("pet" :: Data.Text.Text) <- o Data.Aeson..: "type"
+               Data.Aeson.parseJSON (Data.Aeson.Object o)
+        ) x) Control.Applicative.<|>
+        (PetOrPackagePackage <$> (Data.Aeson.Types.withObject "Package" $ \o ->
+            do ("package" :: Data.Text.Text) <- o Data.Aeson..: "type"
+               Data.Aeson.parseJSON (Data.Aeson.Object o)
+        ) x)
 ---------------------
 test.cabal
 
@@ -774,4 +849,5 @@ library
     Test.Schemas.Inline
     Test.Schemas.Inline2
     Test.Schemas.Package
-    Test.Schemas.Packages
+    Test.Schemas.Pet
+    Test.Schemas.PetOrPackage

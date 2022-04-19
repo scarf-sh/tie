@@ -19,7 +19,7 @@ paths:
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/Packages"
+                $ref: "#/components/schemas/PetOrPackage"
   /packages2:
     get:
       summary: List all packages
@@ -50,8 +50,21 @@ components:
   schemas:
     Package: 
       properties: 
-        name: 
+        type: 
           type: string
+    Pet: 
+      properties:
+        type: 
+          type: string
+    PetOrPackage:
+      oneOf: 
+        - $ref: "#/components/schemas/Pet"
+        - $ref: "#/components/schemas/Package"
+      discriminator:
+        propertyName: type
+        mapping:
+          pet: "#/components/schemas/Pet"
+          package: "#/components/schemas/Package"
     Packages:
       oneOf:
         - $ref: "#/components/schemas/Package"

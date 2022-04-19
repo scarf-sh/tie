@@ -17,6 +17,7 @@ module Tie.Type
     Enumeration (..),
     Name,
     Named (..),
+    Discriminator (..),
     namedType,
 
     -- * Conversion from 'OpenApi.Schema' to 'Type'.
@@ -49,6 +50,7 @@ import Data.Foldable (foldr1)
 import qualified Data.HashMap.Strict as HashMap
 import qualified Data.HashMap.Strict.InsOrd as InsOrd
 import qualified Data.HashSet as HashSet
+import Data.OpenApi (HasDiscriminator (discriminator))
 import qualified Data.OpenApi as OpenApi
 import qualified Data.Text as Text
 import Tie.Name (Name, extractHaskellModule, fromText)
@@ -124,6 +126,17 @@ namedType named = case named of
   Named _ ty -> ty
   Unnamed ty -> ty
 
+data Discriminator ty = Discriminator
+  { -- | The name of the property in the payload
+    -- that will hold the discriminator value.
+    propertyName :: Text,
+    -- | An object to hold mappings between payload
+    -- values and schema names or references:
+    -- [(VariantTypeName, PropertyValue)]
+    mapping :: [(Name, Text)]
+  }
+  deriving (Eq, Ord, Show)
+
 -- | This is our internal representation for 'OpenApi.Schema'. From 'Type' we derive
 -- the Haskell data types as well as the serialization code.
 data Type
@@ -132,7 +145,7 @@ data Type
   | -- | OpenApi's anyOf
     AnyOf [Named Type]
   | -- | OpenApi's oneOf
-    OneOf [Named Type]
+    OneOf (Maybe (Discriminator (Named Type))) [Named Type]
   | -- | OpenApi's not
     Not (Named Type)
   | -- | Basic, primitive types
@@ -150,7 +163,7 @@ isBasicType typ = case typ of
   AllOf {} -> Nothing
   AnyOf [x] -> isBasicType (namedType x)
   AnyOf {} -> Nothing
-  OneOf [x] -> isBasicType (namedType x)
+  OneOf _ [x] -> isBasicType (namedType x)
   OneOf {} -> Nothing
   Not {} -> Nothing
   Basic basicType -> Just basicType
@@ -179,14 +192,46 @@ schemaRefToType resolver referencedSchema = do
     OpenApi.Inline schema -> do
       Unnamed <$> schemaToType resolver schema
 
+resolveMapping :: Monad m => Resolver m -> Text -> m Text
+resolveMapping resolver referenceOrschemaName = do
+  let -- The OpenApi package doesn't expose a way to parse references.
+      -- Instead we construct the JSON manually and let it run through
+      -- Aeson. Meh.
+      referencedJSON =
+        Aeson.object ["$ref" Aeson..= referenceOrschemaName]
+
+  case Aeson.parseMaybe Aeson.parseJSON referencedJSON ::
+         Maybe (OpenApi.Referenced OpenApi.Schema) of
+    Just (OpenApi.Ref reference) ->
+      pure (OpenApi.getReference reference)
+    _ ->
+      pure referenceOrschemaName
+
 -- | Converts an 'OpenApi.Schema' to our internal 'Type' representation.
 -- An optional 'ComponentName' indicates the name of component.
 schemaToType :: Monad m => Resolver m -> OpenApi.Schema -> m Type
 schemaToType resolver schema
   | Just allOfsRefs <- OpenApi._schemaAllOf schema = do
     AllOf <$> traverse (schemaRefToType resolver) allOfsRefs
-  | Just oneOfsRefs <- OpenApi._schemaOneOf schema =
-    OneOf <$> traverse (schemaRefToType resolver) oneOfsRefs
+  | Just oneOfsRefs <- OpenApi._schemaOneOf schema = do
+    discriminator <- case OpenApi._schemaDiscriminator schema of
+      Nothing ->
+        pure Nothing
+      Just OpenApi.Discriminator {_discriminatorPropertyName, _discriminatorMapping} -> do
+        mapping <-
+          traverse
+            (resolveMapping resolver)
+            _discriminatorMapping
+        pure $
+          Just
+            Discriminator
+              { mapping =
+                  [ (fromText name, value)
+                    | (value, name) <- InsOrd.toList mapping
+                  ],
+                propertyName = _discriminatorPropertyName
+              }
+    OneOf discriminator <$> traverse (schemaRefToType resolver) oneOfsRefs
   | Just anyOfRefs <- OpenApi._schemaAnyOf schema =
     AnyOf <$> traverse (schemaRefToType resolver) anyOfRefs
   | Just notOfRef <- OpenApi._schemaNot schema =
@@ -316,7 +361,7 @@ typeExternalDependencies ty =
       concatMap (typeExternalDependencies . namedType) allOfs
     AnyOf anyOfs ->
       concatMap (typeExternalDependencies . namedType) anyOfs
-    OneOf oneOfs ->
+    OneOf _discriminator oneOfs ->
       concatMap (typeExternalDependencies . namedType) oneOfs
     Not not ->
       typeExternalDependencies (namedType not)
@@ -340,7 +385,7 @@ typeDependencies getDependencies ty =
       concatMap (allOfDependencies getDependencies) allOfs
     AnyOf anyOfs ->
       concatMap (allOfDependencies getDependencies) anyOfs
-    OneOf oneOfs ->
+    OneOf _discriminator oneOfs ->
       concatMap getDependencies oneOfs
     Not not ->
       typeDependencies getDependencies (namedType not)
@@ -385,12 +430,12 @@ objectTypeDependencies getDependencies objectType =
   concatMap getDependencies (toList (properties objectType))
 
 -- | Casting a 'Type' to the set of types it could be.
-isOneOfType :: Type -> Maybe [Named Type]
+isOneOfType :: Type -> Maybe (Maybe (Discriminator (Named Type)), [Named Type])
 isOneOfType ty = case ty of
-  OneOf [_] ->
+  OneOf _ [_] ->
     Nothing
-  OneOf oneOfs ->
-    Just oneOfs
+  OneOf discriminator oneOfs ->
+    Just (discriminator, oneOfs)
   _ ->
     Nothing
 
@@ -417,7 +462,7 @@ isObjectType ty = case ty of
             | object <- catMaybes (map (isObjectType . namedType) anyOfs)
           ]
     pure (combine objects)
-  OneOf oneOfs -> do
+  OneOf _discriminator oneOfs -> do
     -- Look through all the objects, mark all of the properties optional
     let objects =
           [ object {requiredProperties = HashSet.empty}
@@ -466,9 +511,9 @@ normalizeNamedType assignName namedType = case namedType of
       newTypeName <- assignName
       pure
         (Named newTypeName (Basic (TyEnum enum)), [(newTypeName, Basic (TyEnum enum))])
-    | Just variants <- isOneOfType typ -> do
+    | Just (discriminator, variants) <- isOneOfType typ -> do
       newTypeName <- assignName
-      pure (Named newTypeName (OneOf variants), [(newTypeName, OneOf variants)])
+      pure (Named newTypeName (OneOf discriminator variants), [(newTypeName, OneOf discriminator variants)])
     | Just objectType <- isObjectType typ -> do
       newTypeName <- assignName
       pure (Named newTypeName (Object objectType), [(newTypeName, Object objectType)])
@@ -537,10 +582,10 @@ normalizeTypeShallow
   assignArrayElemTypeName
   typeName
   typ
-    | Just variants <- isOneOfType typ = do
+    | Just (discriminator, variants) <- isOneOfType typ = do
       (variants, inlineDefinitions) <-
         normalizeVariants (assignOneOfTypeName typeName) variants
-      pure (OneOf variants, inlineDefinitions)
+      pure (OneOf discriminator variants, inlineDefinitions)
     | Just objectType <- isObjectType typ = do
       (objectType, inlineDefinitions) <-
         normalizeObjectType (assignObjectFieldTypeName typeName) objectType
