@@ -1,6 +1,7 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Tie.Codegen.Response
   ( codegenResponses,
@@ -9,6 +10,7 @@ module Tie.Codegen.Response
 where
 
 import Data.List (lookup)
+import Network.HTTP.Media (renderHeader)
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
@@ -41,8 +43,13 @@ import Tie.Resolve (Resolver)
 codegenResponses :: Monad m => Resolver m -> Operation -> m (Doc ann)
 codegenResponses resolver Operation {..} = do
   let responseBodyType Response {responseContent}
+        -- We treat JSON responses specially
         | Just jsonContent <- lookup "application/json" responseContent =
           [codegenFieldType jsonContent]
+        -- Everything else we use a Network.Wai.StreamingBody type
+        | not (null responseContent) =
+          ["Network.Wai.StreamingBody"]
+        -- Otherwise, no response body present
         | otherwise =
           []
 
@@ -91,9 +98,23 @@ codegenToResponses operationName responses defaultResponse =
         | hasBody response = ["x"]
         | otherwise = []
 
+      waiResponse Response {responseContent}
+        | Just _ <- lookup "application/json" responseContent =
+          -- JSON is very easy to turn into Builders!
+          "Network.Wai.responseBuilder"
+        | not (null responseContent) =
+          -- Tie doesn't know about the content type of this response,
+          -- uses a Stream instaed
+          "Network.Wai.responseStream"
+        | otherwise =
+          -- For empty response bodies we pass mempty
+          "Network.Wai.responseBuilder"
+
       bodySerialize Response {responseContent}
         | Just _ <- lookup "application/json" responseContent =
           "(" <> "Data.Aeson.fromEncoding" <+> "(" <> "Data.Aeson.toEncoding" <+> "x" <> ")" <> ")"
+        | not (null responseContent) =
+          "x"
         | otherwise =
           "mempty"
 
@@ -101,6 +122,8 @@ codegenToResponses operationName responses defaultResponse =
         let contentType
               | Just _ <- lookup "application/json" responseContent =
                 ["(Network.HTTP.Types.hContentType, \"application/json\")"]
+              | (unknownMediaType, _) : _ <- responseContent =
+                ["(Network.HTTP.Types.hContentType, \"" <> PP.pretty @Text (decodeUtf8 (renderHeader unknownMediaType)) <> "\")"]
               | otherwise =
                 []
 
@@ -149,7 +172,7 @@ codegenToResponses operationName responses defaultResponse =
                     <> PP.line
                     <> PP.indent
                       4
-                      ( "Network.Wai.responseBuilder" <+> "(" <> "toEnum" <+> PP.pretty statusCode <> ")"
+                      ( waiResponse response <+> "(" <> "toEnum" <+> PP.pretty statusCode <> ")"
                           <+> responseHeaders response
                           <+> bodySerialize response
                       )
@@ -168,7 +191,7 @@ codegenToResponses operationName responses defaultResponse =
                          <> PP.line
                          <> PP.indent
                            4
-                           ( "Network.Wai.responseBuilder" <+> "status"
+                           ( waiResponse response <+> "status"
                                <+> responseHeaders response
                                <+> bodySerialize response
                            )
