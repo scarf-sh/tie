@@ -85,7 +85,7 @@ data Header = Header
 data Response = Response
   { description :: Text,
     -- | Response contents per media type
-    responseContent :: [(MediaType, Named Type)],
+    responseContent :: [(MediaType, Maybe (Named Type))],
     -- | Response headers
     headers :: [Header]
   }
@@ -178,11 +178,11 @@ operationSchemaDependencies getDependencies Operation {..} =
       ++ map getDependencies (pathDependencies path)
       ++ [ getDependencies contentSchema
            | Just Response {responseContent} <- [defaultResponse],
-             (_mediaType, contentSchema) <- responseContent
+             (_mediaType, Just contentSchema) <- responseContent
          ]
       ++ [ getDependencies contentSchema
            | (_, Response {responseContent}) <- responses,
-             (_mediaType, contentSchema) <- responseContent
+             (_mediaType, Just contentSchema) <- responseContent
          ]
       ++ [ getDependencies schema
            | Param {schema} <- queryParams
@@ -333,16 +333,23 @@ responseToResponse resolver errors@Errors {..} response@OpenApi.Response {..} = 
         headers
       }
 
-responseMediaTypeObject :: Monad m => Resolver m -> Errors m -> OpenApi.Response -> m [(MediaType, Named Type)]
+responseMediaTypeObject ::
+  Monad m =>
+  Resolver m ->
+  Errors m ->
+  OpenApi.Response ->
+  m [(MediaType, Maybe (Named Type))]
 responseMediaTypeObject resolver Errors {..} response =
   forM (InsOrd.toList (OpenApi._responseContent response)) $ \(mediaType, OpenApi.MediaTypeObject {..}) -> do
-    referencedSchema <-
-      whenNothing
-        _mediaTypeObjectSchema
-        requestBodyMissingSchema
-    type_ <-
-      schemaRefToType resolver referencedSchema
-    pure (mediaType, type_)
+    case _mediaTypeObjectSchema of
+      Nothing ->
+        -- A response with a body that is not described by a schema
+        -- e.g. when returning a text/csv
+        pure (mediaType, Nothing)
+      Just referencedSchema -> do
+        type_ <-
+          schemaRefToType resolver referencedSchema
+        pure (mediaType, Just type_)
 
 parsePath :: FilePath -> [PathSegment Text]
 parsePath path =
@@ -446,9 +453,13 @@ normalizeResponse :: Monad m => Name -> Response -> m (Response, [(Name, Type)])
 normalizeResponse name response@Response {..} = do
   (responseContent, inlineDefinitions) <- runWriterT $
     forM responseContent $ \(mediaType, schema) -> do
-      (normedType, inlineDefinitions) <- normalizeNamedType (pure name) schema
-      tell inlineDefinitions
-      pure (mediaType, normedType)
+      case schema of
+        Nothing ->
+          pure (mediaType, Nothing)
+        Just schema -> do
+          (normedType, inlineDefinitions) <- normalizeNamedType (pure name) schema
+          tell inlineDefinitions
+          pure (mediaType, Just normedType)
   pure (response {responseContent}, inlineDefinitions)
 
 normalizeRequestBody :: Monad m => Name -> RequestBody -> m (RequestBody, [(Name, Type)])

@@ -45,7 +45,7 @@ codegenResponses resolver Operation {..} = do
   let responseBodyType Response {responseContent}
         -- We treat JSON responses specially
         | Just jsonContent <- lookup "application/json" responseContent =
-          [codegenFieldType jsonContent]
+          [maybe "Data.Aeson.Value" codegenFieldType jsonContent]
         -- Everything else we use a Network.Wai.StreamingBody type
         | not (null responseContent) =
           ["Network.Wai.StreamingBody"]
@@ -55,6 +55,21 @@ codegenResponses resolver Operation {..} = do
 
       responseHeaderTypes Response {headers} =
         map codegenHeaderSchema headers
+
+      -- Since we insert StreamingBody for mime types that we don't know,
+      -- we have to generate Show instances for those types!
+      canDeriveStockShowInstanceForResponse Response {responseContent}
+        | Just _ <- lookup "application/json" responseContent =
+          True
+        | not (null responseContent) =
+          False
+        | otherwise =
+          True
+
+      requiresCustomShowInstance =
+        not $ all
+          canDeriveStockShowInstanceForResponse
+          (maybeToList defaultResponse ++ map snd responses)
 
       decl =
         "data" <+> toApiResponseTypeName name <> PP.line
@@ -78,15 +93,29 @@ codegenResponses resolver Operation {..} = do
                        | Just response <- [defaultResponse]
                      ]
                   ++ [ "deriving" <+> "(" <> "Show" <> ")"
+                       | not requiresCustomShowInstance
                      ]
             )
+
       instances =
         codegenToResponses name responses defaultResponse
+
+      showInstance =
+        "instance" <+> "Show" <+> toApiResponseTypeName name <+> "where" <> PP.line
+          <> PP.indent
+            4
+            ( "show" <+> "_" <+> "=" <+> "\"" <> toApiResponseTypeName name <+> "{}" <> "\""
+            )
 
       exceptionInstance =
         "instance" <+> "Control.Exception.Exception" <+> toApiResponseTypeName name
 
-  pure (PP.vsep [decl, mempty, exceptionInstance, mempty, instances])
+  pure
+    ( PP.vsep $
+        intersperse mempty $
+          [decl, exceptionInstance, instances]
+            ++ [showInstance | requiresCustomShowInstance]
+    )
 
 codegenToResponses :: Name -> [(Int, Response)] -> Maybe Response -> Doc ann
 codegenToResponses operationName responses defaultResponse =

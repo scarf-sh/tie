@@ -35,14 +35,18 @@ import Test.Response
 
 
 
-import Test.Schemas.Test
+
 
 import Test.Response.Test
+import Test.Response.Test2
 
 data Api m = Api {
     -- | test
     test ::
-        m TestResponse
+        m TestResponse,
+    -- | test
+    test2 ::
+        m Test2Response
 }
 
 application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
@@ -53,6 +57,16 @@ application run api notFound request respond =
                 "GET" ->
                     run request (do
                         response <- Control.Monad.Catch.handle pure (test api)
+                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
+                    )
+                x ->
+                    unsupportedMethod x
+
+        ["test2"] ->
+            case Network.Wai.requestMethod request of
+                "GET" ->
+                    run request (do
+                        response <- Control.Monad.Catch.handle pure (test2 api)
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -326,7 +340,7 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import Test.Schemas.Test
+
 
 import Test.Response
 
@@ -334,15 +348,17 @@ import Test.Response
 
 data TestResponse
     = TestResponse200 Network.Wai.StreamingBody
-    deriving (Show)
 
 instance Control.Exception.Exception TestResponse
 
 instance ToResponse TestResponse where
     toResponse (TestResponse200 x) =
         Network.Wai.responseStream (toEnum 200) ([(Network.HTTP.Types.hContentType, "text/csv")]) x
+
+instance Show TestResponse where
+    show _ = "TestResponse {}"
 ---------------------
-Test/Schemas/Test.hs
+Test/Response/Test2.hs
 
 {-# LANGUAGE BangPatterns #-}
 {-# LANGUAGE DuplicateRecordFields #-}
@@ -350,7 +366,7 @@ Test/Schemas/Test.hs
 {-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
-module Test.Schemas.Test where
+module Test.Response.Test2 where
 
 import qualified Control.Applicative
 import qualified Control.Exception
@@ -376,30 +392,19 @@ import qualified Web.HttpApiData
 
 
 
+import Test.Response
 
 
 
-
-newtype Test = Test
-    {
-        name :: (Data.Maybe.Maybe (Data.Text.Text))
-    }
+data Test2Response
+    = Test2Response200 Data.Aeson.Value
     deriving (Show)
 
-instance Data.Aeson.ToJSON Test where
-    toJSON Test {..} = Data.Aeson.object
-        [
-            "name" Data.Aeson..= name
-        ]
+instance Control.Exception.Exception Test2Response
 
-    toEncoding Test {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
-        )
-
-instance Data.Aeson.FromJSON Test where
-    parseJSON = Data.Aeson.withObject "Test" $ \o ->
-        Test
-            <$> o Data.Aeson..:? "name"
+instance ToResponse Test2Response where
+    toResponse (Test2Response200 x) =
+        Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 test.cabal
 
@@ -424,4 +429,4 @@ library
     Test.Request
     Test.Response
     Test.Response.Test
-    Test.Schemas.Test
+    Test.Response.Test2
