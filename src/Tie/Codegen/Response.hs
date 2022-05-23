@@ -8,6 +8,7 @@ module Tie.Codegen.Response
   )
 where
 
+import Data.List (lookup)
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
@@ -39,10 +40,10 @@ import Tie.Resolve (Resolver)
 -- | Generate code for the responses of an 'Operation'.
 codegenResponses :: Monad m => Resolver m -> Operation -> m (Doc ann)
 codegenResponses resolver Operation {..} = do
-  let responseBodyType Response {jsonResponseContent} = case jsonResponseContent of
-        Just jsonContent ->
+  let responseBodyType Response {responseContent}
+        | Just jsonContent <- lookup "application/json" responseContent =
           [codegenFieldType jsonContent]
-        Nothing ->
+        | otherwise =
           []
 
       responseHeaderTypes Response {headers} =
@@ -83,22 +84,22 @@ codegenResponses resolver Operation {..} = do
 codegenToResponses :: Name -> [(Int, Response)] -> Maybe Response -> Doc ann
 codegenToResponses operationName responses defaultResponse =
   let hasBody response = case response of
-        Response {jsonResponseContent = Just {}} -> True
+        Response {responseContent = _ : _} -> True
         _ -> False
 
       bodyBinder response
         | hasBody response = ["x"]
         | otherwise = []
 
-      bodySerialize Response {jsonResponseContent}
-        | Just {} <- jsonResponseContent =
+      bodySerialize Response {responseContent}
+        | Just _ <- lookup "application/json" responseContent =
           "(" <> "Data.Aeson.fromEncoding" <+> "(" <> "Data.Aeson.toEncoding" <+> "x" <> ")" <> ")"
         | otherwise =
           "mempty"
 
-      responseHeaders response@Response {jsonResponseContent, headers} =
+      responseHeaders response@Response {responseContent, headers} =
         let contentType
-              | Just _ <- jsonResponseContent =
+              | Just _ <- lookup "application/json" responseContent =
                 ["(Network.HTTP.Types.hContentType, \"application/json\")"]
               | otherwise =
                 []
@@ -171,7 +172,7 @@ codegenToResponses operationName responses defaultResponse =
                                <+> responseHeaders response
                                <+> bodySerialize response
                            )
-                       | Just response@Response {jsonResponseContent, headers} <- [defaultResponse]
+                       | Just response@Response {headers} <- [defaultResponse]
                      ]
             )
    in decl

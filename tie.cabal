@@ -60,6 +60,7 @@ library
                       text,
                       directory,
                       filepath,
+                      http-media,
                       lens,
                       mtl,
                       openapi3,

@@ -39,9 +39,11 @@ module Tie.Operation
 where
 
 import Control.Monad.Writer (WriterT (..), runWriterT)
+import Control.Monad.Writer.Strict (tell)
 import qualified Data.HashMap.Strict.InsOrd as InsOrd
 import qualified Data.OpenApi as OpenApi
 import qualified Data.Text as Text
+import Network.HTTP.Media (MediaType)
 import Tie.Name
   ( Name,
     apiDefaultResponseConstructorName,
@@ -82,8 +84,8 @@ data Header = Header
 -- | Response descriptor
 data Response = Response
   { description :: Text,
-    -- | JSON schema of the response
-    jsonResponseContent :: Maybe (Named Type),
+    -- | Response contents per media type
+    responseContent :: [(MediaType, Named Type)],
     -- | Response headers
     headers :: [Header]
   }
@@ -174,11 +176,13 @@ operationSchemaDependencies getDependencies Operation {..} =
       | Just RequestBody {jsonRequestBodyContent} <- [requestBody]
     ]
       ++ map getDependencies (pathDependencies path)
-      ++ [ getDependencies jsonContent
-           | Just Response {jsonResponseContent = Just jsonContent} <- [defaultResponse]
+      ++ [ getDependencies contentSchema
+           | Just Response {responseContent} <- [defaultResponse],
+             (_mediaType, contentSchema) <- responseContent
          ]
-      ++ [ getDependencies jsonContent
-           | (_, Response {jsonResponseContent = Just jsonContent}) <- responses
+      ++ [ getDependencies contentSchema
+           | (_, Response {responseContent}) <- responses,
+             (_mediaType, contentSchema) <- responseContent
          ]
       ++ [ getDependencies schema
            | Param {schema} <- queryParams
@@ -320,29 +324,25 @@ responseToResponse ::
   OpenApi.Response ->
   m Response
 responseToResponse resolver errors@Errors {..} response@OpenApi.Response {..} = do
-  responseTy <- responseMediaTypeObject resolver errors response
+  responses <- responseMediaTypeObject resolver errors response
   headers <- traverse (uncurry (headerToHeader resolver errors)) (InsOrd.toList _responseHeaders)
   pure
     Response
       { description = OpenApi._responseDescription response,
-        jsonResponseContent = responseTy,
+        responseContent = responses,
         headers
       }
 
-responseMediaTypeObject :: Monad m => Resolver m -> Errors m -> OpenApi.Response -> m (Maybe (Named Type))
-responseMediaTypeObject resolver Errors {..} response
-  | Just OpenApi.MediaTypeObject {..} <- InsOrd.lookup "application/json" (OpenApi._responseContent response) = do
+responseMediaTypeObject :: Monad m => Resolver m -> Errors m -> OpenApi.Response -> m [(MediaType, Named Type)]
+responseMediaTypeObject resolver Errors {..} response =
+  forM (InsOrd.toList (OpenApi._responseContent response)) $ \(mediaType, OpenApi.MediaTypeObject {..}) -> do
     referencedSchema <-
       whenNothing
         _mediaTypeObjectSchema
         requestBodyMissingSchema
     type_ <-
       schemaRefToType resolver referencedSchema
-    pure (Just type_)
-  | InsOrd.null (OpenApi._responseContent response) = do
-    pure Nothing
-  | otherwise =
-    traceShow response $ unsupportedMediaType
+    pure (mediaType, type_)
 
 parsePath :: FilePath -> [PathSegment Text]
 parsePath path =
@@ -443,12 +443,13 @@ normalizeParam operationName param@Param {..} = do
   pure (param {schema = normedType} :: Param, inlineDefinitions)
 
 normalizeResponse :: Monad m => Name -> Response -> m (Response, [(Name, Type)])
-normalizeResponse name response@Response {..} =
-  case jsonResponseContent of
-    Nothing -> pure (response, [])
-    Just jsonContent -> do
-      (normedType, inlineDefinitions) <- normalizeNamedType (pure name) jsonContent
-      pure (response {jsonResponseContent = Just normedType}, inlineDefinitions)
+normalizeResponse name response@Response {..} = do
+  (responseContent, inlineDefinitions) <- runWriterT $
+    forM responseContent $ \(mediaType, schema) -> do
+      (normedType, inlineDefinitions) <- normalizeNamedType (pure name) schema
+      tell inlineDefinitions
+      pure (mediaType, normedType)
+  pure (response {responseContent}, inlineDefinitions)
 
 normalizeRequestBody :: Monad m => Name -> RequestBody -> m (RequestBody, [(Name, Type)])
 normalizeRequestBody name body@RequestBody {..} = do
