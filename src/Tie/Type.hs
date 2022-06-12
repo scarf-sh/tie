@@ -281,7 +281,18 @@ schemaToType resolver schema
   | Just _enum <- OpenApi._schemaEnum schema =
     pure (Basic (schemaToStringyType schema))
   | otherwise =
-    traceShow schema undefined
+    -- Fallback to a free form object type in case nothing else
+    -- matches
+    -- TODO: maybe warn about missing explicit type
+    pure
+      ( Object
+          ( ObjectType
+              { properties = mempty,
+                requiredProperties = mempty,
+                freeFormObjectType = True
+              }
+          )
+      )
 
 -- | Resolves an 'OpenApi.Schema' to an 'ObjectType'. In case the the 'OpenApi.Schema' is an
 -- allOf-schema. This function doesn't do any additional type checking.
