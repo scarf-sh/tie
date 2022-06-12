@@ -224,6 +224,12 @@ codegenOneOfType getDiscriminator typName variants = do
   pure (PP.vsep [decl, mempty, toJson, mempty, fromJson])
 
 codegenObjectType :: Monad m => Name -> ObjectType (Named Type) -> m (Doc ann)
+codegenObjectType typName ObjectType {..}
+  -- for empty, free form objects, just generate a type synonym for Value.
+  | freeFormObjectType,
+    null properties =
+    pure $
+      "type" <+> toDataTypeName typName <+> "=" <+> "Data.Aeson.Value"
 codegenObjectType typName ObjectType {..} = do
   -- Now generate for the object itself
   let orderedProperties =
