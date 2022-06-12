@@ -191,16 +191,15 @@ generate write packageName apiName extraPackages inputFile = do
         codegenSchema name' normedType
       write path $
         vsep $
-          [ header,
-            mempty,
-            externalDependencyCode,
-            mempty,
-            schemaDependencyCode,
-            mempty,
-            vsep (intersperse mempty codeForInlineDependencies),
-            mempty,
-            output
-          ]
+          intersperse mempty $
+            concat
+              [ [ header,
+                  externalDependencyCode,
+                  schemaDependencyCode
+                ],
+                codeForInlineDependencies,
+                [output]
+              ]
 
   -- For each Operation, generate data types for the responses.
   for_ operations $ \operation@Operation {name} -> do
@@ -215,17 +214,16 @@ generate write packageName apiName extraPackages inputFile = do
       traverse (uncurry codegenSchema) inlineDefinitions
     responsesCode <- codegenResponses resolver operation
     write path $
-      vsep
-        [ header,
-          mempty,
-          importsCode,
-          mempty,
-          codegenExtraResponseModuleDependencies apiName,
-          mempty,
-          vsep codeForInlineDefinitions,
-          mempty,
-          responsesCode
-        ]
+      vsep $
+        intersperse mempty $
+          concat
+            [ [ header,
+                importsCode,
+                codegenExtraResponseModuleDependencies apiName
+              ],
+              codeForInlineDefinitions,
+              [responsesCode]
+            ]
 
   -- Generate auxiliary definitions in Response.hs
   let path = responseHaskellFileName apiName
@@ -284,19 +282,16 @@ generate write packageName apiName extraPackages inputFile = do
               operations
 
   write path $
-    vsep
-      [ header,
-        mempty,
-        codegenExtraApiModuleDependencies apiName,
-        mempty,
-        externalDependencyCode,
-        mempty,
-        schemaDependencyCode,
-        mempty,
-        responseDependencyCode,
-        mempty,
-        operationsCode
-      ]
+    vsep $
+      intersperse
+        mempty
+        [ header,
+          codegenExtraApiModuleDependencies apiName,
+          externalDependencyCode,
+          schemaDependencyCode,
+          responseDependencyCode,
+          operationsCode
+        ]
 
   -- Last but not least, generate the Cabal file
   let allReferencedModules :: [Text]

@@ -361,8 +361,6 @@ import Test.Schemas.Test
 
 import Test.Response
 
-
-
 data TestResponse
     = TestResponse200 Test
     deriving (Show)
@@ -408,8 +406,6 @@ import qualified Web.HttpApiData
 
 
 import Test.Response
-
-
 
 data Test1Response
     = Test1Response201 (Data.Maybe.Maybe (Data.Text.Text))
@@ -457,8 +453,6 @@ import qualified Web.HttpApiData
 
 import Test.Response
 
-
-
 data Test2Response
     = Test2Response201 Data.Text.Text
     deriving (Show)
@@ -500,8 +494,6 @@ import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
-
-
 
 
 

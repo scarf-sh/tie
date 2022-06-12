@@ -360,8 +360,6 @@ import Test.Schemas.Packages
 
 import Test.Response
 
-
-
 data ListPackagesResponse
     = ListPackagesResponse200 Packages
     deriving (Show)
@@ -408,8 +406,6 @@ import Test.Schemas.Package
 
 import Test.Response
 
-
-
 data ListPackages2Response
     = ListPackages2Response200 [ Package ]
     deriving (Show)
@@ -455,8 +451,6 @@ import qualified Web.HttpApiData
 import Test.Schemas.Inline
 
 import Test.Response
-
-
 
 data ListPackages3Response
     = ListPackages3Response200 [ Inline ]
@@ -563,8 +557,6 @@ import qualified Web.HttpApiData
 
 
 
-
-
 newtype Package = Package
     {
         name :: (Data.Maybe.Maybe (Data.Text.Text))
@@ -621,8 +613,6 @@ import qualified Web.HttpApiData
 
 
 import Test.Schemas.Package
-
-
 
 type Packages = [ Package ]
 ---------------------
