@@ -257,7 +257,18 @@ schemaToType resolver schema
             OpenApi.OpenApiItemsArray _itemsSchemaRefs ->
               undefined -- TODO find out what tuple schemas are
         | otherwise ->
-          undefined -- TODO array type without items
+          pure $
+            Array
+              ( Unnamed
+                  ( Object
+                      ( ObjectType
+                          { properties = mempty,
+                            requiredProperties = mempty,
+                            freeFormObjectType = True
+                          }
+                      )
+                  )
+              )
       OpenApi.OpenApiNull ->
         undefined -- TODO need a BasicType for that
       OpenApi.OpenApiObject ->

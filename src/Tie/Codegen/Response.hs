@@ -67,9 +67,10 @@ codegenResponses resolver Operation {..} = do
           True
 
       requiresCustomShowInstance =
-        not $ all
-          canDeriveStockShowInstanceForResponse
-          (maybeToList defaultResponse ++ map snd responses)
+        not $
+          all
+            canDeriveStockShowInstanceForResponse
+            (maybeToList defaultResponse ++ map snd responses)
 
       decl =
         "data" <+> toApiResponseTypeName name <> PP.line
