@@ -63,6 +63,7 @@ application run api notFound request respond =
     where
         unsupportedMethod _ =
             respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
+{-# INLINABLE application #-}
 ---------------------
 Test/Request.hs
 
