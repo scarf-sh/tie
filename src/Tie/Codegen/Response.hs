@@ -9,11 +9,15 @@ module Tie.Codegen.Response
   )
 where
 
+import qualified Data.ByteString as ByteString
 import Data.List (lookup)
+import qualified Data.Text as Text
 import Network.HTTP.Media (renderHeader)
+import Paths_tie (getDataFileName)
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
+import System.IO.Unsafe (unsafePerformIO)
 import Tie.Codegen.Schema
   ( codegenFieldType,
     codegenHeaderSchema,
@@ -230,14 +234,16 @@ codegenToResponses operationName responses defaultResponse =
             )
    in decl
 
-codegenResponseAuxFile :: Doc ann
-codegenResponseAuxFile =
-  "class"
-    <+> "ToResponse"
-    <+> "a"
-    <+> "where"
-      <> PP.line
-      <> PP.indent
-        4
-        ( "toResponse" <+> "::" <+> "a" <+> "->" <+> "Network.Wai.Response"
-        )
+auxTemplate :: Text
+auxTemplate = unsafePerformIO $ do
+  file <- getDataFileName "Response.template.hs"
+  contents <- ByteString.readFile file
+  pure (decodeUtf8 contents)
+{-# NOINLINE auxTemplate #-}
+
+codegenResponseAuxFile ::
+  -- | Module name
+  Text ->
+  Text
+codegenResponseAuxFile moduleName =
+  Text.replace "Tie.Template.Response_" moduleName auxTemplate

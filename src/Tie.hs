@@ -227,16 +227,11 @@ generate write packageName apiName extraPackages inputFile = do
           responsesCode
         ]
 
-  -- Generate auxiliary definitions in Response.hs
+  -- Generate auxliary definitions in Response.hs
   let path = responseHaskellFileName apiName
-      header = codegenModuleHeader (responseHaskellModuleName apiName)
-
   write path $
-    vsep
-      [ header,
-        mempty,
-        codegenResponseAuxFile
-      ]
+    unsafeTextWithoutNewlines $
+      codegenResponseAuxFile (responseHaskellModuleName apiName)
 
   -- Generate auxliary definitions in Request.hs
   let path = requestHaskellFileName apiName
