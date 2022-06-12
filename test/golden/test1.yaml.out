@@ -384,6 +384,7 @@ instance Data.Aeson.FromJSON CreateUserRequestBody where
     parseJSON = Data.Aeson.withObject "CreateUserRequestBody" $ \o ->
         CreateUserRequestBody
             <$> o Data.Aeson..:? "nise"
+
 newtype CreateUserResponseBody200 = CreateUserResponseBody200
     {
         name :: (Data.Maybe.Maybe (Data.Text.Text))
@@ -451,8 +452,6 @@ import Test.Schemas.Vehicle
 
 import Test.Response
 
-
-
 data GetUserResponse
     = GetUserResponse200 Vehicle
     | GetUserResponse404
@@ -501,8 +500,6 @@ import qualified Web.HttpApiData
 
 
 import Test.Schemas.Vehicle
-
-
 
 data Car = Car
     {
@@ -821,8 +818,6 @@ import qualified Web.HttpApiData
 import Test.Schemas.Car
 import Test.Schemas.Vehicle
 
-
-
 data Plane = Plane
     {
         car :: (Data.Maybe.Maybe (Car)),
@@ -899,8 +894,6 @@ import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
-
-
 
 
 

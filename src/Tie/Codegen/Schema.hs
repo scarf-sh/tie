@@ -221,7 +221,7 @@ codegenOneOfType getDiscriminator typName variants = do
                   )
             )
 
-  pure (PP.vsep [decl, mempty, toJson, mempty, fromJson])
+  pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
 
 codegenObjectType :: Monad m => Name -> ObjectType (Named Type) -> m (Doc ann)
 codegenObjectType typName ObjectType {..}
@@ -324,7 +324,7 @@ codegenObjectType typName ObjectType {..} = do
                         )
                   )
             )
-   in pure (PP.vsep [decl, mempty, toJson, mempty, fromJson])
+   in pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
 
 codegenRequiredOptionalFieldType :: Bool -> Doc ann -> Doc ann
 codegenRequiredOptionalFieldType True doc = doc
@@ -474,4 +474,8 @@ codegenEnumeration typName alternatives _includeNull =
                         )
                   )
             )
-   in PP.vsep [dataDecl, mempty, toJSON, mempty, fromJSON, mempty, toHttpApiData, mempty, fromHttpApiData]
+   in PP.vsep
+        ( intersperse
+            mempty
+            [dataDecl, toJSON, fromJSON, toHttpApiData, fromHttpApiData]
+        )

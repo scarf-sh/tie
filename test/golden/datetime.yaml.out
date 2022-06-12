@@ -330,8 +330,6 @@ import Test.Schemas.Test
 
 import Test.Response
 
-
-
 data TestResponse
     = TestResponse200 Test
     deriving (Show)
@@ -373,8 +371,6 @@ import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
-
-
 
 
 

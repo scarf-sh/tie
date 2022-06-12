@@ -397,8 +397,6 @@ import Test.Schemas.Package
 
 import Test.Response
 
-
-
 data ListPackagesResponse
     = ListPackagesResponse200 Package
     deriving (Show)
@@ -609,8 +607,6 @@ import Test.Schemas.Order
 
 import Test.Response
 
-
-
 data ListPackages4Response
     = ListPackages4Response201
     deriving (Show)
@@ -657,8 +653,6 @@ import Test.Schemas.InsightsTimeRange
 
 import Test.Response
 
-
-
 data ListPackages5Response
     = ListPackages5Response201
     deriving (Show)
@@ -700,8 +694,6 @@ import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
-
-
 
 
 
@@ -782,8 +774,6 @@ import qualified Web.HttpApiData
 
 
 
-
-
 data Order
     = OrderAsc
     | OrderDesc
@@ -848,8 +838,6 @@ import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
-
-
 
 
 
