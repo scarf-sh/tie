@@ -15,6 +15,7 @@ copyright:          (c) 2022 Scarf Systems
 category:
 extra-source-files: CHANGELOG.md
 data-files:
+  Response.template.hs
   Request.template.hs
   test/golden/**/*.out
   test/golden/**/*.yaml
