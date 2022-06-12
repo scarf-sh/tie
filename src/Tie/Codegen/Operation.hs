@@ -94,7 +94,10 @@ codegenOperations resolver operations = do
                     )
               )
 
-  pure (dataApiDecl <> PP.line <> PP.line <> apiDecl)
+      inlineablePragma = 
+        "{-#" <+> "INLINABLE" <+> "application" <+> "#-}"
+
+  pure (dataApiDecl <> PP.line <> PP.line <> apiDecl <> PP.line <> inlineablePragma)
 
 codegenApiType :: Monad m => Resolver m -> [Operation] -> m (PP.Doc ann)
 codegenApiType resolver operations = do
