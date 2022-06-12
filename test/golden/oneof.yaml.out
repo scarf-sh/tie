@@ -11,7 +11,6 @@ module Test.Api where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -55,14 +54,14 @@ data Api m = Api {
         m ListPackages3Response
 }
 
-application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
+application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
 application run api notFound request respond =
     case Network.Wai.pathInfo request of
         ["packages"] ->
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (listPackages api)
+                        response <- listPackages api
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -72,7 +71,7 @@ application run api notFound request respond =
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (listPackages2 api)
+                        response <- listPackages2 api
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -82,7 +81,7 @@ application run api notFound request respond =
             case Network.Wai.requestMethod request of
                 "GET" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (listPackages3 api)
+                        response <- listPackages3 api
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -316,7 +315,6 @@ module Test.Response.ListPackages where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -343,8 +341,6 @@ data ListPackagesResponse
     = ListPackagesResponse200 PetOrPackage
     deriving (Show)
 
-instance Control.Exception.Exception ListPackagesResponse
-
 instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
@@ -362,7 +358,6 @@ module Test.Response.ListPackages2 where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -389,8 +384,6 @@ data ListPackages2Response
     = ListPackages2Response200 Inline
     deriving (Show)
 
-instance Control.Exception.Exception ListPackages2Response
-
 instance ToResponse ListPackages2Response where
     toResponse (ListPackages2Response200 x) =
         Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
@@ -408,7 +401,6 @@ module Test.Response.ListPackages3 where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -435,8 +427,6 @@ data ListPackages3Response
     = ListPackages3Response200 Inline2
     deriving (Show)
 
-instance Control.Exception.Exception ListPackages3Response
-
 instance ToResponse ListPackages3Response where
     toResponse (ListPackages3Response200 x) =
         Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
@@ -454,7 +444,6 @@ module Test.Schemas.Inline where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -532,7 +521,6 @@ module Test.Schemas.Inline2 where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -627,7 +615,6 @@ module Test.Schemas.Package where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -684,7 +671,6 @@ module Test.Schemas.Pet where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -741,7 +727,6 @@ module Test.Schemas.PetOrPackage where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -799,7 +784,6 @@ library
     , attoparsec
     , base
     , bytestring
-    , exceptions
     , ghc-prim
     , http-api-data
     , http-types

@@ -14,7 +14,6 @@ codegenCabalFile packageName exposedModules extraPackages =
             "attoparsec",
             "base",
             "bytestring",
-            "exceptions",
             "ghc-prim",
             "http-api-data",
             "http-types",

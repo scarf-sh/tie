@@ -11,7 +11,6 @@ module Test.Api where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -47,7 +46,7 @@ data Api m = Api {
         m DummyResponse
 }
 
-application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
+application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
 application run api notFound request respond =
     case Network.Wai.pathInfo request of
         ["v2", __entity, "packages"] ->
@@ -55,7 +54,7 @@ application run api notFound request respond =
                 case Network.Wai.requestMethod request of
                     "GET" ->
                         run request (do
-                            response <- Control.Monad.Catch.handle pure (dummy api __entity)
+                            response <- dummy api __entity
                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )
                     x ->
@@ -289,7 +288,6 @@ module Test.Response.Dummy where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -316,8 +314,6 @@ data DummyResponse
     = DummyResponse200 Package
     deriving (Show)
 
-instance Control.Exception.Exception DummyResponse
-
 instance ToResponse DummyResponse where
     toResponse (DummyResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
@@ -335,7 +331,6 @@ module Test.Schemas.DockerPackage where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -421,7 +416,6 @@ module Test.Schemas.FilePackage where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -507,7 +501,6 @@ module Test.Schemas.Package where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -561,7 +554,6 @@ module Test.Schemas.PackageBase where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -638,7 +630,6 @@ module Test.Schemas.PackageType where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -717,7 +708,6 @@ library
     , attoparsec
     , base
     , bytestring
-    , exceptions
     , ghc-prim
     , http-api-data
     , http-types

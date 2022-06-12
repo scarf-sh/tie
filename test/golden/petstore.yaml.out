@@ -11,7 +11,6 @@ module Test.Api where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -59,7 +58,7 @@ data Api m = Api {
         m ShowPetByIdResponse
 }
 
-application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
+application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
 application run api notFound request respond =
     case Network.Wai.pathInfo request of
         ["pets"] ->
@@ -67,12 +66,12 @@ application run api notFound request respond =
                 "GET" ->
                     optionalQueryParameter "limit" False (\__limit request respond ->
                         run request (do
-                            response <- Control.Monad.Catch.handle pure (listPets api __limit)
+                            response <- listPets api __limit
                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )) request respond
                 "POST" ->
                     run request (do
-                        response <- Control.Monad.Catch.handle pure (createPets api)
+                        response <- createPets api
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -83,7 +82,7 @@ application run api notFound request respond =
                 case Network.Wai.requestMethod request of
                     "GET" ->
                         run request (do
-                            response <- Control.Monad.Catch.handle pure (showPetById api __petId)
+                            response <- showPetById api __petId
                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )
                     x ->
@@ -317,7 +316,6 @@ module Test.Response.CreatePets where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -345,8 +343,6 @@ data CreatePetsResponse
     | CreatePetsDefaultResponse Network.HTTP.Types.Status Error
     deriving (Show)
 
-instance Control.Exception.Exception CreatePetsResponse
-
 instance ToResponse CreatePetsResponse where
     toResponse (CreatePetsResponse201) =
         Network.Wai.responseBuilder (toEnum 201) ([]) mempty
@@ -366,7 +362,6 @@ module Test.Response.ListPets where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -395,8 +390,6 @@ data ListPetsResponse
     | ListPetsDefaultResponse Network.HTTP.Types.Status Error
     deriving (Show)
 
-instance Control.Exception.Exception ListPetsResponse
-
 instance ToResponse ListPetsResponse where
     toResponse (ListPetsResponse200 x __x_next) =
         Network.Wai.responseBuilder (toEnum 200) ([("x-next", Web.HttpApiData.toHeader __x_next) | Just __x_next <- [__x_next]] ++ [(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
@@ -416,7 +409,6 @@ module Test.Response.ShowPetById where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -445,8 +437,6 @@ data ShowPetByIdResponse
     | ShowPetByIdDefaultResponse Network.HTTP.Types.Status Error
     deriving (Show)
 
-instance Control.Exception.Exception ShowPetByIdResponse
-
 instance ToResponse ShowPetByIdResponse where
     toResponse (ShowPetByIdResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
@@ -466,7 +456,6 @@ module Test.Schemas.Error where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -527,7 +516,6 @@ module Test.Schemas.Pet where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -592,7 +580,6 @@ module Test.Schemas.Pets where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -628,7 +615,6 @@ library
     , attoparsec
     , base
     , bytestring
-    , exceptions
     , ghc-prim
     , http-api-data
     , http-types
