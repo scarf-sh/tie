@@ -1,107 +1,92 @@
 cabal-version:      3.0
 name:               tie
 version:            0.1.0.0
+synopsis:
+  Tie allows generation of Haskell server stubs from 
+  OpenAPI (v 3.x) specifications.
 
--- A short (one-line) description of the package.
--- synopsis:
-
--- A longer description of the package.
--- description:
-
--- A URL where users can report bugs.
--- bug-reports:
-
--- The license under which the package is released.
--- license:
-
--- The package author(s).
--- author:
-
--- An email address to which users can send suggestions, bug reports, and patches.
--- maintainer:
-
--- A copyright notice.
--- copyright:
--- category:
+bug-reports:        https://github.com/scarf-sh/tie/issues
+package-url:        https://github.com/scarf-sh/tie
+license:            Apache-2.0
+license-file:       LICENSE
+author:             Alex Biehl (alex@scarf.sh)
+maintainer:         alex@scarf.sh, engineering@scarf.sh
+copyright:          (c) 2022 Scarf Systems
+category:
 extra-source-files: CHANGELOG.md
-
-data-files: 
+data-files:
   Request.template.hs
-  test/golden/**/*.yaml
   test/golden/**/*.out
+  test/golden/**/*.yaml
+
+source-repository head
+  type:     git
+  location: https://github.com/scarf-sh/tie
 
 library
-    autogen-modules: Paths_tie
+  autogen-modules:  Paths_tie
+  other-modules:    Paths_tie
+  exposed-modules:
+    Tie
+    Tie.Codegen.Cabal
+    Tie.Codegen.Imports
+    Tie.Codegen.Operation
+    Tie.Codegen.Request
+    Tie.Codegen.Response
+    Tie.Codegen.Schema
+    Tie.Name
+    Tie.Operation
+    Tie.Resolve
+    Tie.Type
+    Tie.Writer
 
-    other-modules: Paths_tie
-
-    exposed-modules:  Tie 
-                      Tie.Resolve
-                      Tie.Type
-                      Tie.Operation
-                      Tie.Codegen.Imports
-                      Tie.Codegen.Operation
-                      Tie.Codegen.Request
-                      Tie.Codegen.Response
-                      Tie.Codegen.Schema
-                      Tie.Name
-                      Tie.Codegen.Cabal
-                      Tie.Writer
-
-    -- Modules included in this library but not exported.
-    -- other-modules:
-
-    -- LANGUAGE extensions used by modules in this package.
-    -- other-extensions:
-    build-depends:    aeson, 
-                      base,
-                      bytestring,
-                      containers,
-                      text,
-                      directory,
-                      filepath,
-                      http-media,
-                      lens,
-                      mtl,
-                      openapi3,
-                      unordered-containers,
-                      insert-ordered-containers,
-                      prettyprinter,
-                      yaml,
-                      relude
-
-    mixins:
-        base hiding (Prelude),
-        relude (Relude as Prelude),
-        relude
-
-    hs-source-dirs:   src
-    default-language: Haskell2010
-
-executable tie
-
-  build-depends: 
-    base, tie, relude, optparse-applicative
+  build-depends:
+    , aeson
+    , base
+    , bytestring
+    , containers
+    , directory
+    , filepath
+    , http-media
+    , insert-ordered-containers
+    , lens
+    , mtl
+    , openapi3
+    , prettyprinter
+    , relude
+    , text
+    , unordered-containers
+    , yaml
 
   mixins:
     base hiding (Prelude),
     relude (Relude as Prelude),
     relude
 
-  main-is: Main.hs
-  hs-source-dirs: bin
+  hs-source-dirs:   src
+  default-language: Haskell2010
+
+executable tie
+  build-depends:
+    , base
+    , optparse-applicative
+    , relude
+    , tie
+
+  mixins:
+    base hiding (Prelude),
+    relude (Relude as Prelude),
+    relude
+
+  main-is:          Main.hs
+  hs-source-dirs:   bin
   default-language: Haskell2010
 
 test-suite tie-tests
   type:               exitcode-stdio-1.0
   main-is:            Main.hs
-
-  autogen-modules: 
-    Paths_tie
-
-  other-modules:
-    Paths_tie
-
+  autogen-modules:    Paths_tie
+  other-modules:      Paths_tie
   other-modules:
     Test.Tie.Golden
     Test.Tie.Operation
@@ -113,16 +98,16 @@ test-suite tie-tests
     , containers
     , filepath
     , hspec
-    , tasty-hspec
-    , tasty
-    , tasty-golden
+    , insert-ordered-containers
     , openapi3
-    , tasty-hunit
-    , tie
-    , text
     , prettyprinter
     , relude
-    , insert-ordered-containers
+    , tasty
+    , tasty-golden
+    , tasty-hspec
+    , tasty-hunit
+    , text
+    , tie
     , yaml
 
   mixins:
@@ -130,5 +115,5 @@ test-suite tie-tests
     relude (Relude as Prelude),
     relude
 
-  build-tool-depends: tasty-discover:tasty-discover
+  build-tool-depends: tasty-discover:tasty-discover -any
   hs-source-dirs:     test
