@@ -45,7 +45,7 @@ codegenOperations resolver operations = do
   operationsCode <- traverse (codegenOperation resolver) (Map.elems groupedOperations)
   let apiDecl =
         -- TODO instead of "application" take name from openapi spec
-        "application" <+> "::" <+> "(" <> "Control.Monad.Catch.MonadCatch" <+> "m" <> "," <+> "Control.Monad.IO.Class.MonadIO" <+> "m" <> ")" <+> "=>" <+> "(" <> "forall" <+> "a" <+> "." <+> "Network.Wai.Request" <+> "->" <+> "m"
+        "application" <+> "::" <+> "(" <> "Control.Monad.IO.Class.MonadIO" <+> "m" <> ")" <+> "=>" <+> "(" <> "forall" <+> "a" <+> "." <+> "Network.Wai.Request" <+> "->" <+> "m"
           <+> "a"
           <+> "->"
           <+> "IO"
@@ -94,7 +94,10 @@ codegenOperations resolver operations = do
                     )
               )
 
-  pure (dataApiDecl <> PP.line <> PP.line <> apiDecl)
+      inlineablePragma = 
+        "{-#" <+> "INLINABLE" <+> "application" <+> "#-}"
+
+  pure (dataApiDecl <> PP.line <> PP.line <> apiDecl <> PP.line <> inlineablePragma)
 
 codegenApiType :: Monad m => Resolver m -> [Operation] -> m (PP.Doc ann)
 codegenApiType resolver operations = do
@@ -187,18 +190,16 @@ codegenCallApiMember operationName path queryParams headerParams requestBody =
   "run" <+> "request" <+> "(" <> "do" <> PP.line
     <> PP.indent
       4
-      ( "response" <+> "<-" <+> "Control.Monad.Catch.handle" <+> "pure"
-          <+> "("
-            <> PP.hsep
-              ( concat
-                  [ [toApiMemberName operationName, "api"],
-                    [toParamBinder name | VariableSegment Param {name} <- path],
-                    [toParamBinder name | Param {name} <- queryParams],
-                    [toParamBinder name | Param {name} <- headerParams],
-                    ["body" | Just {} <- [requestBody]]
-                  ]
-              )
-            <> ")"
+      ( "response" <+> "<-"
+          <+> PP.hsep
+            ( concat
+                [ [toApiMemberName operationName, "api"],
+                  [toParamBinder name | VariableSegment Param {name} <- path],
+                  [toParamBinder name | Param {name} <- queryParams],
+                  [toParamBinder name | Param {name} <- headerParams],
+                  ["body" | Just {} <- [requestBody]]
+                ]
+            )
             <> PP.line
             <> "Control.Monad.IO.Class.liftIO"
           <+> "(" <> "respond"

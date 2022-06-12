@@ -112,14 +112,10 @@ codegenResponses resolver Operation {..} = do
             ( "show" <+> "_" <+> "=" <+> "\"" <> toApiResponseTypeName name <+> "{}" <> "\""
             )
 
-      exceptionInstance =
-        "instance" <+> "Control.Exception.Exception" <+> toApiResponseTypeName name
-
   pure
     ( PP.vsep $
         intersperse mempty $
-          [decl, exceptionInstance, instances]
-            ++ [showInstance | requiresCustomShowInstance]
+          [decl, instances] ++ [showInstance | requiresCustomShowInstance]
     )
 
 codegenToResponses :: Name -> [(Int, Response)] -> Maybe Response -> Doc ann

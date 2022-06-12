@@ -47,8 +47,6 @@ codegenModuleHeader moduleName =
     <> PP.line
     <> "import" <+> "qualified" <+> "Control.Monad"
     <> PP.line
-    <> "import" <+> "qualified" <+> "Control.Monad.Catch"
-    <> PP.line
     <> "import" <+> "qualified" <+> "Control.Monad.IO.Class"
     <> PP.line
     <> "import" <+> "qualified" <+> "Data.Aeson"

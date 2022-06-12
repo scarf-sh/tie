@@ -11,7 +11,6 @@ module Test.Api where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -67,7 +66,7 @@ data Api m = Api {
         m GetUserResponse
 }
 
-application :: (Control.Monad.Catch.MonadCatch m, Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
+application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
 application run api notFound request respond =
     case Network.Wai.pathInfo request of
         ["users", __id, "create", __name] ->
@@ -78,7 +77,7 @@ application run api notFound request respond =
                             requiredQueryParameter "page" (\__page request respond ->
                                 optionalQueryParameter "offset" False (\__offset request respond ->
                                     run request (do
-                                        response <- Control.Monad.Catch.handle pure (getUser api __id __name __page __offset)
+                                        response <- getUser api __id __name __page __offset
                                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                                     )) request respond) request respond
                         "POST" ->
@@ -86,7 +85,7 @@ application run api notFound request respond =
                                 optionalQueryParameter "offset" False (\__offset request respond ->
                                     parseRequestBody [jsonBodyParser] (\body request respond ->
                                         run request (do
-                                            response <- Control.Monad.Catch.handle pure (createUser api __id __name __page __offset body)
+                                            response <- createUser api __id __name __page __offset body
                                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                                         )) request respond) request respond) request respond
                         x ->
@@ -97,6 +96,7 @@ application run api notFound request respond =
     where
         unsupportedMethod _ =
             respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
+{-# INLINABLE application #-}
 ---------------------
 Test/Request.hs
 
@@ -319,7 +319,6 @@ module Test.Response.CreateUser where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -388,8 +387,6 @@ data CreateUserResponse
     = CreateUserResponse200 CreateUserResponseBody200
     deriving (Show)
 
-instance Control.Exception.Exception CreateUserResponse
-
 instance ToResponse CreateUserResponse where
     toResponse (CreateUserResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
@@ -407,7 +404,6 @@ module Test.Response.GetUser where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -435,8 +431,6 @@ data GetUserResponse
     | GetUserResponse404
     deriving (Show)
 
-instance Control.Exception.Exception GetUserResponse
-
 instance ToResponse GetUserResponse where
     toResponse (GetUserResponse200 x) =
         Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
@@ -456,7 +450,6 @@ module Test.Schemas.Car where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -529,7 +522,6 @@ module Test.Schemas.NISE where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -623,7 +615,6 @@ module Test.Schemas.PackageId where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -772,7 +763,6 @@ module Test.Schemas.Plane where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -854,7 +844,6 @@ module Test.Schemas.Vehicle where
 import qualified Control.Applicative
 import qualified Control.Exception
 import qualified Control.Monad
-import qualified Control.Monad.Catch
 import qualified Control.Monad.IO.Class
 import qualified Data.Aeson
 import qualified Data.Aeson.Encoding
@@ -921,7 +910,6 @@ library
     , attoparsec
     , base
     , bytestring
-    , exceptions
     , ghc-prim
     , http-api-data
     , http-types
