@@ -34,7 +34,7 @@ Available options:
   -h,--help                Show this help text
 ```
 
-## Insallation
+## Installation
 
 ### Building from source
 
