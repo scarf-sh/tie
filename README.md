@@ -7,7 +7,20 @@ If you are looking for a generator for Haskell client code, check out the
 [Haskell-OpenAPI-Client-Code-Generator](https://github.com/Haskell-OpenAPI-Code-Generator/Haskell-OpenAPI-Client-Code-Generator)
 project.
 
-## Building Tie
+## Usage
+
+```bash
+$ tie
+Missing: FILE
+
+Usage: tie [-o|--output DIR] [--module-name MODULE] [--package-name PACKAGE]
+           [--extra-package PACKAGE] FILE
+  Generate a Haskell server from an OpenAPI3 specification
+```
+
+## Insallation
+
+### Building from source
 
 Below are the steps to install Tie using the Cabal build tool.
 
@@ -40,7 +53,7 @@ $ cabal install .
 ## Community & Contact
 
 Feel free to join on us on our
-[community Slack](https://tinyurl.com/scarf-community-slack) (#tie channel)!
+[community Slack](https://tinyurl.com/scarf-community-slack) (`#tie` channel)!
 
 ## License
 
