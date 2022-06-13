@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="/assets/tie.svg" width="200" />
+</div>
+
 <h1 align="center">Tie</h1>
 
 Tie allows generation of Haskell server stubs from
@@ -7,7 +11,32 @@ If you are looking for a generator for Haskell client code, check out the
 [Haskell-OpenAPI-Client-Code-Generator](https://github.com/Haskell-OpenAPI-Code-Generator/Haskell-OpenAPI-Client-Code-Generator)
 project.
 
-## Building Tie
+## Usage
+
+```
+$ tie --help
+tie - openapi3 server code generator
+
+Usage: tie [-o|--output DIR] [--module-name MODULE] [--package-name PACKAGE]
+           [--extra-package PACKAGE] FILE
+
+  Generate a Haskell server from an OpenAPI3 specification
+
+Available options:
+  -o,--output DIR          The directory output (default: "out")
+  --module-name MODULE     Name of the generated top level module
+                           (default: "OpenAPI")
+  --package-name PACKAGE   Name of the generated cabal project
+                           (default: "open-api")
+  --extra-package PACKAGE  Extra packages to include in the generated cabal
+                           project
+  FILE                     OpenAPI specification file
+  -h,--help                Show this help text
+```
+
+## Insallation
+
+### Building from source
 
 Below are the steps to install Tie using the Cabal build tool.
 
@@ -40,7 +69,7 @@ $ cabal install .
 ## Community & Contact
 
 Feel free to join on us on our
-[community Slack](https://tinyurl.com/scarf-community-slack) (#tie channel)!
+[community Slack](https://tinyurl.com/scarf-community-slack) (`#tie` channel)!
 
 ## License
 

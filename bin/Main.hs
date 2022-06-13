@@ -47,6 +47,7 @@ options =
           <> metavar "DIR"
           <> showDefault
           <> value "out"
+          <> help "The directory output"
       )
     <*> option
       str
@@ -54,6 +55,7 @@ options =
           <> metavar "MODULE"
           <> showDefault
           <> value "OpenAPI"
+          <> help "Name of the generated top level module"
       )
     <*> option
       str
@@ -61,16 +63,19 @@ options =
           <> metavar "PACKAGE"
           <> showDefault
           <> value "open-api"
+          <> help "Name of the generated cabal project"
       )
     <*> many
       ( option
           str
           ( long "extra-package"
               <> metavar "PACKAGE"
+              <> help "Extra packages to include in the generated cabal project"
           )
       )
     <*> strArgument
       ( metavar "FILE"
+          <> help "OpenAPI specification file"
       )
 
 main :: IO ()
