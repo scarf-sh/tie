@@ -13,13 +13,25 @@ project.
 
 ## Usage
 
-```bash
-$ tie
-Missing: FILE
+```
+$ tie --help
+tie - openapi3 server code generator
 
 Usage: tie [-o|--output DIR] [--module-name MODULE] [--package-name PACKAGE]
            [--extra-package PACKAGE] FILE
+
   Generate a Haskell server from an OpenAPI3 specification
+
+Available options:
+  -o,--output DIR          The directory output (default: "out")
+  --module-name MODULE     Name of the generated top level module
+                           (default: "OpenAPI")
+  --package-name PACKAGE   Name of the generated cabal project
+                           (default: "open-api")
+  --extra-package PACKAGE  Extra packages to include in the generated cabal
+                           project
+  FILE                     OpenAPI specification file
+  -h,--help                Show this help text
 ```
 
 ## Insallation
