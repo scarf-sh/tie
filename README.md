@@ -1,3 +1,7 @@
+<div align="center">
+  <img src="/assets/tie.svg" width="200" />
+</div>
+
 <h1 align="center">Tie</h1>
 
 Tie allows generation of Haskell server stubs from
