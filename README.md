@@ -1,8 +1,6 @@
-<div align="center">
-  <img src="/assets/tie.svg" width="200" />
-</div>
-
-<h1 align="center">Tie</h1>
+<h1 align="center">
+  <img src="/assets/tie.svg" width="300" />
+</h1>
 
 Tie allows generation of Haskell server stubs from
 [OpenAPI (v 3.x) specifications](https://swagger.io/specification/).
