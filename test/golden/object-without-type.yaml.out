@@ -61,7 +61,7 @@ application run api notFound request respond =
             notFound request respond
     where
         unsupportedMethod _ =
-            respond (Network.Wai.responseBuilder (toEnum 405) [] mempty)
+            respond (Network.Wai.responseBuilder Network.HTTP.Types.status405 [] mempty)
 {-# INLINABLE application #-}
 ---------------------
 Test/Request.hs
@@ -315,7 +315,7 @@ data TestResponse
 
 instance ToResponse TestResponse where
     toResponse (TestResponse200 x) =
-        Network.Wai.responseBuilder (toEnum 200) ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+        Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
 test.cabal
 
