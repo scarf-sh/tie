@@ -86,8 +86,7 @@ codegenOperations resolver operations = do
                         <> PP.indent
                           4
                           ( "respond" <+> "(" <> "Network.Wai.responseBuilder"
-                              <+> "(" <> "toEnum"
-                              <+> "405" <> ")"
+                              <+> "Network.HTTP.Types.status" <> "405"
                               <+> "[]"
                               <+> "mempty" <> ")"
                           )

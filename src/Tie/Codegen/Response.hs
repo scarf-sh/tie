@@ -202,7 +202,7 @@ codegenToResponses operationName responses defaultResponse =
                     <> PP.line
                     <> PP.indent
                       4
-                      ( waiResponse response <+> "(" <> "toEnum" <+> PP.pretty statusCode <> ")"
+                      ( waiResponse response <+> "Network.HTTP.Types.status" <> PP.pretty statusCode
                           <+> responseHeaders response
                           <+> bodySerialize response
                       )
