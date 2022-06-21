@@ -93,7 +93,7 @@ codegenOperations resolver operations = do
                     )
               )
 
-      inlineablePragma = 
+      inlineablePragma =
         "{-#" <+> "INLINABLE" <+> "application" <+> "#-}"
 
   pure (dataApiDecl <> PP.line <> PP.line <> apiDecl <> PP.line <> inlineablePragma)

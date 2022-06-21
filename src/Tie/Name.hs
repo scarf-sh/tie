@@ -154,9 +154,14 @@ toFieldName :: Name -> PP.Doc ann
 toFieldName =
   PP.pretty . Text.pack . escapeKeyword . lowerFirstLetter . toCamelCase . Text.unpack . unName
 
+-- | Returns the name as written, should be used within quotes only.
 toParamName :: Name -> PP.Doc ann
 toParamName =
-  PP.pretty . unName
+  PP.pretty . filterNUL . unName
+  where
+    -- Filter away '\0' to support the weird cookie trick
+    -- (see test/golden/weird-cookie-trick.yaml)
+    filterNUL = Text.filter (/= '\0')
 
 toParamBinder :: Name -> PP.Doc ann
 toParamBinder =
@@ -262,12 +267,12 @@ escapeKeyword input = haskelify $ case input of
   _ -> input
 
 haskelify :: String -> String
-haskelify xs =
-  [ case x of
-      '-' -> '_'
-      _ -> x
-    | x <- xs
-  ]
+haskelify = concatMap escape
+  where
+    escape c = case c of
+      '-' -> "_"
+      '\0' -> "NUL"
+      _ -> [c]
 
 toCamelCase :: String -> String
 toCamelCase input =
