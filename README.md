@@ -1,5 +1,6 @@
 <h1 align="center">
   <img src="/assets/tie.svg" width="300" />
+  <img referrerpolicy="no-referrer-when-downgrade" src="https://static.scarf.sh/a.png?x-pxid=bc48832f-871e-4165-8f5c-539748589cbe" />
 </h1>
 
 Tie allows generation of Haskell server stubs from
