@@ -33,6 +33,10 @@ Available options:
   -h,--help                Show this help text
 ```
 
+## Example
+
+See [`example/`](/example) for the ubiquitous OpenAPI Petstore example.
+
 ## Installation
 
 ### Building from source
