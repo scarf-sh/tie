@@ -1,0 +1,25 @@
+cabal-version: 3.0
+name: petstore-api
+version: 0.1.0.0
+library
+  build-depends:
+    , aeson
+    , attoparsec
+    , base
+    , bytestring
+    , ghc-prim
+    , http-api-data
+    , http-types
+    , text
+    , time
+    , wai
+  exposed-modules:
+    Petstore.API.Api
+    Petstore.API.Request
+    Petstore.API.Response
+    Petstore.API.Response.CreatePets
+    Petstore.API.Response.ListPets
+    Petstore.API.Response.ShowPetById
+    Petstore.API.Schemas.Error
+    Petstore.API.Schemas.Pet
+    Petstore.API.Schemas.Pets
