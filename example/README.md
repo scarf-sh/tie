@@ -37,3 +37,6 @@ The generated code will placed in [`generated`](generated). The modules are plac
   - [`generated/Petstore/API/Response`](generated/Petstore/API/Response) is where Tie places the 
     response types for the individual operations. You will find a Haskell module for each operation 
     in the OpenAPI specification here.
+  
+  - [`app/Main.hs`](app/Main.hs) is the entry point of the example Petstore application. It provides
+    an implementation for the generated `Api` type and spins up a Warp webserver.
