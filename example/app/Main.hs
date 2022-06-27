@@ -72,7 +72,7 @@ createPets = do
         },
       Petstore.Pet
         { id = 2,
-          name = "바다 거북",
+          name = "바다거북",
           tag = Just "🐢"
         },
       Petstore.Pet
