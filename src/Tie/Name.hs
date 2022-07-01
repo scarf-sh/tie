@@ -276,7 +276,10 @@ haskelify = concatMap escape
 
 toCamelCase :: String -> String
 toCamelCase input =
-  (prefix <>) . (<> suffix) . concat . map (capitalizeFirstLetter . Text.unpack)
+  (prefix <>)
+    . (<> suffix)
+    . concat
+    . map (capitalizeFirstLetter . Text.unpack)
     . Text.split (\c -> c == '_' || c == '-')
     . Text.pack
     $ input

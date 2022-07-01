@@ -49,13 +49,13 @@ codegenResponses resolver Operation {..} = do
   let responseBodyType Response {responseContent}
         -- We treat JSON responses specially
         | Just jsonContent <- lookup "application/json" responseContent =
-          [maybe "Data.Aeson.Value" codegenFieldType jsonContent]
+            [maybe "Data.Aeson.Value" codegenFieldType jsonContent]
         -- Everything else we use a Network.Wai.StreamingBody type
         | not (null responseContent) =
-          ["Network.Wai.StreamingBody"]
+            ["Network.Wai.StreamingBody"]
         -- Otherwise, no response body present
         | otherwise =
-          []
+            []
 
       responseHeaderTypes Response {headers} =
         map codegenHeaderSchema headers
@@ -64,11 +64,11 @@ codegenResponses resolver Operation {..} = do
       -- we have to generate Show instances for those types!
       canDeriveStockShowInstanceForResponse Response {responseContent}
         | Just _ <- lookup "application/json" responseContent =
-          True
+            True
         | not (null responseContent) =
-          False
+            False
         | otherwise =
-          True
+            True
 
       requiresCustomShowInstance =
         not $
@@ -77,40 +77,46 @@ codegenResponses resolver Operation {..} = do
             (maybeToList defaultResponse ++ map snd responses)
 
       decl =
-        "data" <+> toApiResponseTypeName name <> PP.line
-          <> PP.indent
-            4
-            ( PP.vsep $
-                [ PP.hsep $
-                    concat
-                      [ [op, toApiResponseConstructorName name statusCode],
-                        responseBodyType response,
-                        responseHeaderTypes response
-                      ]
-                  | (op, (statusCode, response)) <- zip ("=" : repeat "|") responses
-                ]
-                  ++ [ PP.hsep $
-                         concat
-                           [ ["|", toApiDefaultResponseConstructorName name, "Network.HTTP.Types.Status"],
-                             responseBodyType response,
-                             responseHeaderTypes response
-                           ]
-                       | Just response <- [defaultResponse]
-                     ]
-                  ++ [ "deriving" <+> "(" <> "Show" <> ")"
-                       | not requiresCustomShowInstance
-                     ]
-            )
+        "data"
+          <+> toApiResponseTypeName name
+            <> PP.line
+            <> PP.indent
+              4
+              ( PP.vsep $
+                  [ PP.hsep $
+                      concat
+                        [ [op, toApiResponseConstructorName name statusCode],
+                          responseBodyType response,
+                          responseHeaderTypes response
+                        ]
+                    | (op, (statusCode, response)) <- zip ("=" : repeat "|") responses
+                  ]
+                    ++ [ PP.hsep $
+                           concat
+                             [ ["|", toApiDefaultResponseConstructorName name, "Network.HTTP.Types.Status"],
+                               responseBodyType response,
+                               responseHeaderTypes response
+                             ]
+                         | Just response <- [defaultResponse]
+                       ]
+                    ++ [ "deriving" <+> "(" <> "Show" <> ")"
+                         | not requiresCustomShowInstance
+                       ]
+              )
 
       instances =
         codegenToResponses name responses defaultResponse
 
       showInstance =
-        "instance" <+> "Show" <+> toApiResponseTypeName name <+> "where" <> PP.line
-          <> PP.indent
-            4
-            ( "show" <+> "_" <+> "=" <+> "\"" <> toApiResponseTypeName name <+> "{}" <> "\""
-            )
+        "instance"
+          <+> "Show"
+          <+> toApiResponseTypeName name
+          <+> "where"
+            <> PP.line
+            <> PP.indent
+              4
+              ( "show" <+> "_" <+> "=" <+> "\"" <> toApiResponseTypeName name <+> "{}" <> "\""
+              )
 
   pure
     ( PP.vsep $
@@ -130,32 +136,32 @@ codegenToResponses operationName responses defaultResponse =
 
       waiResponse Response {responseContent}
         | Just _ <- lookup "application/json" responseContent =
-          -- JSON is very easy to turn into Builders!
-          "Network.Wai.responseBuilder"
+            -- JSON is very easy to turn into Builders!
+            "Network.Wai.responseBuilder"
         | not (null responseContent) =
-          -- Tie doesn't know about the content type of this response,
-          -- uses a Stream instaed
-          "Network.Wai.responseStream"
+            -- Tie doesn't know about the content type of this response,
+            -- uses a Stream instaed
+            "Network.Wai.responseStream"
         | otherwise =
-          -- For empty response bodies we pass mempty
-          "Network.Wai.responseBuilder"
+            -- For empty response bodies we pass mempty
+            "Network.Wai.responseBuilder"
 
       bodySerialize Response {responseContent}
         | Just _ <- lookup "application/json" responseContent =
-          "(" <> "Data.Aeson.fromEncoding" <+> "(" <> "Data.Aeson.toEncoding" <+> "x" <> ")" <> ")"
+            "(" <> "Data.Aeson.fromEncoding" <+> "(" <> "Data.Aeson.toEncoding" <+> "x" <> ")" <> ")"
         | not (null responseContent) =
-          "x"
+            "x"
         | otherwise =
-          "mempty"
+            "mempty"
 
       responseHeaders response@Response {responseContent, headers} =
         let contentType
               | Just _ <- lookup "application/json" responseContent =
-                ["(Network.HTTP.Types.hContentType, \"application/json\")"]
+                  ["(Network.HTTP.Types.hContentType, \"application/json\")"]
               | (unknownMediaType, _) : _ <- responseContent =
-                ["(Network.HTTP.Types.hContentType, \"" <> PP.pretty @Text (decodeUtf8 (renderHeader unknownMediaType)) <> "\")"]
+                  ["(Network.HTTP.Types.hContentType, \"" <> PP.pretty @Text (decodeUtf8 (renderHeader unknownMediaType)) <> "\")"]
               | otherwise =
-                []
+                  []
 
             requiredHeaders =
               [ "(\"" <> toParamName name <> "\"," <+> "Web.HttpApiData.toHeader" <+> toParamBinder name <> ")"
@@ -163,7 +169,9 @@ codegenToResponses operationName responses defaultResponse =
               ]
 
             optionalHeaders =
-              [ "[" <> "(\"" <> toParamName name <> "\"," <+> "Web.HttpApiData.toHeader" <+> toParamBinder name <> ")"
+              [ "[" <> "(\"" <> toParamName name <> "\","
+                  <+> "Web.HttpApiData.toHeader"
+                  <+> toParamBinder name <> ")"
                   <+> "|"
                   <+> "Just"
                   <+> toParamBinder name
@@ -185,49 +193,57 @@ codegenToResponses operationName responses defaultResponse =
               <> ")"
 
       decl =
-        "instance" <+> "ToResponse" <+> toApiResponseTypeName operationName <+> "where" <> PP.line
-          <> PP.indent
-            4
-            ( PP.vsep $
-                [ "toResponse" <+> "("
-                    <> PP.hsep
-                      ( concat
-                          [ [toApiResponseConstructorName operationName statusCode],
-                            bodyBinder response,
-                            [toParamBinder name | Header {name} <- headers]
-                          ]
-                      )
-                    <> ")"
+        "instance"
+          <+> "ToResponse"
+          <+> toApiResponseTypeName operationName
+          <+> "where"
+            <> PP.line
+            <> PP.indent
+              4
+              ( PP.vsep $
+                  [ "toResponse"
+                      <+> "("
+                        <> PP.hsep
+                          ( concat
+                              [ [toApiResponseConstructorName operationName statusCode],
+                                bodyBinder response,
+                                [toParamBinder name | Header {name} <- headers]
+                              ]
+                          )
+                        <> ")"
                       <+> "="
-                    <> PP.line
-                    <> PP.indent
-                      4
-                      ( waiResponse response <+> "Network.HTTP.Types.status" <> PP.pretty statusCode
-                          <+> responseHeaders response
-                          <+> bodySerialize response
-                      )
-                  | (statusCode, response@Response {headers}) <- responses
-                ]
-                  ++ [ "toResponse" <+> "("
-                         <> PP.hsep
-                           ( concat
-                               [ [toApiDefaultResponseConstructorName operationName, "status"],
-                                 bodyBinder response,
-                                 [toParamBinder name | Header {name} <- headers]
-                               ]
-                           )
-                         <> ")"
-                         <+> "="
-                         <> PP.line
-                         <> PP.indent
-                           4
-                           ( waiResponse response <+> "status"
-                               <+> responseHeaders response
-                               <+> bodySerialize response
-                           )
-                       | Just response@Response {headers} <- [defaultResponse]
-                     ]
-            )
+                        <> PP.line
+                        <> PP.indent
+                          4
+                          ( waiResponse response
+                              <+> "Network.HTTP.Types.status" <> PP.pretty statusCode
+                              <+> responseHeaders response
+                              <+> bodySerialize response
+                          )
+                    | (statusCode, response@Response {headers}) <- responses
+                  ]
+                    ++ [ "toResponse"
+                           <+> "("
+                             <> PP.hsep
+                               ( concat
+                                   [ [toApiDefaultResponseConstructorName operationName, "status"],
+                                     bodyBinder response,
+                                     [toParamBinder name | Header {name} <- headers]
+                                   ]
+                               )
+                             <> ")"
+                           <+> "="
+                             <> PP.line
+                             <> PP.indent
+                               4
+                               ( waiResponse response
+                                   <+> "status"
+                                   <+> responseHeaders response
+                                   <+> bodySerialize response
+                               )
+                         | Just response@Response {headers} <- [defaultResponse]
+                       ]
+              )
    in decl
 
 auxTemplate :: Text
