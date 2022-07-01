@@ -356,9 +356,9 @@ parsePath path =
   let toPathSegment s
         | Just s <- Text.stripPrefix "{" s,
           Just s <- Text.stripSuffix "}" s =
-          VariableSegment s
+            VariableSegment s
         | otherwise =
-          StaticSegment s
+            StaticSegment s
    in case Text.splitOn "/" (toText path) of
         -- leading / results in a leading empty string after split
         "" : segments ->

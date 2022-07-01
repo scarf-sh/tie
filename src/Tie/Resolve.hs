@@ -47,9 +47,9 @@ resolveComponent components notFound = \referenced -> do
           InsOrd.lookup
             (OpenApi.getReference reference)
             (resolvables components) ->
-        pure a
+          pure a
       | otherwise -> do
-        notFound reference
+          notFound reference
 
 -- | Helper class helping to dispatch from 'OpenApi.Referenced' to component type @a@.
 class Resolvable a where

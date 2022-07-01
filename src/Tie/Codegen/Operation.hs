@@ -45,7 +45,17 @@ codegenOperations resolver operations = do
   operationsCode <- traverse (codegenOperation resolver) (Map.elems groupedOperations)
   let apiDecl =
         -- TODO instead of "application" take name from openapi spec
-        "application" <+> "::" <+> "(" <> "Control.Monad.IO.Class.MonadIO" <+> "m" <> ")" <+> "=>" <+> "(" <> "forall" <+> "a" <+> "." <+> "Network.Wai.Request" <+> "->" <+> "m"
+        "application"
+          <+> "::"
+          <+> "(" <> "Control.Monad.IO.Class.MonadIO"
+          <+> "m" <> ")"
+          <+> "=>"
+          <+> "(" <> "forall"
+          <+> "a"
+          <+> "."
+          <+> "Network.Wai.Request"
+          <+> "->"
+          <+> "m"
           <+> "a"
           <+> "->"
           <+> "IO"
@@ -56,41 +66,53 @@ codegenOperations resolver operations = do
           <+> "->"
           <+> "Network.Wai.Application"
           <+> "->"
-          <+> "Network.Wai.Application" <> PP.line
+          <+> "Network.Wai.Application"
+            <> PP.line
             <> "application"
           <+> "run"
           <+> "api"
           <+> "notFound"
           <+> "request"
           <+> "respond"
-          <+> "=" <> PP.line
+          <+> "="
+            <> PP.line
             <> PP.indent
               4
-              ( "case" <+> "Network.Wai.pathInfo" <+> "request" <+> "of" <> PP.line
-                  <> PP.indent
-                    4
-                    ( PP.concatWith
-                        (\x y -> x <> PP.line <> PP.line <> y)
-                        ( operationsCode
-                            ++ [ "_" <+> "->" <> PP.line
-                                   <> PP.indent 4 ("notFound" <+> "request" <+> "respond")
-                               ]
-                        )
-                    )
-                  <> PP.line
-                  <> "where"
-                  <> PP.line
-                  <> PP.indent
-                    4
-                    ( "unsupportedMethod" <+> "_" <+> "=" <> PP.line
-                        <> PP.indent
-                          4
-                          ( "respond" <+> "(" <> "Network.Wai.responseBuilder"
-                              <+> "Network.HTTP.Types.status" <> "405"
-                              <+> "[]"
-                              <+> "mempty" <> ")"
+              ( "case"
+                  <+> "Network.Wai.pathInfo"
+                  <+> "request"
+                  <+> "of"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( PP.concatWith
+                          (\x y -> x <> PP.line <> PP.line <> y)
+                          ( operationsCode
+                              ++ [ "_"
+                                     <+> "->"
+                                       <> PP.line
+                                       <> PP.indent 4 ("notFound" <+> "request" <+> "respond")
+                                 ]
                           )
-                    )
+                      )
+                    <> PP.line
+                    <> "where"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( "unsupportedMethod"
+                          <+> "_"
+                          <+> "="
+                            <> PP.line
+                            <> PP.indent
+                              4
+                              ( "respond"
+                                  <+> "(" <> "Network.Wai.responseBuilder"
+                                  <+> "Network.HTTP.Types.status" <> "405"
+                                  <+> "[]"
+                                  <+> "mempty" <> ")"
+                              )
+                      )
               )
 
       inlineablePragma =
@@ -105,10 +127,16 @@ codegenApiType resolver operations = do
         PP.concatWith (\x y -> x <> "," <> PP.line <> y) operationsFieldsCode
 
       dataDecl =
-        "data" <+> "Api" <+> "m" <+> "=" <+> "Api" <+> "{" <> PP.line
-          <> PP.indent 4 fieldsCode
-          <> PP.line
-          <> "}"
+        "data"
+          <+> "Api"
+          <+> "m"
+          <+> "="
+          <+> "Api"
+          <+> "{"
+            <> PP.line
+            <> PP.indent 4 fieldsCode
+            <> PP.line
+            <> "}"
   pure dataDecl
 
 codegenApiTypeOperation :: Monad m => Resolver m -> Operation -> m (PP.Doc ann)
@@ -126,20 +154,21 @@ codegenApiTypeOperation resolver Operation {..} = do
            ]
   pure $
     codegenApiMemberComment summary
-      <> toApiMemberName name <+> "::"
-      <> PP.line
-      <> PP.indent
-        4
-        ( PP.concatWith
-            (\x y -> x <+> "->" <> PP.line <> y)
-            ( paramsCode
-                ++ [ codegenRequestBodyComment body
-                       <> codegenFieldType jsonRequestBodyContent
-                     | Just body@RequestBody {jsonRequestBodyContent} <- [requestBody]
-                   ]
-                ++ ["m" <+> toApiResponseTypeName name]
-            )
-        )
+      <> toApiMemberName name
+      <+> "::"
+        <> PP.line
+        <> PP.indent
+          4
+          ( PP.concatWith
+              (\x y -> x <+> "->" <> PP.line <> y)
+              ( paramsCode
+                  ++ [ codegenRequestBodyComment body
+                         <> codegenFieldType jsonRequestBodyContent
+                       | Just body@RequestBody {jsonRequestBodyContent} <- [requestBody]
+                     ]
+                  ++ ["m" <+> toApiResponseTypeName name]
+              )
+          )
   where
     codegenApiMemberComment mcomment = case mcomment of
       Nothing -> mempty
@@ -186,39 +215,46 @@ codegenOperation resolver operations@(Operation {path} : _) =
 
 codegenCallApiMember :: Name -> Path -> [Param] -> [Param] -> Maybe RequestBody -> PP.Doc ann
 codegenCallApiMember operationName path queryParams headerParams requestBody =
-  "run" <+> "request" <+> "(" <> "do" <> PP.line
-    <> PP.indent
-      4
-      ( "response" <+> "<-"
-          <+> PP.hsep
-            ( concat
-                [ [toApiMemberName operationName, "api"],
-                  [toParamBinder name | VariableSegment Param {name} <- path],
-                  [toParamBinder name | Param {name} <- queryParams],
-                  [toParamBinder name | Param {name} <- headerParams],
-                  ["body" | Just {} <- [requestBody]]
-                ]
-            )
-            <> PP.line
-            <> "Control.Monad.IO.Class.liftIO"
-          <+> "(" <> "respond"
-          <+> "$!"
-          <+> "(" <> "toResponse"
-          <+> "response" <> ")" <> ")"
-      )
-    <> PP.line
-    <> ")"
+  "run"
+    <+> "request"
+    <+> "("
+      <> "do"
+      <> PP.line
+      <> PP.indent
+        4
+        ( "response"
+            <+> "<-"
+            <+> PP.hsep
+              ( concat
+                  [ [toApiMemberName operationName, "api"],
+                    [toParamBinder name | VariableSegment Param {name} <- path],
+                    [toParamBinder name | Param {name} <- queryParams],
+                    [toParamBinder name | Param {name} <- headerParams],
+                    ["body" | Just {} <- [requestBody]]
+                  ]
+              )
+              <> PP.line
+              <> "Control.Monad.IO.Class.liftIO"
+            <+> "(" <> "respond"
+            <+> "$!"
+            <+> "(" <> "toResponse"
+            <+> "response" <> ")" <> ")"
+        )
+      <> PP.line
+      <> ")"
 
 codegenPathGuard :: Path -> PP.Doc ann -> PP.Doc ann
 codegenPathGuard path continuation =
-  codegenPathPattern path <+> "->" <> PP.line
-    <> PP.indent
-      4
-      ( codegenParamsGuard
-          codegenPathParamGuard
-          [param | VariableSegment param <- path]
-          continuation
-      )
+  codegenPathPattern path
+    <+> "->"
+      <> PP.line
+      <> PP.indent
+        4
+        ( codegenParamsGuard
+            codegenPathParamGuard
+            [param | VariableSegment param <- path]
+            continuation
+        )
 
 codegenPathPattern :: Path -> PP.Doc ann
 codegenPathPattern path =
@@ -237,16 +273,20 @@ codegenPathSegmentPattern segment = case segment of
 
 codegenMethodGuard :: [(Text, PP.Doc ann)] -> PP.Doc ann
 codegenMethodGuard methodBodies =
-  "case" <+> "Network.Wai.requestMethod" <+> "request" <+> "of" <> PP.line
-    <> PP.indent
-      4
-      ( PP.vsep $
-          [ "\"" <> PP.pretty method <> "\"" <+> "->" <> PP.line <> PP.indent 4 body
-            | (method, body) <- methodBodies
-          ]
-            ++ [ "x" <+> "->" <> PP.line <> PP.indent 4 ("unsupportedMethod" <+> "x")
-               ]
-      )
+  "case"
+    <+> "Network.Wai.requestMethod"
+    <+> "request"
+    <+> "of"
+      <> PP.line
+      <> PP.indent
+        4
+        ( PP.vsep $
+            [ "\"" <> PP.pretty method <> "\"" <+> "->" <> PP.line <> PP.indent 4 body
+              | (method, body) <- methodBodies
+            ]
+              ++ [ "x" <+> "->" <> PP.line <> PP.indent 4 ("unsupportedMethod" <+> "x")
+                 ]
+        )
 
 codegenRequestBodyGuard :: Maybe RequestBody -> PP.Doc ann -> PP.Doc ann
 codegenRequestBodyGuard requestBody continuation = case requestBody of
@@ -259,9 +299,17 @@ codegenRequestBodyGuard requestBody continuation = case requestBody of
 
         parsersList =
           "[" <> PP.concatWith (\x y -> x <> "," <+> y) parsers <> "]"
-     in "parseRequestBody" <+> parsersList <+> "(" <> "\\" <> "body" <+> "request" <+> "respond" <+> "->" <> PP.line
-          <> PP.indent 4 continuation
-          <> ")" <+> "request" <+> "respond"
+     in "parseRequestBody"
+          <+> parsersList
+          <+> "(" <> "\\" <> "body"
+          <+> "request"
+          <+> "respond"
+          <+> "->"
+            <> PP.line
+            <> PP.indent 4 continuation
+            <> ")"
+          <+> "request"
+          <+> "respond"
 
 codegenQueryParamsGuard :: [Param] -> PP.Doc ann -> PP.Doc ann
 codegenQueryParamsGuard =
@@ -280,28 +328,69 @@ codegenParamsGuard codegenParam params continuation =
 
 codegenPathParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
 codegenPathParamGuard Param {name} continuation =
-  "pathVariable" <+> toParamBinder name <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
-    <> PP.indent 4 continuation
-    <> ")" <+> "request" <+> "respond"
+  "pathVariable"
+    <+> toParamBinder name
+    <+> "(" <> "\\" <> toParamBinder name
+    <+> "request"
+    <+> "respond"
+    <+> "->"
+      <> PP.line
+      <> PP.indent 4 continuation
+      <> ")"
+    <+> "request"
+    <+> "respond"
 
 codegenQueryParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
 codegenQueryParamGuard Param {name, required} continuation
   | required =
-    "requiredQueryParameter" <+> "\"" <> toParamName name <> "\"" <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
-      <> PP.indent 4 continuation
-      <> ")" <+> "request" <+> "respond"
+      "requiredQueryParameter"
+        <+> "\"" <> toParamName name <> "\""
+        <+> "(" <> "\\" <> toParamBinder name
+        <+> "request"
+        <+> "respond"
+        <+> "->"
+          <> PP.line
+          <> PP.indent 4 continuation
+          <> ")"
+        <+> "request"
+        <+> "respond"
   | otherwise =
-    "optionalQueryParameter" <+> "\"" <> toParamName name <> "\"" <+> "False" <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
-      <> PP.indent 4 continuation
-      <> ")" <+> "request" <+> "respond"
+      "optionalQueryParameter"
+        <+> "\"" <> toParamName name <> "\""
+        <+> "False"
+        <+> "(" <> "\\" <> toParamBinder name
+        <+> "request"
+        <+> "respond"
+        <+> "->"
+          <> PP.line
+          <> PP.indent 4 continuation
+          <> ")"
+        <+> "request"
+        <+> "respond"
 
 codegenHeaderGuard :: Param -> PP.Doc ann -> PP.Doc ann
 codegenHeaderGuard Param {name, required} continuation
   | required =
-    "requiredHeader" <+> "\"" <> toParamName name <> "\"" <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
-      <> PP.indent 4 continuation
-      <> ")" <+> "request" <+> "respond"
+      "requiredHeader"
+        <+> "\"" <> toParamName name <> "\""
+        <+> "(" <> "\\" <> toParamBinder name
+        <+> "request"
+        <+> "respond"
+        <+> "->"
+          <> PP.line
+          <> PP.indent 4 continuation
+          <> ")"
+        <+> "request"
+        <+> "respond"
   | otherwise =
-    "optionalHeader" <+> "\"" <> toParamName name <> "\"" <+> "(" <> "\\" <> toParamBinder name <+> "request" <+> "respond" <+> "->" <> PP.line
-      <> PP.indent 4 continuation
-      <> ")" <+> "request" <+> "respond"
+      "optionalHeader"
+        <+> "\"" <> toParamName name <> "\""
+        <+> "(" <> "\\" <> toParamBinder name
+        <+> "request"
+        <+> "respond"
+        <+> "->"
+          <> PP.line
+          <> PP.indent 4 continuation
+          <> ")"
+        <+> "request"
+        <+> "respond"

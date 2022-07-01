@@ -33,6 +33,7 @@ import Tie.Type
   ( BasicType (..),
     Discriminator (..),
     Enumeration (..),
+    FreeFormObject (..),
     IntegerFormat (..),
     Name,
     Named (..),
@@ -60,13 +61,13 @@ codegenParamSchema Param {schema, required} =
         pure (codegenFieldType schema)
       Unnamed typ
         | Just _enumeration <- isEnumType typ ->
-          error "TODO enumeration params"
+            error "TODO enumeration params"
         | Just basicType <- isBasicType typ ->
-          pure (codegenFieldType (Unnamed typ))
+            pure (codegenFieldType (Unnamed typ))
         | Just objectType <- isObjectType typ ->
-          error "Invariant broken: ruled out by pathToPath"
+            error "Invariant broken: ruled out by pathToPath"
         | otherwise ->
-          undefined
+            undefined
 
 -- | Generate code for a header
 codegenHeaderSchema :: Header -> Doc ann
@@ -78,13 +79,13 @@ codegenHeaderSchema Header {schema, required} =
         codegenFieldType schema
       Just (Unnamed typ)
         | Just _enumeration <- isEnumType typ ->
-          error "TODO enumeration params"
+            error "TODO enumeration params"
         | Just basicType <- isBasicType typ ->
-          codegenFieldType (Unnamed typ)
+            codegenFieldType (Unnamed typ)
         | Just objectType <- isObjectType typ ->
-          error "Invariant broken: ruled out by pathToPath"
+            error "Invariant broken: ruled out by pathToPath"
         | otherwise ->
-          undefined
+            undefined
       Nothing ->
         error "Header without schema"
 
@@ -92,24 +93,24 @@ codegenHeaderSchema Header {schema, required} =
 codegenSchema :: Monad m => Name -> Type -> m (Doc ann)
 codegenSchema typName typ
   | Just Enumeration {alternatives, includeNull} <- isEnumType typ =
-    pure (codegenEnumeration typName alternatives includeNull)
+      pure (codegenEnumeration typName alternatives includeNull)
   | Just basicType <- isBasicType typ =
-    pure (codegenBasicType typName basicType)
+      pure (codegenBasicType typName basicType)
   | Just (discriminator, alternatives) <- isOneOfType typ = do
-    let discriminatorMapping
-          | Just Discriminator {propertyName, mapping} <- discriminator =
-            \variantTypeName -> do
-              value <- lookup variantTypeName mapping
-              pure (propertyName, value)
-          | otherwise =
-            \_variantTypeName -> Nothing
-    codegenOneOfType discriminatorMapping typName alternatives
+      let discriminatorMapping
+            | Just Discriminator {propertyName, mapping} <- discriminator =
+                \variantTypeName -> do
+                  value <- lookup variantTypeName mapping
+                  pure (propertyName, value)
+            | otherwise =
+                \_variantTypeName -> Nothing
+      codegenOneOfType discriminatorMapping typName alternatives
   | Just objectType <- isObjectType typ =
-    codegenObjectType typName objectType
+      codegenObjectType typName objectType
   | Just elemType <- isArrayType typ =
-    pure (codegenArrayType typName elemType)
+      pure (codegenArrayType typName elemType)
   | otherwise =
-    error "impossible: unknown type"
+      error "impossible: unknown type"
 
 -- | Generate code for basic, primitive types
 codegenBasicType :: Name -> BasicType -> Doc ann
@@ -153,83 +154,119 @@ codegenOneOfType getDiscriminator typName variants = do
         ]
 
       decl =
-        "data" <+> toOneOfDataTypeName typName <> PP.line
-          <> PP.indent
-            4
-            ( PP.vsep
-                ( [ op
-                      <+> variantName
-                      <+> codegenFieldType variantType
-                    | (op, (_, variantName, variantType)) <- zip ("=" : repeat "|") variantConstructors
-                  ]
-                    ++ [ "deriving" <+> "(" <> "Show" <> ")"
-                       ]
-                )
-            )
+        "data"
+          <+> toOneOfDataTypeName typName
+            <> PP.line
+            <> PP.indent
+              4
+              ( PP.vsep
+                  ( [ op
+                        <+> variantName
+                        <+> codegenFieldType variantType
+                      | (op, (_, variantName, variantType)) <- zip ("=" : repeat "|") variantConstructors
+                    ]
+                      ++ [ "deriving" <+> "(" <> "Show" <> ")"
+                         ]
+                  )
+              )
 
       toJson =
-        "instance" <+> "Data.Aeson.ToJSON" <+> toDataTypeName typName <+> "where" <> PP.line
-          <> PP.indent
-            4
-            ( PP.vsep
-                [ "toJSON" <+> "(" <> variantName <+> "x" <> ")" <+> "="
-                    <+> "Data.Aeson.toJSON"
-                    <+> "x"
-                  | (_, variantName, _) <- variantConstructors
-                ]
-                <> PP.line
-                <> PP.line
-                <> PP.vsep
-                  [ "toEncoding" <+> "(" <> variantName <+> "x" <> ")" <+> "="
-                      <+> "Data.Aeson.toEncoding"
+        "instance"
+          <+> "Data.Aeson.ToJSON"
+          <+> toDataTypeName typName
+          <+> "where"
+            <> PP.line
+            <> PP.indent
+              4
+              ( PP.vsep
+                  [ "toJSON"
+                      <+> "(" <> variantName
+                      <+> "x" <> ")"
+                      <+> "="
+                      <+> "Data.Aeson.toJSON"
                       <+> "x"
                     | (_, variantName, _) <- variantConstructors
                   ]
-            )
+                  <> PP.line
+                  <> PP.line
+                  <> PP.vsep
+                    [ "toEncoding"
+                        <+> "(" <> variantName
+                        <+> "x" <> ")"
+                        <+> "="
+                        <+> "Data.Aeson.toEncoding"
+                        <+> "x"
+                      | (_, variantName, _) <- variantConstructors
+                    ]
+              )
 
       fromJsonVariant :: Name -> PP.Doc ann
       fromJsonVariant variantName
         | Just (property, value) <- getDiscriminator variantName =
-          "(" <> "Data.Aeson.Types.withObject" <+> "\"" <> toDataTypeName variantName <> "\"" <+> "$" <+> "\\" <> "o" <+> "->" <> PP.line
-            <> PP.indent
-              4
-              ( "do"
-                  <+> PP.align
-                    ( "(" <> "\"" <> PP.pretty value <> "\"" <+> "::" <+> "Data.Text.Text" <> ")" <+> "<-" <+> "o" <+> "Data.Aeson..:" <+> "\"" <> PP.pretty property <> "\"" <> PP.line
-                        <> "Data.Aeson.parseJSON" <+> "("
-                        <> "Data.Aeson.Object" <+> "o"
-                        <> ")"
-                    )
-              )
-            <> PP.line
-            <> ")" <+> "x"
-        | otherwise =
-          "Data.Aeson.parseJSON" <+> "x"
-
-      fromJson =
-        "instance" <+> "Data.Aeson.FromJSON" <+> toDataTypeName typName <+> "where" <> PP.line
-          <> PP.indent
-            4
-            ( "parseJSON" <+> "x" <+> "=" <> PP.line
+            "(" <> "Data.Aeson.Types.withObject"
+              <+> "\"" <> toDataTypeName variantName <> "\""
+              <+> "$"
+              <+> "\\" <> "o"
+              <+> "->"
+                <> PP.line
                 <> PP.indent
                   4
-                  ( PP.concatWith
-                      (\x y -> x <+> "Control.Applicative.<|>" <> PP.line <> y)
-                      [ "(" <> variantConstructorName <+> "<$>" <+> fromJsonVariant variantName <> ")"
-                        | (variantName, variantConstructorName, _variantType) <- variantConstructors
-                      ]
+                  ( "do"
+                      <+> PP.align
+                        ( "(" <> "\"" <> PP.pretty value <> "\""
+                            <+> "::"
+                            <+> "Data.Text.Text" <> ")"
+                            <+> "<-"
+                            <+> "o"
+                            <+> "Data.Aeson..:"
+                            <+> "\""
+                              <> PP.pretty property
+                              <> "\""
+                              <> PP.line
+                              <> "Data.Aeson.parseJSON"
+                            <+> "("
+                              <> "Data.Aeson.Object"
+                            <+> "o"
+                              <> ")"
+                        )
                   )
-            )
+                <> PP.line
+                <> ")"
+              <+> "x"
+        | otherwise =
+            "Data.Aeson.parseJSON" <+> "x"
+
+      fromJson =
+        "instance"
+          <+> "Data.Aeson.FromJSON"
+          <+> toDataTypeName typName
+          <+> "where"
+            <> PP.line
+            <> PP.indent
+              4
+              ( "parseJSON"
+                  <+> "x"
+                  <+> "="
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( PP.concatWith
+                          (\x y -> x <+> "Control.Applicative.<|>" <> PP.line <> y)
+                          [ "(" <> variantConstructorName <+> "<$>" <+> fromJsonVariant variantName <> ")"
+                            | (variantName, variantConstructorName, _variantType) <- variantConstructors
+                          ]
+                      )
+              )
 
   pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
 
 codegenObjectType :: Monad m => Name -> ObjectType (Named Type) -> m (Doc ann)
 codegenObjectType typName ObjectType {..}
   -- for empty, free form objects, just generate a type synonym for Value.
-  | freeFormObjectType,
+  | Just FreeForm <- additionalProperties,
     null properties =
-    pure $
-      "type" <+> toDataTypeName typName <+> "=" <+> "Data.Aeson.Value"
+      pure $
+        "type" <+> toDataTypeName typName <+> "=" <+> "Data.Aeson.Value"
 codegenObjectType typName ObjectType {..} = do
   -- Now generate for the object itself
   let orderedProperties =
@@ -240,90 +277,124 @@ codegenObjectType typName ObjectType {..} = do
         _ -> "data"
 
       decl =
-        dataOrNewtype <+> toDataTypeName typName <+> "=" <+> toConstructorName typName <> PP.line
-          <> PP.indent
-            4
-            ( "{" <> PP.line
-                <> PP.indent
-                  4
-                  ( PP.concatWith
-                      (\x y -> x <> "," <> PP.line <> y)
-                      [ toFieldName field <+> "::"
-                          <+> codegenRequiredOptionalFieldType
-                            (HashSet.member field requiredProperties)
-                            (codegenFieldType fieldType)
-                        | (field, fieldType) <- orderedProperties
-                      ]
-                  )
-                <> PP.line
-                <> "}"
-                <> PP.line
-                <> "deriving" <+> "("
-                <> "Show"
-                <> ")"
-            )
+        dataOrNewtype
+          <+> toDataTypeName typName
+          <+> "="
+          <+> toConstructorName typName
+            <> PP.line
+            <> PP.indent
+              4
+              ( "{"
+                  <> PP.line
+                  <> PP.indent
+                    4
+                    ( PP.concatWith
+                        (\x y -> x <> "," <> PP.line <> y)
+                        [ toFieldName field
+                            <+> "::"
+                            <+> codegenRequiredOptionalFieldType
+                              (HashSet.member field requiredProperties)
+                              (codegenFieldType fieldType)
+                          | (field, fieldType) <- orderedProperties
+                        ]
+                    )
+                  <> PP.line
+                  <> "}"
+                  <> PP.line
+                  <> "deriving"
+                  <+> "("
+                    <> "Show"
+                    <> ")"
+              )
 
       toJson =
-        "instance" <+> "Data.Aeson.ToJSON" <+> toDataTypeName typName <+> "where" <> PP.line
-          <> PP.indent
-            4
-            ( "toJSON" <+> toConstructorName typName <+> "{..}" <+> "=" <+> "Data.Aeson.object" <> PP.line
-                <> PP.indent
-                  4
-                  ( "[" <> PP.line
-                      <> PP.indent
-                        4
-                        ( PP.concatWith
-                            (\x y -> x <> "," <> PP.line <> y)
-                            [ "\"" <> toJsonFieldName field <> "\"" <+> "Data.Aeson..=" <+> toFieldName field
-                              | (field, _) <- orderedProperties
-                            ]
-                        )
-                      <> PP.line
-                      <> "]"
-                  )
-                <> PP.line
-                <> PP.line
-                <> "toEncoding" <+> toConstructorName typName <+> "{..}" <+> "=" <+> "Data.Aeson.Encoding.pairs"
-                <> PP.line
-                <> PP.indent
-                  4
-                  ( "("
-                      <+> PP.align
-                        ( PP.concatWith
-                            (\x y -> x <+> "<>" <> PP.line <> y)
-                            [ "Data.Aeson.Encoding.pair" <+> "\"" <> toJsonFieldName field <> "\""
-                                <+> "(" <> "Data.Aeson.toEncoding"
-                                <+> toFieldName field <> ")"
-                              | (field, _) <- orderedProperties
-                            ]
-                        )
-                      <> PP.line
-                      <> ")"
-                  )
-            )
+        "instance"
+          <+> "Data.Aeson.ToJSON"
+          <+> toDataTypeName typName
+          <+> "where"
+            <> PP.line
+            <> PP.indent
+              4
+              ( "toJSON"
+                  <+> toConstructorName typName
+                  <+> "{..}"
+                  <+> "="
+                  <+> "Data.Aeson.object"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( "["
+                          <> PP.line
+                          <> PP.indent
+                            4
+                            ( PP.concatWith
+                                (\x y -> x <> "," <> PP.line <> y)
+                                [ "\"" <> toJsonFieldName field <> "\"" <+> "Data.Aeson..=" <+> toFieldName field
+                                  | (field, _) <- orderedProperties
+                                ]
+                            )
+                          <> PP.line
+                          <> "]"
+                      )
+                    <> PP.line
+                    <> PP.line
+                    <> "toEncoding"
+                  <+> toConstructorName typName
+                  <+> "{..}"
+                  <+> "="
+                  <+> "Data.Aeson.Encoding.pairs"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( "("
+                          <+> PP.align
+                            ( PP.concatWith
+                                (\x y -> x <+> "<>" <> PP.line <> y)
+                                [ "Data.Aeson.Encoding.pair"
+                                    <+> "\"" <> toJsonFieldName field <> "\""
+                                    <+> "(" <> "Data.Aeson.toEncoding"
+                                    <+> toFieldName field <> ")"
+                                  | (field, _) <- orderedProperties
+                                ]
+                            )
+                            <> PP.line
+                            <> ")"
+                      )
+              )
 
       fromOptOrReq field
         | HashSet.member field requiredProperties = "Data.Aeson..:"
         | otherwise = "Data.Aeson..:?"
 
       fromJson =
-        "instance" <+> "Data.Aeson.FromJSON" <+> toDataTypeName typName <+> "where" <> PP.line
-          <> PP.indent
-            4
-            ( "parseJSON" <+> "=" <+> "Data.Aeson.withObject" <+> "\"" <> toDataTypeName typName <> "\"" <+> "$" <+> "\\" <> "o" <+> "->" <> PP.line
-                <> PP.indent
-                  4
-                  ( toConstructorName typName <> PP.line
-                      <> PP.indent
-                        4
-                        ( PP.vsep
-                            [ op <+> "o" <+> fromOptOrReq fieldName <+> "\"" <> toJsonFieldName fieldName <> "\""
-                              | (op, (fieldName, _)) <- zip ("<$>" : repeat "<*>") orderedProperties
-                            ]
-                        )
-                  )
-            )
+        "instance"
+          <+> "Data.Aeson.FromJSON"
+          <+> toDataTypeName typName
+          <+> "where"
+            <> PP.line
+            <> PP.indent
+              4
+              ( "parseJSON"
+                  <+> "="
+                  <+> "Data.Aeson.withObject"
+                  <+> "\"" <> toDataTypeName typName <> "\""
+                  <+> "$"
+                  <+> "\\" <> "o"
+                  <+> "->"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( toConstructorName typName
+                          <> PP.line
+                          <> PP.indent
+                            4
+                            ( PP.vsep
+                                [ op <+> "o" <+> fromOptOrReq fieldName <+> "\"" <> toJsonFieldName fieldName <> "\""
+                                  | (op, (fieldName, _)) <- zip ("<$>" : repeat "<*>") orderedProperties
+                                ]
+                            )
+                      )
+              )
    in pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
 
 codegenRequiredOptionalFieldType :: Bool -> Doc ann -> Doc ann
@@ -400,80 +471,129 @@ codegenEnumeration typName alternatives _includeNull =
                   <+> "Show" <> ")"
               )
       toJSON =
-        "instance" <+> "Data.Aeson.ToJSON" <+> toDataTypeName typName <+> "where" <> PP.line
-          <> PP.indent
-            4
-            ( "toJSON" <+> "x" <+> "=" <+> "case" <+> "x" <+> "of" <> PP.line
-                <> PP.indent
-                  4
-                  ( PP.vsep
-                      [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
-                        | alt <- alternatives
-                      ]
-                  )
-                <> PP.line
-                <> PP.line
-                <> "toEncoding" <+> "x" <+> "=" <+> "case" <+> "x" <+> "of"
-                <> PP.line
-                <> PP.indent
-                  4
-                  ( PP.vsep
-                      [ toEnumConstructorName typName alt <+> "->" <+> "Data.Aeson.Encoding.text" <+> "\"" <> PP.pretty alt <> "\""
-                        | alt <- alternatives
-                      ]
-                  )
-            )
+        "instance"
+          <+> "Data.Aeson.ToJSON"
+          <+> toDataTypeName typName
+          <+> "where"
+            <> PP.line
+            <> PP.indent
+              4
+              ( "toJSON"
+                  <+> "x"
+                  <+> "="
+                  <+> "case"
+                  <+> "x"
+                  <+> "of"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( PP.vsep
+                          [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
+                            | alt <- alternatives
+                          ]
+                      )
+                    <> PP.line
+                    <> PP.line
+                    <> "toEncoding"
+                  <+> "x"
+                  <+> "="
+                  <+> "case"
+                  <+> "x"
+                  <+> "of"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( PP.vsep
+                          [ toEnumConstructorName typName alt <+> "->" <+> "Data.Aeson.Encoding.text" <+> "\"" <> PP.pretty alt <> "\""
+                            | alt <- alternatives
+                          ]
+                      )
+              )
       fromJSON =
-        "instance" <+> "Data.Aeson.FromJSON" <+> toDataTypeName typName <+> "where" <> PP.line
-          <> PP.indent
-            4
-            ( "parseJSON" <+> "=" <+> "Data.Aeson.withText" <+> "\"" <> toDataTypeName typName <> "\"" <+> "$" <+> "\\" <> "s" <+> "->" <> PP.line
-                <> PP.indent
-                  4
-                  ( "case" <+> "s" <+> "of" <> PP.line
-                      <> PP.indent
-                        4
-                        ( PP.vsep
-                            ( [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> "pure" <+> toEnumConstructorName typName alt
-                                | alt <- alternatives
-                              ]
-                                ++ ["_" <+> "->" <+> "fail" <+> "\"invalid enum value\""]
-                            )
-                        )
-                  )
-            )
+        "instance"
+          <+> "Data.Aeson.FromJSON"
+          <+> toDataTypeName typName
+          <+> "where"
+            <> PP.line
+            <> PP.indent
+              4
+              ( "parseJSON"
+                  <+> "="
+                  <+> "Data.Aeson.withText"
+                  <+> "\"" <> toDataTypeName typName <> "\""
+                  <+> "$"
+                  <+> "\\" <> "s"
+                  <+> "->"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( "case"
+                          <+> "s"
+                          <+> "of"
+                            <> PP.line
+                            <> PP.indent
+                              4
+                              ( PP.vsep
+                                  ( [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> "pure" <+> toEnumConstructorName typName alt
+                                      | alt <- alternatives
+                                    ]
+                                      ++ ["_" <+> "->" <+> "fail" <+> "\"invalid enum value\""]
+                                  )
+                              )
+                      )
+              )
       toHttpApiData =
-        "instance" <+> "Web.HttpApiData.ToHttpApiData" <+> toDataTypeName typName <+> "where" <> PP.line
-          <> PP.indent
-            4
-            ( "toQueryParam" <+> "x" <+> "=" <+> "case" <+> "x" <+> "of" <> PP.line
-                <> PP.indent
-                  4
-                  ( PP.vsep
-                      [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
-                        | alt <- alternatives
-                      ]
-                  )
-            )
+        "instance"
+          <+> "Web.HttpApiData.ToHttpApiData"
+          <+> toDataTypeName typName
+          <+> "where"
+            <> PP.line
+            <> PP.indent
+              4
+              ( "toQueryParam"
+                  <+> "x"
+                  <+> "="
+                  <+> "case"
+                  <+> "x"
+                  <+> "of"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( PP.vsep
+                          [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
+                            | alt <- alternatives
+                          ]
+                      )
+              )
       fromHttpApiData =
-        "instance" <+> "Web.HttpApiData.FromHttpApiData" <+> toDataTypeName typName <+> "where" <> PP.line
-          <> PP.indent
-            4
-            ( "parseUrlPiece" <+> "x" <+> "=" <> PP.line
-                <> PP.indent
-                  4
-                  ( "case" <+> "x" <+> "of" <> PP.line
-                      <> PP.indent
-                        4
-                        ( PP.vsep
-                            ( [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> "pure" <+> toEnumConstructorName typName alt
-                                | alt <- alternatives
-                              ]
-                                ++ ["_" <+> "->" <+> "Left" <+> "\"invalid enum value\""]
-                            )
-                        )
-                  )
-            )
+        "instance"
+          <+> "Web.HttpApiData.FromHttpApiData"
+          <+> toDataTypeName typName
+          <+> "where"
+            <> PP.line
+            <> PP.indent
+              4
+              ( "parseUrlPiece"
+                  <+> "x"
+                  <+> "="
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( "case"
+                          <+> "x"
+                          <+> "of"
+                            <> PP.line
+                            <> PP.indent
+                              4
+                              ( PP.vsep
+                                  ( [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> "pure" <+> toEnumConstructorName typName alt
+                                      | alt <- alternatives
+                                    ]
+                                      ++ ["_" <+> "->" <+> "Left" <+> "\"invalid enum value\""]
+                                  )
+                              )
+                      )
+              )
    in PP.vsep
         ( intersperse
             mempty

@@ -26,16 +26,19 @@ codegenCabalFile packageName exposedModules extraPackages =
         [ "cabal-version:" <+> "3.0",
           "name:" <+> PP.pretty packageName,
           "version:" <+> "0.1.0.0",
-          "library" <> PP.line
+          "library"
+            <> PP.line
             <> PP.indent
               2
               ( PP.vsep
-                  [ "build-depends:" <> PP.line
+                  [ "build-depends:"
+                      <> PP.line
                       <> PP.indent
                         2
                         ( PP.vsep (map (\x -> "," <+> PP.pretty x) packages)
                         ),
-                    "exposed-modules:" <> PP.line
+                    "exposed-modules:"
+                      <> PP.line
                       <> PP.indent
                         2
                         ( PP.vsep
