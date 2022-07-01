@@ -120,6 +120,22 @@ normalize =
         pure (inlineArrayElementTypeName enclosingType)
     )
 
+-- | Expands a list of inline definitions until it reaches a fixed point.
+-- The invariant of the returned list is that there are no non-primitive
+-- unnamed types left: 
+--   forall x. normalize x == [] 
+--  where x is an element of the result of normalizedTypes
+normalizeTypes :: Monad m => [(Name, Type)] -> m [(Name, Type)]
+normalizeTypes types =
+  concat
+    <$> traverse
+      ( \(name, type_) -> do
+          (normalizedType, inlineDefinitions) <- normalize name type_
+          normalizedTypes <- normalizeTypes inlineDefinitions
+          pure ((name, normalizedType) : normalizedTypes)
+      )
+      types
+
 generate ::
   MonadIO m =>
   Writer m ->
@@ -214,8 +230,13 @@ generate write packageName apiName extraPackages inputFile = do
             nubOrd (operationSchemaDependencies shallow operation)
     (operation, inlineDefinitions) <-
       normalizeOperation operation
+    -- normalizeOperation doesn't recurse into transitive inline definitions,
+    -- we apply normalizeTypes explicitly to normalize transitive inline definitions
+    -- explicitly
+    normalizedInlineDefinitions <-
+      normalizeTypes inlineDefinitions
     codeForInlineDefinitions <-
-      traverse (uncurry codegenSchema) inlineDefinitions
+      traverse (uncurry codegenSchema) normalizedInlineDefinitions
     responsesCode <- codegenResponses resolver operation
     write path $
       vsep $

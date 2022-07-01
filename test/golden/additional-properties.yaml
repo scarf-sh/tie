@@ -18,6 +18,27 @@ paths:
             application/json:    
               schema:
                 $ref: "#/components/schemas/Pets"
+  /pets2:
+    get:
+      summary: List all pets
+      operationId: listPets2
+      responses:
+        '200':
+          description: A paged array of pets
+          content:
+            application/json:    
+              schema:
+                type: object
+                additionalProperties:
+                  type: object
+                  required: 
+                    - name
+                    - count
+                  properties:
+                    name: 
+                      type: string
+                    count: 
+                      type: integer
 components:
   schemas:
     Pet:
