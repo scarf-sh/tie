@@ -35,6 +35,7 @@ import Tie.Codegen.Response (codegenResponseAuxFile, codegenResponses)
 import Tie.Codegen.Schema (codegenSchema)
 import Tie.Name
   ( Name,
+    additionalPropertiesTypeName,
     apiHaskellFileName,
     apiHaskellModuleName,
     cabalFileName,
@@ -108,6 +109,9 @@ normalize =
   normalizeType
     ( \enclosingType fieldName ->
         pure (inlineObjectTypeName enclosingType fieldName)
+    )
+    ( \enclosingType ->
+        pure (additionalPropertiesTypeName enclosingType)
     )
     ( \enclosingType ith ->
         pure (inlineVariantTypeName enclosingType ith)

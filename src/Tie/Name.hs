@@ -35,6 +35,7 @@ module Tie.Name
     responseHaskellModuleName,
     responseHaskellFileName,
     inlineObjectTypeName,
+    additionalPropertiesTypeName,
     inlineVariantTypeName,
     inlineArrayElementTypeName,
     operationParamTypeName,
@@ -226,6 +227,16 @@ inlineObjectTypeName (Name parentType) (Name fieldName) =
       escapeKeyword $
         capitalizeFirstLetter (Text.unpack parentType)
           <> capitalizeFirstLetter (Text.unpack fieldName)
+
+-- | Generate a name for additionalProperties type name within an
+-- ObjectType.
+additionalPropertiesTypeName :: Name -> Name
+additionalPropertiesTypeName (Name parentObjectType) =
+  Name $
+    Text.pack $
+      escapeKeyword $
+        capitalizeFirstLetter (Text.unpack parentObjectType)
+          <> "AdditionalProperties"
 
 -- | Construct a name for an inline type in a oneOf.
 inlineVariantTypeName :: Name -> Int -> Name
