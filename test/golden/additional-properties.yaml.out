@@ -38,11 +38,15 @@ import Test.Response
 import Test.Schemas.Pets
 
 import Test.Response.ListPets
+import Test.Response.ListPets2
 
 data Api m = Api {
     -- | List all pets
     listPets ::
-        m ListPetsResponse
+        m ListPetsResponse,
+    -- | List all pets
+    listPets2 ::
+        m ListPets2Response
 }
 
 application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
@@ -53,6 +57,16 @@ application run api notFound request respond =
                 "GET" ->
                     run request (do
                         response <- listPets api
+                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
+                    )
+                x ->
+                    unsupportedMethod x
+
+        ["pets2"] ->
+            case Network.Wai.requestMethod request of
+                "GET" ->
+                    run request (do
+                        response <- listPets2 api
                         Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                     )
                 x ->
@@ -317,6 +331,90 @@ instance ToResponse ListPetsResponse where
     toResponse (ListPetsResponse200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
+Test/Response/ListPets2.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Response.ListPets2 where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.Map
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+
+
+import Test.Response
+
+newtype ListPets2ResponseBody200 = ListPets2ResponseBody200
+    (Data.Map.Map Data.Text.Text (ListPets2ResponseBody200AdditionalProperties))
+    deriving (Show)
+
+instance Data.Aeson.ToJSON ListPets2ResponseBody200 where
+    toJSON (ListPets2ResponseBody200 x) =
+        Data.Aeson.toJSON x
+
+    toEncoding (ListPets2ResponseBody200 x) =
+        Data.Aeson.toEncoding x
+
+instance Data.Aeson.FromJSON ListPets2ResponseBody200 where
+    parseJSON x =
+        ListPets2ResponseBody200 <$> Data.Aeson.parseJSON x
+
+data ListPets2ResponseBody200AdditionalProperties = ListPets2ResponseBody200AdditionalProperties
+    {
+        count :: GHC.Int.Int,
+        name :: Data.Text.Text
+    }
+    deriving (Show)
+
+instance Data.Aeson.ToJSON ListPets2ResponseBody200AdditionalProperties where
+    toJSON ListPets2ResponseBody200AdditionalProperties {..} = Data.Aeson.object
+        [
+            "count" Data.Aeson..= count,
+            "name" Data.Aeson..= name
+        ]
+
+    toEncoding ListPets2ResponseBody200AdditionalProperties {..} = Data.Aeson.Encoding.pairs
+        ( Data.Aeson.Encoding.pair "count" (Data.Aeson.toEncoding count) <>
+          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        )
+
+instance Data.Aeson.FromJSON ListPets2ResponseBody200AdditionalProperties where
+    parseJSON = Data.Aeson.withObject "ListPets2ResponseBody200AdditionalProperties" $ \o ->
+        ListPets2ResponseBody200AdditionalProperties
+            <$> o Data.Aeson..: "count"
+            <*> o Data.Aeson..: "name"
+
+data ListPets2Response
+    = ListPets2Response200 ListPets2ResponseBody200
+    deriving (Show)
+
+instance ToResponse ListPets2Response where
+    toResponse (ListPets2Response200 x) =
+        Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
 Test/Schemas/Pet.hs
 
 {-# LANGUAGE BangPatterns #-}
@@ -456,5 +554,6 @@ library
     Test.Request
     Test.Response
     Test.Response.ListPets
+    Test.Response.ListPets2
     Test.Schemas.Pet
     Test.Schemas.Pets
