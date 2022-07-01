@@ -267,135 +267,208 @@ codegenObjectType typName ObjectType {..}
     null properties =
       pure $
         "type" <+> toDataTypeName typName <+> "=" <+> "Data.Aeson.Value"
-codegenObjectType typName ObjectType {..} = do
-  -- Now generate for the object itself
-  let orderedProperties =
-        sortOn fst (HashMap.toList properties)
+  -- additionalProperties: $ref some other schema
+  | Just (AdditionalProperties propertyType) <- additionalProperties,
+    null properties =
+      let decl =
+            "newtype"
+              <+> toDataTypeName typName
+              <+> "="
+              <+> toConstructorName typName
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( "(" <> "Data.Map.Map"
+                      <+> "Data.Text.Text"
+                      <+> "("
+                        <> codegenFieldType propertyType
+                        <> ")"
+                        <> ")"
+                        <> PP.line
+                        <> "deriving"
+                      <+> "(" <> "Show" <> ")"
+                  )
 
-      dataOrNewtype = case orderedProperties of
-        [_] -> "newtype"
-        _ -> "data"
+          toJson =
+            "instance"
+              <+> "Data.Aeson.ToJSON"
+              <+> toDataTypeName typName
+              <+> "where"
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( "toJSON"
+                      <+> "(" <> toConstructorName typName
+                      <+> "x" <> ")"
+                      <+> "="
+                        <> PP.line
+                        <> PP.indent
+                          4
+                          ( "Data.Aeson.toJSON" <+> "x"
+                          )
+                        <> PP.line
+                        <> PP.line
+                        <> "toEncoding"
+                      <+> "(" <> toConstructorName typName
+                      <+> "x" <> ")"
+                      <+> "="
+                        <> PP.line
+                        <> PP.indent
+                          4
+                          ( "Data.Aeson.toEncoding" <+> "x"
+                          )
+                  )
 
-      decl =
-        dataOrNewtype
-          <+> toDataTypeName typName
-          <+> "="
-          <+> toConstructorName typName
-            <> PP.line
-            <> PP.indent
-              4
-              ( "{"
-                  <> PP.line
-                  <> PP.indent
-                    4
-                    ( PP.concatWith
-                        (\x y -> x <> "," <> PP.line <> y)
-                        [ toFieldName field
-                            <+> "::"
-                            <+> codegenRequiredOptionalFieldType
-                              (HashSet.member field requiredProperties)
-                              (codegenFieldType fieldType)
-                          | (field, fieldType) <- orderedProperties
-                        ]
-                    )
-                  <> PP.line
-                  <> "}"
-                  <> PP.line
-                  <> "deriving"
-                  <+> "("
-                    <> "Show"
-                    <> ")"
-              )
+          fromJson =
+            "instance"
+              <+> "Data.Aeson.FromJSON"
+              <+> toDataTypeName typName
+              <+> "where"
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( "parseJSON"
+                      <+> "x"
+                      <+> "="
+                        <> PP.line
+                        <> PP.indent
+                          4
+                          ( toConstructorName typName <+> "<$>" <+> "Data.Aeson.parseJSON" <+> "x"
+                          )
+                  )
+       in pure $ PP.vsep $ intersperse mempty [decl, toJson, fromJson]
+  -- additionalProperties: $ref some other schema + required properties
+  | Just (AdditionalProperties propertyType) <- additionalProperties =
+      error "unsupported"
+  | otherwise = do
+      -- Now generate for the object itself
+      let orderedProperties =
+            sortOn fst (HashMap.toList properties)
 
-      toJson =
-        "instance"
-          <+> "Data.Aeson.ToJSON"
-          <+> toDataTypeName typName
-          <+> "where"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "toJSON"
-                  <+> toConstructorName typName
-                  <+> "{..}"
-                  <+> "="
-                  <+> "Data.Aeson.object"
-                    <> PP.line
-                    <> PP.indent
-                      4
-                      ( "["
-                          <> PP.line
-                          <> PP.indent
-                            4
-                            ( PP.concatWith
-                                (\x y -> x <> "," <> PP.line <> y)
-                                [ "\"" <> toJsonFieldName field <> "\"" <+> "Data.Aeson..=" <+> toFieldName field
-                                  | (field, _) <- orderedProperties
-                                ]
-                            )
-                          <> PP.line
-                          <> "]"
-                      )
-                    <> PP.line
-                    <> PP.line
-                    <> "toEncoding"
-                  <+> toConstructorName typName
-                  <+> "{..}"
-                  <+> "="
-                  <+> "Data.Aeson.Encoding.pairs"
-                    <> PP.line
-                    <> PP.indent
-                      4
-                      ( "("
-                          <+> PP.align
-                            ( PP.concatWith
-                                (\x y -> x <+> "<>" <> PP.line <> y)
-                                [ "Data.Aeson.Encoding.pair"
-                                    <+> "\"" <> toJsonFieldName field <> "\""
-                                    <+> "(" <> "Data.Aeson.toEncoding"
-                                    <+> toFieldName field <> ")"
-                                  | (field, _) <- orderedProperties
-                                ]
-                            )
-                            <> PP.line
-                            <> ")"
-                      )
-              )
+          dataOrNewtype = case orderedProperties of
+            [_] -> "newtype"
+            _ -> "data"
 
-      fromOptOrReq field
-        | HashSet.member field requiredProperties = "Data.Aeson..:"
-        | otherwise = "Data.Aeson..:?"
+          decl =
+            dataOrNewtype
+              <+> toDataTypeName typName
+              <+> "="
+              <+> toConstructorName typName
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( "{"
+                      <> PP.line
+                      <> PP.indent
+                        4
+                        ( PP.concatWith
+                            (\x y -> x <> "," <> PP.line <> y)
+                            [ toFieldName field
+                                <+> "::"
+                                <+> codegenRequiredOptionalFieldType
+                                  (HashSet.member field requiredProperties)
+                                  (codegenFieldType fieldType)
+                              | (field, fieldType) <- orderedProperties
+                            ]
+                        )
+                      <> PP.line
+                      <> "}"
+                      <> PP.line
+                      <> "deriving"
+                      <+> "("
+                        <> "Show"
+                        <> ")"
+                  )
 
-      fromJson =
-        "instance"
-          <+> "Data.Aeson.FromJSON"
-          <+> toDataTypeName typName
-          <+> "where"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "parseJSON"
-                  <+> "="
-                  <+> "Data.Aeson.withObject"
-                  <+> "\"" <> toDataTypeName typName <> "\""
-                  <+> "$"
-                  <+> "\\" <> "o"
-                  <+> "->"
-                    <> PP.line
-                    <> PP.indent
-                      4
-                      ( toConstructorName typName
-                          <> PP.line
-                          <> PP.indent
-                            4
-                            ( PP.vsep
-                                [ op <+> "o" <+> fromOptOrReq fieldName <+> "\"" <> toJsonFieldName fieldName <> "\""
-                                  | (op, (fieldName, _)) <- zip ("<$>" : repeat "<*>") orderedProperties
-                                ]
-                            )
-                      )
-              )
-   in pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
+          toJson =
+            "instance"
+              <+> "Data.Aeson.ToJSON"
+              <+> toDataTypeName typName
+              <+> "where"
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( "toJSON"
+                      <+> toConstructorName typName
+                      <+> "{..}"
+                      <+> "="
+                      <+> "Data.Aeson.object"
+                        <> PP.line
+                        <> PP.indent
+                          4
+                          ( "["
+                              <> PP.line
+                              <> PP.indent
+                                4
+                                ( PP.concatWith
+                                    (\x y -> x <> "," <> PP.line <> y)
+                                    [ "\"" <> toJsonFieldName field <> "\"" <+> "Data.Aeson..=" <+> toFieldName field
+                                      | (field, _) <- orderedProperties
+                                    ]
+                                )
+                              <> PP.line
+                              <> "]"
+                          )
+                        <> PP.line
+                        <> PP.line
+                        <> "toEncoding"
+                      <+> toConstructorName typName
+                      <+> "{..}"
+                      <+> "="
+                      <+> "Data.Aeson.Encoding.pairs"
+                        <> PP.line
+                        <> PP.indent
+                          4
+                          ( "("
+                              <+> PP.align
+                                ( PP.concatWith
+                                    (\x y -> x <+> "<>" <> PP.line <> y)
+                                    [ "Data.Aeson.Encoding.pair"
+                                        <+> "\"" <> toJsonFieldName field <> "\""
+                                        <+> "(" <> "Data.Aeson.toEncoding"
+                                        <+> toFieldName field <> ")"
+                                      | (field, _) <- orderedProperties
+                                    ]
+                                )
+                                <> PP.line
+                                <> ")"
+                          )
+                  )
+
+          fromOptOrReq field
+            | HashSet.member field requiredProperties = "Data.Aeson..:"
+            | otherwise = "Data.Aeson..:?"
+
+          fromJson =
+            "instance"
+              <+> "Data.Aeson.FromJSON"
+              <+> toDataTypeName typName
+              <+> "where"
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( "parseJSON"
+                      <+> "="
+                      <+> "Data.Aeson.withObject"
+                      <+> "\"" <> toDataTypeName typName <> "\""
+                      <+> "$"
+                      <+> "\\" <> "o"
+                      <+> "->"
+                        <> PP.line
+                        <> PP.indent
+                          4
+                          ( toConstructorName typName
+                              <> PP.line
+                              <> PP.indent
+                                4
+                                ( PP.vsep
+                                    [ op <+> "o" <+> fromOptOrReq fieldName <+> "\"" <> toJsonFieldName fieldName <> "\""
+                                      | (op, (fieldName, _)) <- zip ("<$>" : repeat "<*>") orderedProperties
+                                    ]
+                                )
+                          )
+                  )
+       in pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
 
 codegenRequiredOptionalFieldType :: Bool -> Doc ann -> Doc ann
 codegenRequiredOptionalFieldType True doc = doc

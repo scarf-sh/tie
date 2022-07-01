@@ -103,6 +103,10 @@ codegenModuleHeader moduleName =
       <> PP.line
       <> "import"
     <+> "qualified"
+    <+> "Data.Map"
+      <> PP.line
+      <> "import"
+    <+> "qualified"
     <+> "Data.Maybe"
       <> PP.line
       <> "import"

@@ -18,6 +18,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
@@ -322,6 +323,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
@@ -365,6 +367,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
@@ -408,6 +411,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
@@ -451,6 +455,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
@@ -509,6 +514,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
@@ -565,6 +571,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
 import qualified Data.Time
@@ -593,6 +600,7 @@ library
     , attoparsec
     , base
     , bytestring
+    , containers
     , ghc-prim
     , http-api-data
     , http-types

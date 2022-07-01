@@ -404,8 +404,9 @@ typeExternalDependencies ty =
       externalModules
     Basic {} ->
       []
-    Object ObjectType {properties} ->
+    Object ObjectType {properties, additionalProperties} ->
       foldMap (typeExternalDependencies . namedType) properties
+        <> foldMap (foldMap (typeExternalDependencies . namedType)) additionalProperties
     Array elemType ->
       typeExternalDependencies (namedType elemType)
 
@@ -462,7 +463,7 @@ transitiveDependencies named = case named of
 -- | Dependencies of an 'ObjectType'.
 objectTypeDependencies :: (Named Type -> [Name]) -> ObjectType (Named Type) -> [Name]
 objectTypeDependencies getDependencies objectType =
-  concatMap getDependencies (toList (properties objectType))
+  foldMap getDependencies objectType
 
 -- | Casting a 'Type' to the set of types it could be.
 isOneOfType :: Type -> Maybe (Maybe (Discriminator (Named Type)), [Named Type])
@@ -534,6 +535,8 @@ isObjectType ty = case ty of
               Just x
             (Nothing, Just x) ->
               Just x
+            (Just FreeForm, Just FreeForm) ->
+              Just FreeForm
             (Just x, Just y) ->
               -- This might be controversial, OTOH definining additional properties on both
               -- objects is undefined behavior anyways.
@@ -574,17 +577,27 @@ normalizeObjectType ::
   Monad m =>
   -- | Assign a name to an anonnymous type in a field of an 'ObjectType'
   (Name -> m Name) ->
+  -- | Assign a name to the additionalProperties type of an 'ObjectType'
+  m Name ->
   -- | 'ObjectType' to normalize
   ObjectType (Named Type) ->
   m (ObjectType (Named Type), [(Name, Type)])
-normalizeObjectType assignObjectFieldTypeName objectType@ObjectType {..} = do
+normalizeObjectType assignObjectFieldTypeName assignAdditionaPropertiesTypeName objectType@ObjectType {..} = do
   (properties, newTypes) <- runWriterT $
     flip HashMap.traverseWithKey properties $ \fieldName fieldType -> do
       WriterT $
         normalizeNamedType
           (assignObjectFieldTypeName fieldName)
           fieldType
-  pure (objectType {properties}, newTypes)
+  (additionalProperties, newTypes') <- runWriterT $
+    case additionalProperties of
+      Nothing ->
+        pure Nothing
+      Just freeFormObject -> do
+        freeFormObject <-
+          traverse (WriterT . normalizeNamedType assignAdditionaPropertiesTypeName) freeFormObject
+        pure (Just freeFormObject)
+  pure (objectType {additionalProperties, properties}, newTypes <> newTypes')
 
 normalizeVariants ::
   Monad m =>
@@ -612,6 +625,8 @@ normalizeTypeShallow ::
   Monad m =>
   -- | Assign a name to an anonnymous type in a field of an 'ObjectType'
   (Name -> Name -> m Name) ->
+  -- | Assign a name to the additionalProperties type of an 'ObjectType'
+  (Name -> m Name) ->
   -- | Assign a name to an anonnymous type in the ith constructor of a
   -- variant type
   (Name -> Int -> m Name) ->
@@ -624,6 +639,7 @@ normalizeTypeShallow ::
   m (Type, [(Name, Type)])
 normalizeTypeShallow
   assignObjectFieldTypeName
+  assignAdditionalPropertiesTypeName
   assignOneOfTypeName
   assignArrayElemTypeName
   typeName
@@ -634,7 +650,10 @@ normalizeTypeShallow
         pure (OneOf discriminator variants, inlineDefinitions)
     | Just objectType <- isObjectType typ = do
         (objectType, inlineDefinitions) <-
-          normalizeObjectType (assignObjectFieldTypeName typeName) objectType
+          normalizeObjectType
+            (assignObjectFieldTypeName typeName)
+            (assignAdditionalPropertiesTypeName typeName)
+            objectType
         pure (Object objectType, inlineDefinitions)
     | Just elemType <- isArrayType typ = do
         (normedElemType, inlineDefinitions) <-
@@ -651,6 +670,8 @@ normalizeType ::
   Monad m =>
   -- | Assign a name to an anonnymous type in a field of an 'ObjectType'
   (Name -> Name -> m Name) ->
+  -- | Assign a name to the additionalProperties type of an 'ObjectType'
+  (Name -> m Name) ->
   -- | Assign a name to an anonnymous type in the ith constructor of a
   -- variant type
   (Name -> Int -> m Name) ->
@@ -663,6 +684,7 @@ normalizeType ::
   m (Type, [(Name, Type)])
 normalizeType
   assignObjectFieldTypeName
+  assignAdditionalPropertiesTypeName
   assignOneOfTypeName
   assignArrayElemTypeName
   typeName
@@ -671,6 +693,7 @@ normalizeType
     (normedType, inlineDefinitions) <-
       normalizeTypeShallow
         assignObjectFieldTypeName
+        assignAdditionalPropertiesTypeName
         assignOneOfTypeName
         assignArrayElemTypeName
         typeName
@@ -683,6 +706,7 @@ normalizeType
             (normedInlineDefType, moreInlineDefinitions) <-
               normalizeType
                 assignObjectFieldTypeName
+                assignAdditionalPropertiesTypeName
                 assignOneOfTypeName
                 assignArrayElemTypeName
                 inlineDefName
