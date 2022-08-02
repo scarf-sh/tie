@@ -345,7 +345,7 @@ import Test.Response
 
 newtype CreateUserRequestBody = CreateUserRequestBody
     {
-        nise :: (Data.Maybe.Maybe (NISE))
+        nise :: (Data.Maybe.Maybe (Nise))
     }
     deriving (Show)
 
@@ -549,39 +549,39 @@ import qualified Web.HttpApiData
 
 import Test.Schemas.PackageId
 
-newtype NISEValue = NISEValue
+newtype NiseValue = NiseValue
     {
         name :: (Data.Maybe.Maybe (Data.Text.Text))
     }
     deriving (Show)
 
-instance Data.Aeson.ToJSON NISEValue where
-    toJSON NISEValue {..} = Data.Aeson.object
+instance Data.Aeson.ToJSON NiseValue where
+    toJSON NiseValue {..} = Data.Aeson.object
         [
             "name" Data.Aeson..= name
         ]
 
-    toEncoding NISEValue {..} = Data.Aeson.Encoding.pairs
+    toEncoding NiseValue {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
         )
 
-instance Data.Aeson.FromJSON NISEValue where
-    parseJSON = Data.Aeson.withObject "NISEValue" $ \o ->
-        NISEValue
+instance Data.Aeson.FromJSON NiseValue where
+    parseJSON = Data.Aeson.withObject "NiseValue" $ \o ->
+        NiseValue
             <$> o Data.Aeson..:? "name"
 
-data NISE = NISE
+data Nise = Nise
     {
         description :: PackageId,
         id :: GHC.Int.Int64,
         name :: Data.Text.Text,
         ports :: [ GHC.Int.Int ],
-        value :: (Data.Maybe.Maybe (NISEValue))
+        value :: (Data.Maybe.Maybe (NiseValue))
     }
     deriving (Show)
 
-instance Data.Aeson.ToJSON NISE where
-    toJSON NISE {..} = Data.Aeson.object
+instance Data.Aeson.ToJSON Nise where
+    toJSON Nise {..} = Data.Aeson.object
         [
             "description" Data.Aeson..= description,
             "id" Data.Aeson..= id,
@@ -590,7 +590,7 @@ instance Data.Aeson.ToJSON NISE where
             "value" Data.Aeson..= value
         ]
 
-    toEncoding NISE {..} = Data.Aeson.Encoding.pairs
+    toEncoding Nise {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "description" (Data.Aeson.toEncoding description) <>
           Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
           Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
@@ -598,9 +598,9 @@ instance Data.Aeson.ToJSON NISE where
           Data.Aeson.Encoding.pair "value" (Data.Aeson.toEncoding value)
         )
 
-instance Data.Aeson.FromJSON NISE where
-    parseJSON = Data.Aeson.withObject "NISE" $ \o ->
-        NISE
+instance Data.Aeson.FromJSON Nise where
+    parseJSON = Data.Aeson.withObject "Nise" $ \o ->
+        Nise
             <$> o Data.Aeson..: "description"
             <*> o Data.Aeson..: "id"
             <*> o Data.Aeson..: "name"

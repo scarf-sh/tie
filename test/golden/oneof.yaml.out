@@ -644,8 +644,66 @@ import qualified Web.HttpApiData
 
 
 
-newtype Package = Package
+data PackageEnumFieldName
+    = PackageEnumFieldNameName1
+    | PackageEnumFieldNameName2
+    | PackageEnumFieldNameName3
+    deriving (Eq, Show)
+
+instance Data.Aeson.ToJSON PackageEnumFieldName where
+    toJSON x = case x of
+        PackageEnumFieldNameName1 -> "Name1"
+        PackageEnumFieldNameName2 -> "Name2"
+        PackageEnumFieldNameName3 -> "Name3"
+
+    toEncoding x = case x of
+        PackageEnumFieldNameName1 -> Data.Aeson.Encoding.text "Name1"
+        PackageEnumFieldNameName2 -> Data.Aeson.Encoding.text "Name2"
+        PackageEnumFieldNameName3 -> Data.Aeson.Encoding.text "Name3"
+
+instance Data.Aeson.FromJSON PackageEnumFieldName where
+    parseJSON = Data.Aeson.withText "PackageEnumFieldName" $ \s ->
+        case s of
+            "Name1" -> pure PackageEnumFieldNameName1
+            "Name2" -> pure PackageEnumFieldNameName2
+            "Name3" -> pure PackageEnumFieldNameName3
+            _ -> fail "invalid enum value"
+
+instance Web.HttpApiData.ToHttpApiData PackageEnumFieldName where
+    toQueryParam x = case x of
+        PackageEnumFieldNameName1 -> "Name1"
+        PackageEnumFieldNameName2 -> "Name2"
+        PackageEnumFieldNameName3 -> "Name3"
+
+instance Web.HttpApiData.FromHttpApiData PackageEnumFieldName where
+    parseUrlPiece x =
+        case x of
+            "Name1" -> pure PackageEnumFieldNameName1
+            "Name2" -> pure PackageEnumFieldNameName2
+            "Name3" -> pure PackageEnumFieldNameName3
+            _ -> Left "invalid enum value"
+
+data PackageOneOfFieldName
+    = PackageOneOfFieldNamePackageOneOfFieldNameOneOf1 Data.Text.Text
+    | PackageOneOfFieldNamePackageOneOfFieldNameOneOf2 [ Data.Text.Text ]
+    deriving (Show)
+
+instance Data.Aeson.ToJSON PackageOneOfFieldName where
+    toJSON (PackageOneOfFieldNamePackageOneOfFieldNameOneOf1 x) = Data.Aeson.toJSON x
+    toJSON (PackageOneOfFieldNamePackageOneOfFieldNameOneOf2 x) = Data.Aeson.toJSON x
+
+    toEncoding (PackageOneOfFieldNamePackageOneOfFieldNameOneOf1 x) = Data.Aeson.toEncoding x
+    toEncoding (PackageOneOfFieldNamePackageOneOfFieldNameOneOf2 x) = Data.Aeson.toEncoding x
+
+instance Data.Aeson.FromJSON PackageOneOfFieldName where
+    parseJSON x =
+        (PackageOneOfFieldNamePackageOneOfFieldNameOneOf1 <$> Data.Aeson.parseJSON x) Control.Applicative.<|>
+        (PackageOneOfFieldNamePackageOneOfFieldNameOneOf2 <$> Data.Aeson.parseJSON x)
+
+data Package = Package
     {
+        enumFieldName :: (Data.Maybe.Maybe (PackageEnumFieldName)),
+        oneOfFieldName :: (Data.Maybe.Maybe (PackageOneOfFieldName)),
         type' :: (Data.Maybe.Maybe (Data.Text.Text))
     }
     deriving (Show)
@@ -653,17 +711,23 @@ newtype Package = Package
 instance Data.Aeson.ToJSON Package where
     toJSON Package {..} = Data.Aeson.object
         [
+            "enum_field_name" Data.Aeson..= enumFieldName,
+            "one_of_field_name" Data.Aeson..= oneOfFieldName,
             "type" Data.Aeson..= type'
         ]
 
     toEncoding Package {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
+        ( Data.Aeson.Encoding.pair "enum_field_name" (Data.Aeson.toEncoding enumFieldName) <>
+          Data.Aeson.Encoding.pair "one_of_field_name" (Data.Aeson.toEncoding oneOfFieldName) <>
+          Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
         )
 
 instance Data.Aeson.FromJSON Package where
     parseJSON = Data.Aeson.withObject "Package" $ \o ->
         Package
-            <$> o Data.Aeson..:? "type"
+            <$> o Data.Aeson..:? "enum_field_name"
+            <*> o Data.Aeson..:? "one_of_field_name"
+            <*> o Data.Aeson..:? "type"
 ---------------------
 Test/Schemas/Pet.hs
 
