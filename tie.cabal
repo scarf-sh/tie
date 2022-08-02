@@ -58,6 +58,7 @@ library
     , text
     , unordered-containers
     , yaml
+    , casing
 
   mixins:
     base hiding (Prelude),

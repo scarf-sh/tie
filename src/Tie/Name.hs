@@ -46,6 +46,7 @@ module Tie.Name
   )
 where
 
+import qualified Text.Casing as Casing
 import Data.Char (toLower, toUpper)
 import qualified Data.List as List
 import qualified Data.Text as Text
@@ -130,19 +131,19 @@ toJsonFieldName = PP.pretty . unName
 
 toDataTypeName :: Name -> PP.Doc ann
 toDataTypeName =
-  PP.pretty . Text.pack . capitalizeFirstLetter . Text.unpack . unName
+  PP.pretty . Text.pack . capitalizeFirstLetter . Casing.camel . Text.unpack . unName
 
 toOneOfDataTypeName :: Name -> PP.Doc ann
 toOneOfDataTypeName =
-  PP.pretty . Text.pack . capitalizeFirstLetter . Text.unpack . unName
+  PP.pretty . Text.pack . capitalizeFirstLetter . Casing.camel . Text.unpack . unName
 
 toOneOfConstructorName :: Name -> Name -> PP.Doc ann
 toOneOfConstructorName (Name oneOfType) (Name variant) =
   PP.pretty $
     Text.pack $
       escapeKeyword $
-        capitalizeFirstLetter (Text.unpack oneOfType)
-          <> capitalizeFirstLetter (Text.unpack variant)
+        capitalizeFirstLetter (Casing.camel $ Text.unpack oneOfType)
+          <> capitalizeFirstLetter (Casing.camel $ Text.unpack variant)
 
 toConstructorName :: Name -> PP.Doc ann
 toConstructorName = toDataTypeName

@@ -49,8 +49,17 @@ paths:
 components:
   schemas:
     Package: 
-      properties: 
-        type: 
+      properties:
+        enum_field_name:
+          type: string
+          enum: [Name1, Name2, Name3]
+        one_of_field_name:
+          oneOf:
+            - type: string
+            - type: array
+              items:
+                type: string
+        type:
           type: string
     Pet: 
       properties:
