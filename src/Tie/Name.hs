@@ -131,19 +131,19 @@ toJsonFieldName = PP.pretty . unName
 
 toDataTypeName :: Name -> PP.Doc ann
 toDataTypeName =
-  PP.pretty . Text.pack . capitalizeFirstLetter . camelCaseIfNotAllCapitalized . Text.unpack . unName
+  PP.pretty . Text.pack . capitalizeFirstLetter . toCamelCase . Text.unpack . unName
 
 toOneOfDataTypeName :: Name -> PP.Doc ann
 toOneOfDataTypeName =
-  PP.pretty . Text.pack . capitalizeFirstLetter . camelCaseIfNotAllCapitalized . Text.unpack . unName
+  PP.pretty . Text.pack . capitalizeFirstLetter . toCamelCase . Text.unpack . unName
 
 toOneOfConstructorName :: Name -> Name -> PP.Doc ann
 toOneOfConstructorName (Name oneOfType) (Name variant) =
   PP.pretty $
     Text.pack $
       escapeKeyword $
-        capitalizeFirstLetter (camelCaseIfNotAllCapitalized $ Text.unpack oneOfType)
-          <> capitalizeFirstLetter (camelCaseIfNotAllCapitalized $ Text.unpack variant)
+        capitalizeFirstLetter (toCamelCase $ Text.unpack oneOfType)
+          <> capitalizeFirstLetter (toCamelCase $ Text.unpack variant)
 
 toConstructorName :: Name -> PP.Doc ann
 toConstructorName = toDataTypeName
@@ -315,8 +315,3 @@ extractHaskellModule =
             [Text.intercalate "." xs]
    in concatMap extractModule . Text.words
 
-camelCaseIfNotAllCapitalized :: String -> String
-camelCaseIfNotAllCapitalized word =
-  if all (==True) $ isUpper <$> word
-  then word
-  else toCamelCase word
