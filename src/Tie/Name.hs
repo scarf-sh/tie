@@ -1,5 +1,6 @@
 {-# LANGUAGE GeneralizedNewtypeDeriving #-}
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 
 module Tie.Name
   ( PackageName,
@@ -46,8 +47,7 @@ module Tie.Name
   )
 where
 
-import qualified Text.Casing as Casing
-import Data.Char (toLower, toUpper)
+import Data.Char (toLower, toUpper, isUpper)
 import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Prettyprinter as PP
@@ -131,19 +131,19 @@ toJsonFieldName = PP.pretty . unName
 
 toDataTypeName :: Name -> PP.Doc ann
 toDataTypeName =
-  PP.pretty . Text.pack . capitalizeFirstLetter . Casing.camel . Text.unpack . unName
+  PP.pretty . Text.pack . capitalizeFirstLetter . camelCaseIfNotAllCapitalized . Text.unpack . unName
 
 toOneOfDataTypeName :: Name -> PP.Doc ann
 toOneOfDataTypeName =
-  PP.pretty . Text.pack . capitalizeFirstLetter . Casing.camel . Text.unpack . unName
+  PP.pretty . Text.pack . capitalizeFirstLetter . camelCaseIfNotAllCapitalized . Text.unpack . unName
 
 toOneOfConstructorName :: Name -> Name -> PP.Doc ann
 toOneOfConstructorName (Name oneOfType) (Name variant) =
   PP.pretty $
     Text.pack $
       escapeKeyword $
-        capitalizeFirstLetter (Casing.camel $ Text.unpack oneOfType)
-          <> capitalizeFirstLetter (Casing.camel $ Text.unpack variant)
+        capitalizeFirstLetter (camelCaseIfNotAllCapitalized $ Text.unpack oneOfType)
+          <> capitalizeFirstLetter (camelCaseIfNotAllCapitalized $ Text.unpack variant)
 
 toConstructorName :: Name -> PP.Doc ann
 toConstructorName = toDataTypeName
@@ -314,3 +314,9 @@ extractHaskellModule =
           xs ->
             [Text.intercalate "." xs]
    in concatMap extractModule . Text.words
+
+camelCaseIfNotAllCapitalized :: String -> String
+camelCaseIfNotAllCapitalized word =
+  if all (==True) $ isUpper <$> word
+  then word
+  else toCamelCase word
