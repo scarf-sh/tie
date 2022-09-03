@@ -124,6 +124,7 @@ import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text
 import qualified Data.Text.Encoding as Text
+import qualified Network.HTTP.Media
 import Network.HTTP.Types (HeaderName, hContentType)
 import qualified Network.Wai as Wai
 import System.IO.Unsafe (unsafeInterleaveIO)
@@ -226,7 +227,10 @@ requiredHeader name withHeader = \request respond ->
           withHeader x request respond
 {-# INLINEABLE requiredHeader #-}
 
-data BodyParser a = BodyParser ByteString ((a -> Wai.Application) -> Wai.Application)
+data BodyParser a
+  = BodyParser
+      Network.HTTP.Media.MediaType
+      ((a -> Wai.Application) -> Wai.Application)
 
 jsonBodyParser :: FromJSON a => BodyParser a
 jsonBodyParser = BodyParser "application/json" parseRequestBodyJSON
@@ -240,16 +244,16 @@ parseRequestBody :: [BodyParser a] -> (a -> Wai.Application) -> Wai.Application
 parseRequestBody parsers withBody = \request respond -> do
   let contentType =
         fromMaybe
-          "text/html"
+          "application/octet-stream"
           (List.lookup hContentType (Wai.requestHeaders request))
 
       bodyParser =
-        List.find
-          (\(BodyParser expectedContentType _) -> expectedContentType == contentType)
-          parsers
+        Network.HTTP.Media.mapAccept
+          [(mediaType, parser) | BodyParser mediaType parser <- parsers]
+          contentType
 
   case bodyParser of
-    Just (BodyParser _ parseBody) ->
+    Just parseBody ->
       parseBody withBody request respond
     Nothing ->
       respond (Wai.responseBuilder (toEnum 415) [] mempty)
@@ -625,6 +629,7 @@ library
     , containers
     , ghc-prim
     , http-api-data
+    , http-media
     , http-types
     , text
     , time

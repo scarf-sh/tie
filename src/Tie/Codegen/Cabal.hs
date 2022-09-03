@@ -17,6 +17,7 @@ codegenCabalFile packageName exposedModules extraPackages =
             "containers",
             "ghc-prim",
             "http-api-data",
+            "http-media",
             "http-types",
             "text",
             "time",
