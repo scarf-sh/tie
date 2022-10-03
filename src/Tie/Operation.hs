@@ -11,6 +11,7 @@
 
 module Tie.Operation
   ( StatusCode,
+    Style (..),
     Param (..),
     Header (..),
     RequestBody (..),
@@ -106,13 +107,19 @@ data ParamIn
   | InCookie
   deriving (Eq, Ord, Show)
 
+data Style
+  = StyleForm
+  deriving (Eq, Ord, Show)
+
 -- | 'Param' corresponds to OpenAPI's Parameter component.
 data Param = Param
   { name :: Name,
     summary :: Maybe Text,
     paramIn :: ParamIn,
     schema :: Named Type,
-    required :: Bool
+    required :: Bool,
+    explode :: Bool,
+    style :: Maybe Style
   }
   deriving (Eq, Ord, Show)
 
@@ -390,6 +397,14 @@ paramToParam resolver Errors {..} OpenApi.Param {..} = do
           OpenApi.ParamPath -> InPath
           OpenApi.ParamCookie -> InCookie,
         required = fromMaybe False _paramRequired,
+        explode = fromMaybe False _paramExplode,
+        style = case _paramStyle of          
+          Just OpenApi.StyleForm -> Just StyleForm
+          _
+            -- Apply the default style for query paramters
+            | OpenApi.ParamQuery <- _paramIn -> 
+                Just StyleForm
+            | otherwise -> Nothing,
         schema = typ
       }
 

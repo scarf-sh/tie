@@ -21,6 +21,7 @@ codegenCabalFile packageName exposedModules extraPackages =
             "http-types",
             "text",
             "time",
+            "unordered-containers",
             "wai"
           ]
             ++ extraPackages

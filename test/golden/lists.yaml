@@ -49,7 +49,60 @@ paths:
               schema:
                 type: array
                 items: 
-                  $ref: "#/components/schemas/Inline"              
+                  $ref: "#/components/schemas/Inline"
+
+  /packages4:
+    get:
+      parameters: 
+        - in: query
+          required: true
+          name: id
+          explode: false
+          style: form
+          schema:
+            type: array
+            items: 
+              type: string
+      summary: List all packages
+      operationId: listPackages4
+      tags:
+        - packages
+      responses:
+        '200':
+          description: An inline array of packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  $ref: "#/components/schemas/Inline"                    
+
+  /packages5:
+    get:
+      parameters: 
+        - in: query
+          required: true
+          name: id
+          explode: true
+          style: form
+          schema:
+            type: array
+            items: 
+              type: string
+      summary: List all packages
+      operationId: listPackages5
+      tags:
+        - packages
+      responses:
+        '200':
+          description: An inline array of packages
+          content:
+            application/json:
+              schema:
+                type: array
+                items: 
+                  $ref: "#/components/schemas/Inline"                    
+
 components:
   schemas:
     Package: 

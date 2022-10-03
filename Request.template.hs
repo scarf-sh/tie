@@ -1,11 +1,17 @@
 {-# LANGUAGE OverloadedStrings #-}
 
 module Tie.Template.Request_
-  ( pathVariable,
+  ( -- * Parameters
+    Style (..),
+    pathVariable,
     requiredQueryParameter,
+    requiredQueryParameters,
     optionalQueryParameter,
+    optionalQueryParameters,
     requiredHeader,
     optionalHeader,
+
+    -- * Request body
     parseRequestBody,
     jsonBodyParser,
     formBodyParser,
@@ -19,7 +25,10 @@ import Data.Attoparsec.ByteString (eitherResult, parseWith)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LBS
+import Data.Coerce (coerce)
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -28,12 +37,18 @@ import qualified Network.HTTP.Media
 import Network.HTTP.Types (HeaderName, hContentType)
 import qualified Network.Wai as Wai
 import System.IO.Unsafe (unsafeInterleaveIO)
-import Web.FormUrlEncoded (FromForm, urlDecodeAsForm)
+import Web.FormUrlEncoded
+  ( FromForm,
+    parseAll,
+    urlDecodeAsForm,
+    urlDecodeForm,
+  )
 import Web.HttpApiData
   ( FromHttpApiData,
     parseHeader,
     parseQueryParam,
     parseUrlPiece,
+    parseUrlPieces,
   )
 
 pathVariable ::
@@ -49,6 +64,126 @@ pathVariable value withVariable = \request respond ->
     Right x ->
       withVariable x request respond
 {-# INLINEABLE pathVariable #-}
+
+data Style
+  = FormStyle
+  | CommaDelimitedStyle
+  | SpaceDelimitedStyle
+  | PipeDelimitedStyle
+
+newtype CommaDelimitedValue a = CommaDelimitedValue {unCommaDelimitedValue :: [a]}
+
+instance FromHttpApiData a => FromHttpApiData (CommaDelimitedValue a) where
+  parseUrlPiece input = do
+    xs <- parseUrlPieces (Text.splitOn "," input)
+    pure (CommaDelimitedValue xs)
+
+newtype SpaceDelimitedValue a = SpaceDelimitedValue {unSpaceDelimitedValue :: [a]}
+
+instance FromHttpApiData a => FromHttpApiData (SpaceDelimitedValue a) where
+  parseUrlPiece input = do
+    xs <- parseUrlPieces (Text.splitOn " " input)
+    pure (SpaceDelimitedValue xs)
+
+newtype PipeDelimitedValue a = PipeDelimitedValue {unPipeDelimitedValue :: [a]}
+
+instance FromHttpApiData a => FromHttpApiData (PipeDelimitedValue a) where
+  parseUrlPiece input = do
+    xs <- parseUrlPieces (Text.splitOn "|" input)
+    pure (PipeDelimitedValue xs)
+
+requiredQueryParameters ::
+  FromHttpApiData a =>
+  Style ->
+  ByteString ->
+  (NonEmpty.NonEmpty a -> Wai.Application) ->
+  Wai.Application
+requiredQueryParameters style name withParam =
+  case style of
+    FormStyle -> \request respond ->
+      case urlDecodeForm (LBS.fromStrict (ByteString.drop 1 (Wai.rawQueryString request))) of
+        Left error ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right form ->
+          case parseAll (Text.decodeUtf8 name) form of
+            Left _ ->
+              respond (Wai.responseBuilder (toEnum 400) [] mempty)
+            Right [] ->
+              respond (Wai.responseBuilder (toEnum 400) [] mempty)
+            Right (x : xs) ->
+              withParam (x NonEmpty.:| xs) request respond
+    SpaceDelimitedStyle ->
+      requiredQueryParameter
+        name
+        ( \xs -> \request respond ->
+            case NonEmpty.nonEmpty (unSpaceDelimitedValue xs) of
+              Nothing ->
+                respond (Wai.responseBuilder (toEnum 400) [] mempty)
+              Just xs ->
+                withParam xs request respond
+        )
+    PipeDelimitedStyle ->
+      requiredQueryParameter
+        name
+        ( \xs -> \request respond ->
+            case NonEmpty.nonEmpty (unPipeDelimitedValue xs) of
+              Nothing ->
+                respond (Wai.responseBuilder (toEnum 400) [] mempty)
+              Just xs ->
+                withParam xs request respond
+        )
+    CommaDelimitedStyle ->
+      requiredQueryParameter
+        name
+        ( \xs -> \request respond ->
+            case NonEmpty.nonEmpty (unCommaDelimitedValue xs) of
+              Nothing ->
+                respond (Wai.responseBuilder (toEnum 400) [] mempty)
+              Just xs ->
+                withParam xs request respond
+        )
+
+optionalQueryParameters ::
+  FromHttpApiData a =>
+  Style ->
+  ByteString ->
+  (Maybe (NonEmpty.NonEmpty a) -> Wai.Application) ->
+  Wai.Application
+optionalQueryParameters style name withParam =
+  case style of
+    FormStyle -> \request respond ->
+      case urlDecodeForm (LBS.fromStrict (ByteString.drop 1 (Wai.rawQueryString request))) of
+        Left error ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right form ->
+          case parseAll (Text.decodeUtf8 name) form of
+            Left _ ->
+              respond (Wai.responseBuilder (toEnum 400) [] mempty)
+            Right [] ->
+              withParam Nothing request respond
+            Right (x : xs) ->
+              withParam (Just (x NonEmpty.:| xs)) request respond
+    SpaceDelimitedStyle ->
+      optionalQueryParameter
+        name
+        False
+        ( \xs ->
+            withParam (xs >>= NonEmpty.nonEmpty . unSpaceDelimitedValue)
+        )
+    PipeDelimitedStyle ->
+      optionalQueryParameter
+        name
+        False
+        ( \xs ->
+            withParam (xs >>= NonEmpty.nonEmpty . unPipeDelimitedValue)
+        )
+    CommaDelimitedStyle ->
+      optionalQueryParameter
+        name
+        False
+        ( \xs ->
+            withParam (xs >>= NonEmpty.nonEmpty . unCommaDelimitedValue)
+        )
 
 requiredQueryParameter ::
   FromHttpApiData a =>
@@ -82,9 +217,9 @@ optionalQueryParameter name allowEmpty withParam = \request respond ->
       withParam Nothing request respond
     Just Nothing
       | allowEmpty ->
-        withParam Nothing request respond
+          withParam Nothing request respond
       | otherwise ->
-        respond (Wai.responseBuilder (toEnum 400) [] mempty)
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Just (Just value) ->
       case parseQueryParam (Text.decodeUtf8 value) of
         Left _err ->

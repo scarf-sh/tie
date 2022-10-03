@@ -64,6 +64,9 @@ codegenParamSchema Param {schema, required} =
             error "TODO enumeration params"
         | Just basicType <- isBasicType typ ->
             pure (codegenFieldType (Unnamed typ))
+        | Just elemType <- isArrayType typ ->
+            -- generate a non-empty list unconditionally
+            pure (codegenArrayParameterType True elemType)
         | Just objectType <- isObjectType typ ->
             error "Invariant broken: ruled out by pathToPath"
         | otherwise ->
@@ -474,6 +477,19 @@ codegenRequiredOptionalFieldType :: Bool -> Doc ann -> Doc ann
 codegenRequiredOptionalFieldType True doc = doc
 codegenRequiredOptionalFieldType False doc = "(" <> "Data.Maybe.Maybe" <+> "(" <> doc <> ")" <> ")"
 
+-- | Special casing for generating parameter types for arrays
+codegenArrayParameterType ::
+  -- | Non-Empty?
+  Bool ->
+  -- | Element type
+  Named Type ->
+  Doc ann
+codegenArrayParameterType requireNonEmpty elemType
+  | requireNonEmpty =
+      "Data.List.NonEmpty.NonEmpty" <+> "(" <+> codegenFieldType elemType <+> ")"
+  | otherwise =
+      "[" <+> codegenFieldType elemType <+> "]"
+
 codegenFieldType :: Named Type -> Doc ann
 codegenFieldType namedType = case namedType of
   Named name _ -> toDataTypeName name
@@ -523,7 +539,8 @@ codegenFieldType namedType = case namedType of
       TyHaskellType _ escapedHaskellType ->
         PP.pretty escapedHaskellType
     Object objectType -> "Data.Aeson.Value"
-    Array elemType -> "[" <+> codegenFieldType elemType <+> "]"
+    Array elemType ->
+      codegenArrayParameterType False elemType
 
 -- | Generate the Haskell code for enumeration types
 codegenEnumeration :: Name -> [Text] -> Bool -> Doc ann

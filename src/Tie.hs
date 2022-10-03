@@ -122,8 +122,8 @@ normalize =
 
 -- | Expands a list of inline definitions until it reaches a fixed point.
 -- The invariant of the returned list is that there are no non-primitive
--- unnamed types left: 
---   forall x. normalize x == [] 
+-- unnamed types left:
+--   forall x. normalize x == []
 --  where x is an element of the result of normalizedTypes
 normalizeTypes :: Monad m => [(Name, Type)] -> m [(Name, Type)]
 normalizeTypes types =
