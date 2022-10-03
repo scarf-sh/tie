@@ -18,6 +18,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.List.NonEmpty
 import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
@@ -42,6 +43,8 @@ import Test.Schemas.Packages
 import Test.Response.ListPackages
 import Test.Response.ListPackages2
 import Test.Response.ListPackages3
+import Test.Response.ListPackages4
+import Test.Response.ListPackages5
 
 data Api m = Api {
     -- | List all packages
@@ -52,7 +55,17 @@ data Api m = Api {
         m ListPackages2Response,
     -- | List all packages
     listPackages3 ::
-        m ListPackages3Response
+        m ListPackages3Response,
+    -- | List all packages
+    listPackages4 ::
+        -- @id@
+        Data.List.NonEmpty.NonEmpty ( Data.Text.Text ) ->
+        m ListPackages4Response,
+    -- | List all packages
+    listPackages5 ::
+        -- @id@
+        Data.List.NonEmpty.NonEmpty ( Data.Text.Text ) ->
+        m ListPackages5Response
 }
 
 application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
@@ -88,6 +101,28 @@ application run api notFound request respond =
                 x ->
                     unsupportedMethod x
 
+        ["packages4"] ->
+            case Network.Wai.requestMethod request of
+                "GET" ->
+                    requiredQueryParameters CommaDelimitedStyle "id" (\__id request respond ->
+                        run request (do
+                            response <- listPackages4 api __id
+                            Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
+                        )) request respond
+                x ->
+                    unsupportedMethod x
+
+        ["packages5"] ->
+            case Network.Wai.requestMethod request of
+                "GET" ->
+                    requiredQueryParameters FormStyle "id" (\__id request respond ->
+                        run request (do
+                            response <- listPackages5 api __id
+                            Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
+                        )) request respond
+                x ->
+                    unsupportedMethod x
+
         _ ->
             notFound request respond
     where
@@ -100,11 +135,17 @@ Test/Request.hs
 {-# LANGUAGE OverloadedStrings #-}
 
 module Test.Request
-  ( pathVariable,
+  ( -- * Parameters
+    Style (..),
+    pathVariable,
     requiredQueryParameter,
+    requiredQueryParameters,
     optionalQueryParameter,
+    optionalQueryParameters,
     requiredHeader,
     optionalHeader,
+
+    -- * Request body
     parseRequestBody,
     jsonBodyParser,
     formBodyParser,
@@ -118,7 +159,10 @@ import Data.Attoparsec.ByteString (eitherResult, parseWith)
 import Data.ByteString (ByteString)
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LBS
+import Data.Coerce (coerce)
+import qualified Data.HashMap.Strict as HashMap
 import qualified Data.List as List
+import qualified Data.List.NonEmpty as NonEmpty
 import Data.Maybe (fromMaybe)
 import Data.Text (Text)
 import qualified Data.Text as Text
@@ -127,12 +171,18 @@ import qualified Network.HTTP.Media
 import Network.HTTP.Types (HeaderName, hContentType)
 import qualified Network.Wai as Wai
 import System.IO.Unsafe (unsafeInterleaveIO)
-import Web.FormUrlEncoded (FromForm, urlDecodeAsForm)
+import Web.FormUrlEncoded
+  ( FromForm,
+    parseAll,
+    urlDecodeAsForm,
+    urlDecodeForm,
+  )
 import Web.HttpApiData
   ( FromHttpApiData,
     parseHeader,
     parseQueryParam,
     parseUrlPiece,
+    parseUrlPieces,
   )
 
 pathVariable ::
@@ -148,6 +198,126 @@ pathVariable value withVariable = \request respond ->
     Right x ->
       withVariable x request respond
 {-# INLINEABLE pathVariable #-}
+
+data Style
+  = FormStyle
+  | CommaDelimitedStyle
+  | SpaceDelimitedStyle
+  | PipeDelimitedStyle
+
+newtype CommaDelimitedValue a = CommaDelimitedValue {unCommaDelimitedValue :: [a]}
+
+instance FromHttpApiData a => FromHttpApiData (CommaDelimitedValue a) where
+  parseUrlPiece input = do
+    xs <- parseUrlPieces (Text.splitOn "," input)
+    pure (CommaDelimitedValue xs)
+
+newtype SpaceDelimitedValue a = SpaceDelimitedValue {unSpaceDelimitedValue :: [a]}
+
+instance FromHttpApiData a => FromHttpApiData (SpaceDelimitedValue a) where
+  parseUrlPiece input = do
+    xs <- parseUrlPieces (Text.splitOn " " input)
+    pure (SpaceDelimitedValue xs)
+
+newtype PipeDelimitedValue a = PipeDelimitedValue {unPipeDelimitedValue :: [a]}
+
+instance FromHttpApiData a => FromHttpApiData (PipeDelimitedValue a) where
+  parseUrlPiece input = do
+    xs <- parseUrlPieces (Text.splitOn "|" input)
+    pure (PipeDelimitedValue xs)
+
+requiredQueryParameters ::
+  FromHttpApiData a =>
+  Style ->
+  ByteString ->
+  (NonEmpty.NonEmpty a -> Wai.Application) ->
+  Wai.Application
+requiredQueryParameters style name withParam =
+  case style of
+    FormStyle -> \request respond ->
+      case urlDecodeForm (LBS.fromStrict (ByteString.drop 1 (Wai.rawQueryString request))) of
+        Left error ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right form ->
+          case parseAll (Text.decodeUtf8 name) form of
+            Left _ ->
+              respond (Wai.responseBuilder (toEnum 400) [] mempty)
+            Right [] ->
+              respond (Wai.responseBuilder (toEnum 400) [] mempty)
+            Right (x : xs) ->
+              withParam (x NonEmpty.:| xs) request respond
+    SpaceDelimitedStyle ->
+      requiredQueryParameter
+        name
+        ( \xs -> \request respond ->
+            case NonEmpty.nonEmpty (unSpaceDelimitedValue xs) of
+              Nothing ->
+                respond (Wai.responseBuilder (toEnum 400) [] mempty)
+              Just xs ->
+                withParam xs request respond
+        )
+    PipeDelimitedStyle ->
+      requiredQueryParameter
+        name
+        ( \xs -> \request respond ->
+            case NonEmpty.nonEmpty (unPipeDelimitedValue xs) of
+              Nothing ->
+                respond (Wai.responseBuilder (toEnum 400) [] mempty)
+              Just xs ->
+                withParam xs request respond
+        )
+    CommaDelimitedStyle ->
+      requiredQueryParameter
+        name
+        ( \xs -> \request respond ->
+            case NonEmpty.nonEmpty (unCommaDelimitedValue xs) of
+              Nothing ->
+                respond (Wai.responseBuilder (toEnum 400) [] mempty)
+              Just xs ->
+                withParam xs request respond
+        )
+
+optionalQueryParameters ::
+  FromHttpApiData a =>
+  Style ->
+  ByteString ->
+  (Maybe (NonEmpty.NonEmpty a) -> Wai.Application) ->
+  Wai.Application
+optionalQueryParameters style name withParam =
+  case style of
+    FormStyle -> \request respond ->
+      case urlDecodeForm (LBS.fromStrict (ByteString.drop 1 (Wai.rawQueryString request))) of
+        Left error ->
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+        Right form ->
+          case parseAll (Text.decodeUtf8 name) form of
+            Left _ ->
+              respond (Wai.responseBuilder (toEnum 400) [] mempty)
+            Right [] ->
+              withParam Nothing request respond
+            Right (x : xs) ->
+              withParam (Just (x NonEmpty.:| xs)) request respond
+    SpaceDelimitedStyle ->
+      optionalQueryParameter
+        name
+        False
+        ( \xs ->
+            withParam (xs >>= NonEmpty.nonEmpty . unSpaceDelimitedValue)
+        )
+    PipeDelimitedStyle ->
+      optionalQueryParameter
+        name
+        False
+        ( \xs ->
+            withParam (xs >>= NonEmpty.nonEmpty . unPipeDelimitedValue)
+        )
+    CommaDelimitedStyle ->
+      optionalQueryParameter
+        name
+        False
+        ( \xs ->
+            withParam (xs >>= NonEmpty.nonEmpty . unCommaDelimitedValue)
+        )
 
 requiredQueryParameter ::
   FromHttpApiData a =>
@@ -181,9 +351,9 @@ optionalQueryParameter name allowEmpty withParam = \request respond ->
       withParam Nothing request respond
     Just Nothing
       | allowEmpty ->
-        withParam Nothing request respond
+          withParam Nothing request respond
       | otherwise ->
-        respond (Wai.responseBuilder (toEnum 400) [] mempty)
+          respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Just (Just value) ->
       case parseQueryParam (Text.decodeUtf8 value) of
         Left _err ->
@@ -327,6 +497,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.List.NonEmpty
 import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
@@ -371,6 +542,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.List.NonEmpty
 import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
@@ -415,6 +587,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.List.NonEmpty
 import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
@@ -439,6 +612,96 @@ instance ToResponse ListPackages3Response where
     toResponse (ListPackages3Response200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
 ---------------------
+Test/Response/ListPackages4.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Response.ListPackages4 where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.List.NonEmpty
+import qualified Data.Map
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.Inline
+
+import Test.Response
+
+data ListPackages4Response
+    = ListPackages4Response200 [ Inline ]
+    deriving (Show)
+
+instance ToResponse ListPackages4Response where
+    toResponse (ListPackages4Response200 x) =
+        Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
+Test/Response/ListPackages5.hs
+
+{-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DuplicateRecordFields #-}
+{-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE RankNTypes #-}
+{-# LANGUAGE RecordWildCards #-}
+module Test.Response.ListPackages5 where
+
+import qualified Control.Applicative
+import qualified Control.Exception
+import qualified Control.Monad
+import qualified Control.Monad.IO.Class
+import qualified Data.Aeson
+import qualified Data.Aeson.Encoding
+import qualified Data.Aeson.Parser
+import qualified Data.Aeson.Types
+import qualified Data.Attoparsec.ByteString
+import qualified Data.List
+import qualified Data.List.NonEmpty
+import qualified Data.Map
+import qualified Data.Maybe
+import qualified Data.Text
+import qualified Data.Time
+import qualified Data.Text.Encoding
+import qualified GHC.Float
+import qualified GHC.Int
+import qualified GHC.Types
+import qualified Network.HTTP.Types
+import qualified Network.Wai
+import qualified Web.HttpApiData
+
+import Test.Schemas.Inline
+
+import Test.Response
+
+data ListPackages5Response
+    = ListPackages5Response200 [ Inline ]
+    deriving (Show)
+
+instance ToResponse ListPackages5Response where
+    toResponse (ListPackages5Response200 x) =
+        Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+---------------------
 Test/Schemas/Inline.hs
 
 {-# LANGUAGE BangPatterns #-}
@@ -459,6 +722,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.List.NonEmpty
 import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
@@ -518,6 +782,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.List.NonEmpty
 import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
@@ -575,6 +840,7 @@ import qualified Data.Aeson.Parser
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.List
+import qualified Data.List.NonEmpty
 import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
@@ -611,6 +877,7 @@ library
     , http-types
     , text
     , time
+    , unordered-containers
     , wai
   exposed-modules:
     Test.Api
@@ -619,6 +886,8 @@ library
     Test.Response.ListPackages
     Test.Response.ListPackages2
     Test.Response.ListPackages3
+    Test.Response.ListPackages4
+    Test.Response.ListPackages5
     Test.Schemas.Inline
     Test.Schemas.Package
     Test.Schemas.Packages

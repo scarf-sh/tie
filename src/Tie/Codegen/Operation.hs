@@ -28,8 +28,10 @@ import Tie.Operation
     PathSegment (..),
     RequestBody (..),
     Response (..),
+    Style (..),
   )
 import Tie.Resolve (Resolver)
+import Tie.Type (isArrayType, namedType)
 
 codegenOperations :: Monad m => Resolver m -> [Operation] -> m (PP.Doc ann)
 codegenOperations resolver operations = do
@@ -340,8 +342,32 @@ codegenPathParamGuard Param {name} continuation =
     <+> "request"
     <+> "respond"
 
+codegenQueryParamStyle :: 
+  -- | Explode? 
+  Bool -> 
+  Style ->
+  Maybe (PP.Doc ann)
+codegenQueryParamStyle explode style = case (explode, style) of 
+  (True, StyleForm) -> Just "FormStyle"
+  (False, StyleForm) -> Just "CommaDelimitedStyle"
+
 codegenQueryParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
-codegenQueryParamGuard Param {name, required} continuation
+codegenQueryParamGuard Param {name, required, style, explode, schema} continuation 
+  | Just _ <- isArrayType (namedType schema)
+  , Just style <- style
+  , Just style <- codegenQueryParamStyle explode style  =
+      (if required then "requiredQueryParameters" else "optionalQueryParameters")
+        <+> style
+        <+> "\"" <> toParamName name <> "\""
+        <+> "(" <> "\\" <> toParamBinder name
+        <+> "request"
+        <+> "respond"
+        <+> "->"
+          <> PP.line
+          <> PP.indent 4 continuation
+          <> ")"
+        <+> "request"
+        <+> "respond"
   | required =
       "requiredQueryParameter"
         <+> "\"" <> toParamName name <> "\""

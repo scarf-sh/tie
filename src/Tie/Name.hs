@@ -47,7 +47,7 @@ module Tie.Name
   )
 where
 
-import Data.Char (toLower, toUpper, isUpper)
+import Data.Char (isUpper, toLower, toUpper)
 import qualified Data.List as List
 import qualified Data.Text as Text
 import qualified Prettyprinter as PP
@@ -314,4 +314,3 @@ extractHaskellModule =
           xs ->
             [Text.intercalate "." xs]
    in concatMap extractModule . Text.words
-
