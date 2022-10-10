@@ -342,20 +342,20 @@ codegenPathParamGuard Param {name} continuation =
     <+> "request"
     <+> "respond"
 
-codegenQueryParamStyle :: 
-  -- | Explode? 
-  Bool -> 
+codegenQueryParamStyle ::
+  -- | Explode?
+  Bool ->
   Style ->
   Maybe (PP.Doc ann)
-codegenQueryParamStyle explode style = case (explode, style) of 
+codegenQueryParamStyle explode style = case (explode, style) of
   (True, StyleForm) -> Just "FormStyle"
   (False, StyleForm) -> Just "CommaDelimitedStyle"
 
 codegenQueryParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
-codegenQueryParamGuard Param {name, required, style, explode, schema} continuation 
-  | Just _ <- isArrayType (namedType schema)
-  , Just style <- style
-  , Just style <- codegenQueryParamStyle explode style  =
+codegenQueryParamGuard Param {name, required, style, explode, schema} continuation
+  | Just _ <- isArrayType (namedType schema),
+    Just style <- style,
+    Just style <- codegenQueryParamStyle explode style =
       (if required then "requiredQueryParameters" else "optionalQueryParameters")
         <+> style
         <+> "\"" <> toParamName name <> "\""

@@ -747,12 +747,12 @@ newtype InlineElem = InlineElem
 
 instance Data.Aeson.ToJSON InlineElem where
     toJSON InlineElem {..} = Data.Aeson.object
-        [
-            "name" Data.Aeson..= name
+        ([ 
         ]
+        ++ [ "name" Data.Aeson..= name | Just name <- [name] ])
 
     toEncoding InlineElem {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        ( maybe mempty (Data.Aeson.Encoding.pair "name" . Data.Aeson.toEncoding) name
         )
 
 instance Data.Aeson.FromJSON InlineElem where
@@ -807,12 +807,12 @@ newtype Package = Package
 
 instance Data.Aeson.ToJSON Package where
     toJSON Package {..} = Data.Aeson.object
-        [
-            "name" Data.Aeson..= name
+        ([ 
         ]
+        ++ [ "name" Data.Aeson..= name | Just name <- [name] ])
 
     toEncoding Package {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        ( maybe mempty (Data.Aeson.Encoding.pair "name" . Data.Aeson.toEncoding) name
         )
 
 instance Data.Aeson.FromJSON Package where

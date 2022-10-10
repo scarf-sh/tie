@@ -508,22 +508,22 @@ data Test = Test
 
 instance Data.Aeson.ToJSON Test where
     toJSON Test {..} = Data.Aeson.object
-        [
-            "a" Data.Aeson..= a,
-            "b" Data.Aeson..= b,
-            "c" Data.Aeson..= c,
-            "d" Data.Aeson..= d,
-            "e" Data.Aeson..= e,
-            "f" Data.Aeson..= f
+        ([ 
         ]
+        ++ [ "a" Data.Aeson..= a | Just a <- [a] ]
+        ++ [ "b" Data.Aeson..= b | Just b <- [b] ]
+        ++ [ "c" Data.Aeson..= c | Just c <- [c] ]
+        ++ [ "d" Data.Aeson..= d | Just d <- [d] ]
+        ++ [ "e" Data.Aeson..= e | Just e <- [e] ]
+        ++ [ "f" Data.Aeson..= f | Just f <- [f] ])
 
     toEncoding Test {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "a" (Data.Aeson.toEncoding a) <>
-          Data.Aeson.Encoding.pair "b" (Data.Aeson.toEncoding b) <>
-          Data.Aeson.Encoding.pair "c" (Data.Aeson.toEncoding c) <>
-          Data.Aeson.Encoding.pair "d" (Data.Aeson.toEncoding d) <>
-          Data.Aeson.Encoding.pair "e" (Data.Aeson.toEncoding e) <>
-          Data.Aeson.Encoding.pair "f" (Data.Aeson.toEncoding f)
+        ( maybe mempty (Data.Aeson.Encoding.pair "a" . Data.Aeson.toEncoding) a <>
+          maybe mempty (Data.Aeson.Encoding.pair "b" . Data.Aeson.toEncoding) b <>
+          maybe mempty (Data.Aeson.Encoding.pair "c" . Data.Aeson.toEncoding) c <>
+          maybe mempty (Data.Aeson.Encoding.pair "d" . Data.Aeson.toEncoding) d <>
+          maybe mempty (Data.Aeson.Encoding.pair "e" . Data.Aeson.toEncoding) e <>
+          maybe mempty (Data.Aeson.Encoding.pair "f" . Data.Aeson.toEncoding) f
         )
 
 instance Data.Aeson.FromJSON Test where

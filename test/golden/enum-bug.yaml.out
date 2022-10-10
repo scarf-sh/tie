@@ -514,26 +514,25 @@ data DockerPackage = DockerPackage
 
 instance Data.Aeson.ToJSON DockerPackage where
     toJSON DockerPackage {..} = Data.Aeson.object
-        [
-            "backend_registry" Data.Aeson..= backendRegistry,
-            "id" Data.Aeson..= id,
-            "image" Data.Aeson..= image,
-            "long_description" Data.Aeson..= longDescription,
-            "name" Data.Aeson..= name,
-            "short_description" Data.Aeson..= shortDescription,
-            "type" Data.Aeson..= type',
-            "website" Data.Aeson..= website
+        ([ "id" Data.Aeson..= id,
+           "name" Data.Aeson..= name,
+           "short_description" Data.Aeson..= shortDescription,
+           "type" Data.Aeson..= type'
         ]
+        ++ [ "backend_registry" Data.Aeson..= backendRegistry | Just backendRegistry <- [backendRegistry] ]
+        ++ [ "image" Data.Aeson..= image | Just image <- [image] ]
+        ++ [ "long_description" Data.Aeson..= longDescription | Just longDescription <- [longDescription] ]
+        ++ [ "website" Data.Aeson..= website | Just website <- [website] ])
 
     toEncoding DockerPackage {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "backend_registry" (Data.Aeson.toEncoding backendRegistry) <>
+        ( maybe mempty (Data.Aeson.Encoding.pair "backend_registry" . Data.Aeson.toEncoding) backendRegistry <>
           Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
-          Data.Aeson.Encoding.pair "image" (Data.Aeson.toEncoding image) <>
-          Data.Aeson.Encoding.pair "long_description" (Data.Aeson.toEncoding longDescription) <>
+          maybe mempty (Data.Aeson.Encoding.pair "image" . Data.Aeson.toEncoding) image <>
+          maybe mempty (Data.Aeson.Encoding.pair "long_description" . Data.Aeson.toEncoding) longDescription <>
           Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
           Data.Aeson.Encoding.pair "short_description" (Data.Aeson.toEncoding shortDescription) <>
           Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type') <>
-          Data.Aeson.Encoding.pair "website" (Data.Aeson.toEncoding website)
+          maybe mempty (Data.Aeson.Encoding.pair "website" . Data.Aeson.toEncoding) website
         )
 
 instance Data.Aeson.FromJSON DockerPackage where
@@ -601,26 +600,25 @@ data FilePackage = FilePackage
 
 instance Data.Aeson.ToJSON FilePackage where
     toJSON FilePackage {..} = Data.Aeson.object
-        [
-            "id" Data.Aeson..= id,
-            "incoming_path" Data.Aeson..= incomingPath,
-            "long_description" Data.Aeson..= longDescription,
-            "name" Data.Aeson..= name,
-            "outgoing_url" Data.Aeson..= outgoingUrl,
-            "short_description" Data.Aeson..= shortDescription,
-            "type" Data.Aeson..= type',
-            "website" Data.Aeson..= website
+        ([ "id" Data.Aeson..= id,
+           "incoming_path" Data.Aeson..= incomingPath,
+           "name" Data.Aeson..= name,
+           "outgoing_url" Data.Aeson..= outgoingUrl,
+           "short_description" Data.Aeson..= shortDescription,
+           "type" Data.Aeson..= type'
         ]
+        ++ [ "long_description" Data.Aeson..= longDescription | Just longDescription <- [longDescription] ]
+        ++ [ "website" Data.Aeson..= website | Just website <- [website] ])
 
     toEncoding FilePackage {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
           Data.Aeson.Encoding.pair "incoming_path" (Data.Aeson.toEncoding incomingPath) <>
-          Data.Aeson.Encoding.pair "long_description" (Data.Aeson.toEncoding longDescription) <>
+          maybe mempty (Data.Aeson.Encoding.pair "long_description" . Data.Aeson.toEncoding) longDescription <>
           Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
           Data.Aeson.Encoding.pair "outgoing_url" (Data.Aeson.toEncoding outgoingUrl) <>
           Data.Aeson.Encoding.pair "short_description" (Data.Aeson.toEncoding shortDescription) <>
           Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type') <>
-          Data.Aeson.Encoding.pair "website" (Data.Aeson.toEncoding website)
+          maybe mempty (Data.Aeson.Encoding.pair "website" . Data.Aeson.toEncoding) website
         )
 
 instance Data.Aeson.FromJSON FilePackage where
@@ -740,22 +738,21 @@ data PackageBase = PackageBase
 
 instance Data.Aeson.ToJSON PackageBase where
     toJSON PackageBase {..} = Data.Aeson.object
-        [
-            "id" Data.Aeson..= id,
-            "long_description" Data.Aeson..= longDescription,
-            "name" Data.Aeson..= name,
-            "short_description" Data.Aeson..= shortDescription,
-            "type" Data.Aeson..= type',
-            "website" Data.Aeson..= website
+        ([ "id" Data.Aeson..= id,
+           "name" Data.Aeson..= name,
+           "short_description" Data.Aeson..= shortDescription,
+           "type" Data.Aeson..= type'
         ]
+        ++ [ "long_description" Data.Aeson..= longDescription | Just longDescription <- [longDescription] ]
+        ++ [ "website" Data.Aeson..= website | Just website <- [website] ])
 
     toEncoding PackageBase {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
-          Data.Aeson.Encoding.pair "long_description" (Data.Aeson.toEncoding longDescription) <>
+          maybe mempty (Data.Aeson.Encoding.pair "long_description" . Data.Aeson.toEncoding) longDescription <>
           Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
           Data.Aeson.Encoding.pair "short_description" (Data.Aeson.toEncoding shortDescription) <>
           Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type') <>
-          Data.Aeson.Encoding.pair "website" (Data.Aeson.toEncoding website)
+          maybe mempty (Data.Aeson.Encoding.pair "website" . Data.Aeson.toEncoding) website
         )
 
 instance Data.Aeson.FromJSON PackageBase where

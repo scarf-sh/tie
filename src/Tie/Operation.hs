@@ -398,11 +398,11 @@ paramToParam resolver Errors {..} OpenApi.Param {..} = do
           OpenApi.ParamCookie -> InCookie,
         required = fromMaybe False _paramRequired,
         explode = fromMaybe False _paramExplode,
-        style = case _paramStyle of          
+        style = case _paramStyle of
           Just OpenApi.StyleForm -> Just StyleForm
           _
             -- Apply the default style for query paramters
-            | OpenApi.ParamQuery <- _paramIn -> 
+            | OpenApi.ParamQuery <- _paramIn ->
                 Just StyleForm
             | otherwise -> Nothing,
         schema = typ

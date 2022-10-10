@@ -644,12 +644,12 @@ newtype Inline = Inline
 
 instance Data.Aeson.ToJSON Inline where
     toJSON Inline {..} = Data.Aeson.object
-        [
-            "value" Data.Aeson..= value
+        ([ 
         ]
+        ++ [ "value" Data.Aeson..= value | Just value <- [value] ])
 
     toEncoding Inline {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "value" (Data.Aeson.toEncoding value)
+        ( maybe mempty (Data.Aeson.Encoding.pair "value" . Data.Aeson.toEncoding) value
         )
 
 instance Data.Aeson.FromJSON Inline where
@@ -740,12 +740,12 @@ newtype Inline2 = Inline2
 
 instance Data.Aeson.ToJSON Inline2 where
     toJSON Inline2 {..} = Data.Aeson.object
-        [
-            "value" Data.Aeson..= value
+        ([ 
         ]
+        ++ [ "value" Data.Aeson..= value | Just value <- [value] ])
 
     toEncoding Inline2 {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "value" (Data.Aeson.toEncoding value)
+        ( maybe mempty (Data.Aeson.Encoding.pair "value" . Data.Aeson.toEncoding) value
         )
 
 instance Data.Aeson.FromJSON Inline2 where
@@ -856,16 +856,16 @@ data Package = Package
 
 instance Data.Aeson.ToJSON Package where
     toJSON Package {..} = Data.Aeson.object
-        [
-            "enum_field_name" Data.Aeson..= enumFieldName,
-            "one_of_field_name" Data.Aeson..= oneOfFieldName,
-            "type" Data.Aeson..= type'
+        ([ 
         ]
+        ++ [ "enum_field_name" Data.Aeson..= enumFieldName | Just enumFieldName <- [enumFieldName] ]
+        ++ [ "one_of_field_name" Data.Aeson..= oneOfFieldName | Just oneOfFieldName <- [oneOfFieldName] ]
+        ++ [ "type" Data.Aeson..= type' | Just type' <- [type'] ])
 
     toEncoding Package {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "enum_field_name" (Data.Aeson.toEncoding enumFieldName) <>
-          Data.Aeson.Encoding.pair "one_of_field_name" (Data.Aeson.toEncoding oneOfFieldName) <>
-          Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
+        ( maybe mempty (Data.Aeson.Encoding.pair "enum_field_name" . Data.Aeson.toEncoding) enumFieldName <>
+          maybe mempty (Data.Aeson.Encoding.pair "one_of_field_name" . Data.Aeson.toEncoding) oneOfFieldName <>
+          maybe mempty (Data.Aeson.Encoding.pair "type" . Data.Aeson.toEncoding) type'
         )
 
 instance Data.Aeson.FromJSON Package where
@@ -920,12 +920,12 @@ newtype Pet = Pet
 
 instance Data.Aeson.ToJSON Pet where
     toJSON Pet {..} = Data.Aeson.object
-        [
-            "type" Data.Aeson..= type'
+        ([ 
         ]
+        ++ [ "type" Data.Aeson..= type' | Just type' <- [type'] ])
 
     toEncoding Pet {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
+        ( maybe mempty (Data.Aeson.Encoding.pair "type" . Data.Aeson.toEncoding) type'
         )
 
 instance Data.Aeson.FromJSON Pet where

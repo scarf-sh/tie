@@ -399,18 +399,36 @@ codegenObjectType typName ObjectType {..}
                         <> PP.line
                         <> PP.indent
                           4
-                          ( "["
-                              <> PP.line
-                              <> PP.indent
-                                4
+                          ( "(" <> "["
+                              <+> PP.align
                                 ( PP.concatWith
                                     (\x y -> x <> "," <> PP.line <> y)
                                     [ "\"" <> toJsonFieldName field <> "\"" <+> "Data.Aeson..=" <+> toFieldName field
-                                      | (field, _) <- orderedProperties
+                                      | (field, _) <- orderedProperties,
+                                        HashSet.member field requiredProperties
                                     ]
                                 )
-                              <> PP.line
-                              <> "]"
+                                <> PP.line
+                                <> "]"
+                                <> PP.line
+                                <> PP.concatWith
+                                  (\x y -> x <> PP.line <> y)
+                                  [ ( "++"
+                                        <+> "["
+                                        <+> "\"" <> toJsonFieldName field <> "\""
+                                        <+> "Data.Aeson..="
+                                        <+> toFieldName field
+                                        <+> "|"
+                                        <+> "Just"
+                                        <+> toFieldName field
+                                        <+> "<-"
+                                        <+> "[" <> toFieldName field <> "]"
+                                        <+> "]"
+                                    )
+                                    | (field, _) <- orderedProperties,
+                                      not (HashSet.member field requiredProperties)
+                                  ]
+                                <> ")"
                           )
                         <> PP.line
                         <> PP.line
@@ -426,10 +444,21 @@ codegenObjectType typName ObjectType {..}
                               <+> PP.align
                                 ( PP.concatWith
                                     (\x y -> x <+> "<>" <> PP.line <> y)
-                                    [ "Data.Aeson.Encoding.pair"
-                                        <+> "\"" <> toJsonFieldName field <> "\""
-                                        <+> "(" <> "Data.Aeson.toEncoding"
-                                        <+> toFieldName field <> ")"
+                                    [ if HashSet.member field requiredProperties
+                                        then
+                                          "Data.Aeson.Encoding.pair"
+                                            <+> "\"" <> toJsonFieldName field <> "\""
+                                            <+> "(" <> "Data.Aeson.toEncoding"
+                                            <+> toFieldName field <> ")"
+                                        else
+                                          "maybe"
+                                            <+> "mempty"
+                                            <+> "("
+                                              <> "Data.Aeson.Encoding.pair"
+                                            <+> "\"" <> toJsonFieldName field <> "\""
+                                            <+> "."
+                                            <+> "Data.Aeson.toEncoding" <> ")"
+                                            <+> toFieldName field
                                       | (field, _) <- orderedProperties
                                     ]
                                 )

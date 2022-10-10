@@ -492,12 +492,12 @@ newtype CreateUserRequestBody = CreateUserRequestBody
 
 instance Data.Aeson.ToJSON CreateUserRequestBody where
     toJSON CreateUserRequestBody {..} = Data.Aeson.object
-        [
-            "nise" Data.Aeson..= nise
+        ([ 
         ]
+        ++ [ "nise" Data.Aeson..= nise | Just nise <- [nise] ])
 
     toEncoding CreateUserRequestBody {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "nise" (Data.Aeson.toEncoding nise)
+        ( maybe mempty (Data.Aeson.Encoding.pair "nise" . Data.Aeson.toEncoding) nise
         )
 
 instance Data.Aeson.FromJSON CreateUserRequestBody where
@@ -513,12 +513,12 @@ newtype CreateUserResponseBody200 = CreateUserResponseBody200
 
 instance Data.Aeson.ToJSON CreateUserResponseBody200 where
     toJSON CreateUserResponseBody200 {..} = Data.Aeson.object
-        [
-            "name" Data.Aeson..= name
+        ([ 
         ]
+        ++ [ "name" Data.Aeson..= name | Just name <- [name] ])
 
     toEncoding CreateUserResponseBody200 {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        ( maybe mempty (Data.Aeson.Encoding.pair "name" . Data.Aeson.toEncoding) name
         )
 
 instance Data.Aeson.FromJSON CreateUserResponseBody200 where
@@ -631,19 +631,18 @@ data Car = Car
 
 instance Data.Aeson.ToJSON Car where
     toJSON Car {..} = Data.Aeson.object
-        [
-            "has_4_wheel_drive" Data.Aeson..= has4WheelDrive,
-            "id" Data.Aeson..= id,
-            "model" Data.Aeson..= model,
-            "name" Data.Aeson..= name,
-            "type" Data.Aeson..= type'
+        ([ "id" Data.Aeson..= id,
+           "type" Data.Aeson..= type'
         ]
+        ++ [ "has_4_wheel_drive" Data.Aeson..= has4WheelDrive | Just has4WheelDrive <- [has4WheelDrive] ]
+        ++ [ "model" Data.Aeson..= model | Just model <- [model] ]
+        ++ [ "name" Data.Aeson..= name | Just name <- [name] ])
 
     toEncoding Car {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "has_4_wheel_drive" (Data.Aeson.toEncoding has4WheelDrive) <>
+        ( maybe mempty (Data.Aeson.Encoding.pair "has_4_wheel_drive" . Data.Aeson.toEncoding) has4WheelDrive <>
           Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
-          Data.Aeson.Encoding.pair "model" (Data.Aeson.toEncoding model) <>
-          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
+          maybe mempty (Data.Aeson.Encoding.pair "model" . Data.Aeson.toEncoding) model <>
+          maybe mempty (Data.Aeson.Encoding.pair "name" . Data.Aeson.toEncoding) name <>
           Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
         )
 
@@ -701,12 +700,12 @@ newtype NISEValue = NISEValue
 
 instance Data.Aeson.ToJSON NISEValue where
     toJSON NISEValue {..} = Data.Aeson.object
-        [
-            "name" Data.Aeson..= name
+        ([ 
         ]
+        ++ [ "name" Data.Aeson..= name | Just name <- [name] ])
 
     toEncoding NISEValue {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
+        ( maybe mempty (Data.Aeson.Encoding.pair "name" . Data.Aeson.toEncoding) name
         )
 
 instance Data.Aeson.FromJSON NISEValue where
@@ -726,20 +725,19 @@ data NISE = NISE
 
 instance Data.Aeson.ToJSON NISE where
     toJSON NISE {..} = Data.Aeson.object
-        [
-            "description" Data.Aeson..= description,
-            "id" Data.Aeson..= id,
-            "name" Data.Aeson..= name,
-            "ports" Data.Aeson..= ports,
-            "value" Data.Aeson..= value
+        ([ "description" Data.Aeson..= description,
+           "id" Data.Aeson..= id,
+           "name" Data.Aeson..= name,
+           "ports" Data.Aeson..= ports
         ]
+        ++ [ "value" Data.Aeson..= value | Just value <- [value] ])
 
     toEncoding NISE {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "description" (Data.Aeson.toEncoding description) <>
           Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
           Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
           Data.Aeson.Encoding.pair "ports" (Data.Aeson.toEncoding ports) <>
-          Data.Aeson.Encoding.pair "value" (Data.Aeson.toEncoding value)
+          maybe mempty (Data.Aeson.Encoding.pair "value" . Data.Aeson.toEncoding) value
         )
 
 instance Data.Aeson.FromJSON NISE where
@@ -800,17 +798,16 @@ data PackageIdOneOf4 = PackageIdOneOf4
 
 instance Data.Aeson.ToJSON PackageIdOneOf4 where
     toJSON PackageIdOneOf4 {..} = Data.Aeson.object
-        [
-            "age" Data.Aeson..= age,
-            "enum" Data.Aeson..= enum,
-            "list" Data.Aeson..= list,
-            "name" Data.Aeson..= name
+        ([ "enum" Data.Aeson..= enum,
+           "name" Data.Aeson..= name
         ]
+        ++ [ "age" Data.Aeson..= age | Just age <- [age] ]
+        ++ [ "list" Data.Aeson..= list | Just list <- [list] ])
 
     toEncoding PackageIdOneOf4 {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "age" (Data.Aeson.toEncoding age) <>
+        ( maybe mempty (Data.Aeson.Encoding.pair "age" . Data.Aeson.toEncoding) age <>
           Data.Aeson.Encoding.pair "enum" (Data.Aeson.toEncoding enum) <>
-          Data.Aeson.Encoding.pair "list" (Data.Aeson.toEncoding list) <>
+          maybe mempty (Data.Aeson.Encoding.pair "list" . Data.Aeson.toEncoding) list <>
           Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name)
         )
 
@@ -863,12 +860,12 @@ newtype PackageIdOneOf4List = PackageIdOneOf4List
 
 instance Data.Aeson.ToJSON PackageIdOneOf4List where
     toJSON PackageIdOneOf4List {..} = Data.Aeson.object
-        [
-            "cool" Data.Aeson..= cool
+        ([ 
         ]
+        ++ [ "cool" Data.Aeson..= cool | Just cool <- [cool] ])
 
     toEncoding PackageIdOneOf4List {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "cool" (Data.Aeson.toEncoding cool)
+        ( maybe mempty (Data.Aeson.Encoding.pair "cool" . Data.Aeson.toEncoding) cool
         )
 
 instance Data.Aeson.FromJSON PackageIdOneOf4List where
@@ -953,24 +950,24 @@ data Plane = Plane
 
 instance Data.Aeson.ToJSON Plane where
     toJSON Plane {..} = Data.Aeson.object
-        [
-            "car" Data.Aeson..= car,
-            "has_reactor" Data.Aeson..= hasReactor,
-            "id" Data.Aeson..= id,
-            "model" Data.Aeson..= model,
-            "name" Data.Aeson..= name,
-            "nb_passengers" Data.Aeson..= nbPassengers,
-            "type" Data.Aeson..= type'
+        ([ 
         ]
+        ++ [ "car" Data.Aeson..= car | Just car <- [car] ]
+        ++ [ "has_reactor" Data.Aeson..= hasReactor | Just hasReactor <- [hasReactor] ]
+        ++ [ "id" Data.Aeson..= id | Just id <- [id] ]
+        ++ [ "model" Data.Aeson..= model | Just model <- [model] ]
+        ++ [ "name" Data.Aeson..= name | Just name <- [name] ]
+        ++ [ "nb_passengers" Data.Aeson..= nbPassengers | Just nbPassengers <- [nbPassengers] ]
+        ++ [ "type" Data.Aeson..= type' | Just type' <- [type'] ])
 
     toEncoding Plane {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "car" (Data.Aeson.toEncoding car) <>
-          Data.Aeson.Encoding.pair "has_reactor" (Data.Aeson.toEncoding hasReactor) <>
-          Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
-          Data.Aeson.Encoding.pair "model" (Data.Aeson.toEncoding model) <>
-          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
-          Data.Aeson.Encoding.pair "nb_passengers" (Data.Aeson.toEncoding nbPassengers) <>
-          Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
+        ( maybe mempty (Data.Aeson.Encoding.pair "car" . Data.Aeson.toEncoding) car <>
+          maybe mempty (Data.Aeson.Encoding.pair "has_reactor" . Data.Aeson.toEncoding) hasReactor <>
+          maybe mempty (Data.Aeson.Encoding.pair "id" . Data.Aeson.toEncoding) id <>
+          maybe mempty (Data.Aeson.Encoding.pair "model" . Data.Aeson.toEncoding) model <>
+          maybe mempty (Data.Aeson.Encoding.pair "name" . Data.Aeson.toEncoding) name <>
+          maybe mempty (Data.Aeson.Encoding.pair "nb_passengers" . Data.Aeson.toEncoding) nbPassengers <>
+          maybe mempty (Data.Aeson.Encoding.pair "type" . Data.Aeson.toEncoding) type'
         )
 
 instance Data.Aeson.FromJSON Plane where
@@ -1032,17 +1029,16 @@ data Vehicle = Vehicle
 
 instance Data.Aeson.ToJSON Vehicle where
     toJSON Vehicle {..} = Data.Aeson.object
-        [
-            "id" Data.Aeson..= id,
-            "model" Data.Aeson..= model,
-            "name" Data.Aeson..= name,
-            "type" Data.Aeson..= type'
+        ([ "id" Data.Aeson..= id,
+           "type" Data.Aeson..= type'
         ]
+        ++ [ "model" Data.Aeson..= model | Just model <- [model] ]
+        ++ [ "name" Data.Aeson..= name | Just name <- [name] ])
 
     toEncoding Vehicle {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
-          Data.Aeson.Encoding.pair "model" (Data.Aeson.toEncoding model) <>
-          Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
+          maybe mempty (Data.Aeson.Encoding.pair "model" . Data.Aeson.toEncoding) model <>
+          maybe mempty (Data.Aeson.Encoding.pair "name" . Data.Aeson.toEncoding) name <>
           Data.Aeson.Encoding.pair "type" (Data.Aeson.toEncoding type')
         )
 
