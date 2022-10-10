@@ -533,10 +533,10 @@ data ListPets2ResponseBody200AdditionalProperties = ListPets2ResponseBody200Addi
 
 instance Data.Aeson.ToJSON ListPets2ResponseBody200AdditionalProperties where
     toJSON ListPets2ResponseBody200AdditionalProperties {..} = Data.Aeson.object
-        [
-            "count" Data.Aeson..= count,
-            "name" Data.Aeson..= name
+        ([ "count" Data.Aeson..= count,
+           "name" Data.Aeson..= name
         ]
+        )
 
     toEncoding ListPets2ResponseBody200AdditionalProperties {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "count" (Data.Aeson.toEncoding count) <>
@@ -604,16 +604,15 @@ data Pet = Pet
 
 instance Data.Aeson.ToJSON Pet where
     toJSON Pet {..} = Data.Aeson.object
-        [
-            "id" Data.Aeson..= id,
-            "name" Data.Aeson..= name,
-            "tag" Data.Aeson..= tag
+        ([ "id" Data.Aeson..= id,
+           "name" Data.Aeson..= name
         ]
+        ++ [ "tag" Data.Aeson..= tag | Just tag <- [tag] ])
 
     toEncoding Pet {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
           Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
-          Data.Aeson.Encoding.pair "tag" (Data.Aeson.toEncoding tag)
+          maybe mempty (Data.Aeson.Encoding.pair "tag" . Data.Aeson.toEncoding) tag
         )
 
 instance Data.Aeson.FromJSON Pet where

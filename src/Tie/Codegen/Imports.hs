@@ -104,7 +104,7 @@ codegenModuleHeader moduleName =
       <> "import"
     <+> "qualified"
     <+> "Data.List.NonEmpty"
-      <> PP.line 
+      <> PP.line
       <> "import"
     <+> "qualified"
     <+> "Data.Map"

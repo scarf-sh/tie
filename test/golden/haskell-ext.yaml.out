@@ -507,12 +507,12 @@ newtype Test = Test
 
 instance Data.Aeson.ToJSON Test where
     toJSON Test {..} = Data.Aeson.object
-        [
-            "test1" Data.Aeson..= test1
+        ([ 
         ]
+        ++ [ "test1" Data.Aeson..= test1 | Just test1 <- [test1] ])
 
     toEncoding Test {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "test1" (Data.Aeson.toEncoding test1)
+        ( maybe mempty (Data.Aeson.Encoding.pair "test1" . Data.Aeson.toEncoding) test1
         )
 
 instance Data.Aeson.FromJSON Test where

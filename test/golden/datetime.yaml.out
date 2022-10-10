@@ -504,14 +504,14 @@ data Test = Test
 
 instance Data.Aeson.ToJSON Test where
     toJSON Test {..} = Data.Aeson.object
-        [
-            "dateProp" Data.Aeson..= dateProp,
-            "dateTimeProp" Data.Aeson..= dateTimeProp
+        ([ 
         ]
+        ++ [ "dateProp" Data.Aeson..= dateProp | Just dateProp <- [dateProp] ]
+        ++ [ "dateTimeProp" Data.Aeson..= dateTimeProp | Just dateTimeProp <- [dateTimeProp] ])
 
     toEncoding Test {..} = Data.Aeson.Encoding.pairs
-        ( Data.Aeson.Encoding.pair "dateProp" (Data.Aeson.toEncoding dateProp) <>
-          Data.Aeson.Encoding.pair "dateTimeProp" (Data.Aeson.toEncoding dateTimeProp)
+        ( maybe mempty (Data.Aeson.Encoding.pair "dateProp" . Data.Aeson.toEncoding) dateProp <>
+          maybe mempty (Data.Aeson.Encoding.pair "dateTimeProp" . Data.Aeson.toEncoding) dateTimeProp
         )
 
 instance Data.Aeson.FromJSON Test where

@@ -636,10 +636,10 @@ data Error = Error
 
 instance Data.Aeson.ToJSON Error where
     toJSON Error {..} = Data.Aeson.object
-        [
-            "code" Data.Aeson..= code,
-            "message" Data.Aeson..= message
+        ([ "code" Data.Aeson..= code,
+           "message" Data.Aeson..= message
         ]
+        )
 
     toEncoding Error {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "code" (Data.Aeson.toEncoding code) <>
@@ -699,16 +699,15 @@ data Pet = Pet
 
 instance Data.Aeson.ToJSON Pet where
     toJSON Pet {..} = Data.Aeson.object
-        [
-            "id" Data.Aeson..= id,
-            "name" Data.Aeson..= name,
-            "tag" Data.Aeson..= tag
+        ([ "id" Data.Aeson..= id,
+           "name" Data.Aeson..= name
         ]
+        ++ [ "tag" Data.Aeson..= tag | Just tag <- [tag] ])
 
     toEncoding Pet {..} = Data.Aeson.Encoding.pairs
         ( Data.Aeson.Encoding.pair "id" (Data.Aeson.toEncoding id) <>
           Data.Aeson.Encoding.pair "name" (Data.Aeson.toEncoding name) <>
-          Data.Aeson.Encoding.pair "tag" (Data.Aeson.toEncoding tag)
+          maybe mempty (Data.Aeson.Encoding.pair "tag" . Data.Aeson.toEncoding) tag
         )
 
 instance Data.Aeson.FromJSON Pet where
