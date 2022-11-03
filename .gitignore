@@ -2,3 +2,4 @@ dist-newstyle/
 .DS_Store
 out/
 cabal.project.local*
+*.tar.gz
