@@ -68,6 +68,7 @@ library
   default-language: Haskell2010
 
 executable tie
+  other-modules:      Paths_tie
   build-depends:
     , base
     , optparse-applicative
