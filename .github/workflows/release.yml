@@ -8,14 +8,15 @@ on:
 jobs:
   build:
     runs-on: ${{ matrix.os }}
-    matrix:
-      os:
-        - ubuntu-latest
-        - macOS-latest
-      cabal:
-        - "3.6.2.0"
-      ghc:
-        - "9.2.3"
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - macos-latest
+        cabal:
+          - "3.6.2.0"
+        ghc:
+          - "9.2.3"
 
     steps:
       - name: Checkout
