@@ -13,6 +13,7 @@ import Options.Applicative
     help,
     helper,
     info,
+    infoOption,
     long,
     metavar,
     option,
@@ -28,6 +29,8 @@ import Options.Applicative
 import System.Environment (getArgs)
 import Tie (fileWriter, generate)
 import Prelude hiding (Option)
+import Data.Version (showVersion)
+import Paths_tie (version)
 
 data Input = Input
   { outputDirectory :: FilePath,
@@ -78,12 +81,18 @@ options =
           <> help "OpenAPI specification file"
       )
 
+versioner :: Parser (a -> a)
+versioner = infoOption ("tie " <> showVersion version)
+  ( long "version"
+  <> help "Print Tie version"
+  )
+
 main :: IO ()
 main = do
   Input {..} <-
     execParser $
       info
-        (options <**> helper)
+        (helper <*> versioner <*> options)
         ( fullDesc
             <> progDesc "Generate a Haskell server from an OpenAPI3 specification"
             <> header "tie - openapi3 server code generator"
