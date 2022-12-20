@@ -237,7 +237,11 @@ generate write packageName apiName extraPackages inputFile = do
       normalizeTypes inlineDefinitions
     codeForInlineDefinitions <-
       traverse (uncurry codegenSchema) normalizedInlineDefinitions
-    responsesCode <- codegenResponses resolver operation
+    responsesCode <-
+      codegenResponses
+        resolver
+        (responseHaskellModuleName apiName)
+        operation
     write path $
       vsep $
         intersperse mempty $

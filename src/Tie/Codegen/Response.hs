@@ -44,12 +44,20 @@ import Tie.Operation
 import Tie.Resolve (Resolver)
 
 -- | Generate code for the responses of an 'Operation'.
-codegenResponses :: Monad m => Resolver m -> Operation -> m (Doc ann)
-codegenResponses resolver Operation {..} = do
+codegenResponses ::
+  Monad m =>
+  Resolver m ->
+  -- | Aux. Response module name TODO make this a proper type
+  Text ->
+  Operation ->
+  m (Doc ann)
+codegenResponses resolver responseModuleName Operation {..} = do
   let responseBodyType Response {responseContent}
         -- We treat JSON responses specially
         | Just jsonContent <- lookup "application/json" responseContent =
             [maybe "Data.Aeson.Value" codegenFieldType jsonContent]
+        | Just jsonLdContent <- lookup "application/x-ndjson" responseContent =
+            ["(" <> PP.pretty responseModuleName <> "." <> "NDJSON" <+> maybe "Data.Aeson.Value" codegenFieldType jsonLdContent <> ")"]
         -- Everything else we use a Network.Wai.StreamingBody type
         | not (null responseContent) =
             ["Network.Wai.StreamingBody"]
@@ -65,6 +73,8 @@ codegenResponses resolver Operation {..} = do
       canDeriveStockShowInstanceForResponse Response {responseContent}
         | Just _ <- lookup "application/json" responseContent =
             True
+        | Just _ <- lookup "application/x-ndjson" responseContent =
+            False
         | not (null responseContent) =
             False
         | otherwise =
@@ -105,7 +115,7 @@ codegenResponses resolver Operation {..} = do
               )
 
       instances =
-        codegenToResponses name responses defaultResponse
+        codegenToResponses responseModuleName name responses defaultResponse
 
       showInstance =
         "instance"
@@ -124,8 +134,14 @@ codegenResponses resolver Operation {..} = do
           [decl, instances] ++ [showInstance | requiresCustomShowInstance]
     )
 
-codegenToResponses :: Name -> [(Int, Response)] -> Maybe Response -> Doc ann
-codegenToResponses operationName responses defaultResponse =
+codegenToResponses ::
+  -- | Aux. Response module name TODO make this a proper type
+  Text ->
+  Name ->
+  [(Int, Response)] ->
+  Maybe Response ->
+  Doc ann
+codegenToResponses responseModuleName operationName responses defaultResponse =
   let hasBody response = case response of
         Response {responseContent = _ : _} -> True
         _ -> False
@@ -138,6 +154,8 @@ codegenToResponses operationName responses defaultResponse =
         | Just _ <- lookup "application/json" responseContent =
             -- JSON is very easy to turn into Builders!
             "Network.Wai.responseBuilder"
+        | Just _ <- lookup "application/x-ndjson" responseContent =
+            PP.pretty responseModuleName <> "." <> "responseNDJSON"
         | not (null responseContent) =
             -- Tie doesn't know about the content type of this response,
             -- uses a Stream instaed
@@ -149,6 +167,8 @@ codegenToResponses operationName responses defaultResponse =
       bodySerialize Response {responseContent}
         | Just _ <- lookup "application/json" responseContent =
             "(" <> "Data.Aeson.fromEncoding" <+> "(" <> "Data.Aeson.toEncoding" <+> "x" <> ")" <> ")"
+        | Just _ <- lookup "application/x-ndjson" responseContent =
+            "x"
         | not (null responseContent) =
             "x"
         | otherwise =
@@ -158,6 +178,8 @@ codegenToResponses operationName responses defaultResponse =
         let contentType
               | Just _ <- lookup "application/json" responseContent =
                   ["(Network.HTTP.Types.hContentType, \"application/json\")"]
+              | Just _ <- lookup "application/x-ndjson" responseContent =
+                  ["(Network.HTTP.Types.hContentType, \"application/x-ndjson\")"]
               | (unknownMediaType, _) : _ <- responseContent =
                   ["(Network.HTTP.Types.hContentType, \"" <> PP.pretty @Text (decodeUtf8 (renderHeader unknownMediaType)) <> "\")"]
               | otherwise =

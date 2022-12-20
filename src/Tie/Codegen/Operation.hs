@@ -12,7 +12,6 @@ import qualified Data.Map.Strict as Map
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
-import Tie.Codegen.Response (codegenResponses)
 import Tie.Codegen.Schema (codegenFieldType, codegenParamSchema)
 import Tie.Name
   ( Name,
