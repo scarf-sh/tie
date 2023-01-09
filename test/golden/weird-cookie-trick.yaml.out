@@ -1,6 +1,7 @@
 Test/Api.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -26,6 +27,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -438,6 +440,7 @@ class ToResponse a where
 Test/Response/Test.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -463,6 +466,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -481,6 +485,9 @@ data TestResponse
 instance ToResponse TestResponse where
     toResponse (TestResponse200 x __Set_Cookie __NULSet_Cookie) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([("Set-Cookie", Web.HttpApiData.toHeader __Set_Cookie) | Just __Set_Cookie <- [__Set_Cookie]] ++ [("Set-Cookie", Web.HttpApiData.toHeader __NULSet_Cookie) | Just __NULSet_Cookie <- [__NULSet_Cookie]] ++ [(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+
+instance GHC.Records.HasField "status" TestResponse Network.HTTP.Types.Status where
+    getField (TestResponse200 {}) = Network.HTTP.Types.status200
 ---------------------
 test.cabal
 

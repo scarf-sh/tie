@@ -1,6 +1,7 @@
 Test/Api.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -26,6 +27,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -452,6 +454,7 @@ class ToResponse a where
 Test/Response/ListPets.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -477,6 +480,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -493,10 +497,14 @@ data ListPetsResponse
 instance ToResponse ListPetsResponse where
     toResponse (ListPetsResponse200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+
+instance GHC.Records.HasField "status" ListPetsResponse Network.HTTP.Types.Status where
+    getField (ListPetsResponse200 {}) = Network.HTTP.Types.status200
 ---------------------
 Test/Response/ListPets2.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -522,6 +530,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -578,10 +587,14 @@ data ListPets2Response
 instance ToResponse ListPets2Response where
     toResponse (ListPets2Response200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+
+instance GHC.Records.HasField "status" ListPets2Response Network.HTTP.Types.Status where
+    getField (ListPets2Response200 {}) = Network.HTTP.Types.status200
 ---------------------
 Test/Schemas/Pet.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -607,6 +620,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -647,6 +661,7 @@ instance Data.Aeson.FromJSON Pet where
 Test/Schemas/Pets.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -672,6 +687,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai

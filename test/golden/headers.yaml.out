@@ -1,6 +1,7 @@
 Test/Api.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -26,6 +27,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -469,6 +471,7 @@ class ToResponse a where
 Test/Response/Test.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -494,6 +497,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -510,10 +514,14 @@ data TestResponse
 instance ToResponse TestResponse where
     toResponse (TestResponse200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+
+instance GHC.Records.HasField "status" TestResponse Network.HTTP.Types.Status where
+    getField (TestResponse200 {}) = Network.HTTP.Types.status200
 ---------------------
 Test/Response/Test1.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -539,6 +547,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -555,10 +564,14 @@ data Test1Response
 instance ToResponse Test1Response where
     toResponse (Test1Response201 __Location) =
         Network.Wai.responseBuilder Network.HTTP.Types.status201 ([("Location", Web.HttpApiData.toHeader __Location) | Just __Location <- [__Location]] ++ []) mempty
+
+instance GHC.Records.HasField "status" Test1Response Network.HTTP.Types.Status where
+    getField (Test1Response201 {}) = Network.HTTP.Types.status201
 ---------------------
 Test/Response/Test2.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -584,6 +597,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -600,10 +614,14 @@ data Test2Response
 instance ToResponse Test2Response where
     toResponse (Test2Response201 __Location) =
         Network.Wai.responseBuilder Network.HTTP.Types.status201 ([("Location", Web.HttpApiData.toHeader __Location)]) mempty
+
+instance GHC.Records.HasField "status" Test2Response Network.HTTP.Types.Status where
+    getField (Test2Response201 {}) = Network.HTTP.Types.status201
 ---------------------
 Test/Schemas/Test.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -629,6 +647,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai

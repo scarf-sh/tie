@@ -33,6 +33,11 @@ codegenModuleHeader moduleName =
       <> PP.line
       <> "{-#"
     <+> "LANGUAGE"
+    <+> "DataKinds"
+    <+> "#-}"
+      <> PP.line
+      <> "{-#"
+    <+> "LANGUAGE"
     <+> "DuplicateRecordFields"
     <+> "#-}"
       <> PP.line
@@ -132,6 +137,10 @@ codegenModuleHeader moduleName =
       <> "import"
     <+> "qualified"
     <+> "GHC.Int"
+      <> PP.line
+      <> "import"
+    <+> "qualified"
+    <+> "GHC.Records"
       <> PP.line
       <> "import"
     <+> "qualified"
