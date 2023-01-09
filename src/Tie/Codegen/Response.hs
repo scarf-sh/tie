@@ -114,8 +114,11 @@ codegenResponses resolver responseModuleName Operation {..} = do
                        ]
               )
 
-      instances =
+      toResponseInstance =
         codegenToResponses responseModuleName name responses defaultResponse
+
+      hasStatusInstance =
+        codegenHasStatusField name responses defaultResponse
 
       showInstance =
         "instance"
@@ -131,8 +134,50 @@ codegenResponses resolver responseModuleName Operation {..} = do
   pure
     ( PP.vsep $
         intersperse mempty $
-          [decl, instances] ++ [showInstance | requiresCustomShowInstance]
+          [decl, toResponseInstance, hasStatusInstance] ++ [showInstance | requiresCustomShowInstance]
     )
+
+codegenHasStatusField ::
+  Name ->
+  [(Int, Response)] ->
+  Maybe Response ->
+  Doc ann
+codegenHasStatusField operationName responses defaultResponse =
+  "instance"
+    <+> "GHC.Records.HasField"
+    <+> "\"status\""
+    <+> toApiResponseTypeName operationName
+    <+> "Network.HTTP.Types.Status"
+    <+> "where"
+      <> PP.line
+      <> PP.indent
+        4
+        ( PP.vsep $
+            [ "getField"
+                <+> "(" <> toApiResponseConstructorName operationName statusCode
+                <+> "{}" <> ")"
+                <+> "="
+                <+> "Network.HTTP.Types.status" <> PP.pretty statusCode
+              | (statusCode, _response) <- responses
+            ]
+              ++ [ "getField"
+                     <+> "("
+                       <> PP.hsep
+                         ( concat
+                             [ [toApiDefaultResponseConstructorName operationName, "status"],
+                               ( case response of
+                                   Response {responseContent = _ : _} -> ["_"]
+                                   _ -> []
+                               ),
+                               ["_" | Header {name} <- headers]
+                             ]
+                         )
+                       <> ")"
+                     <+> "="
+                     <+> "status"
+                   | Just response@Response {headers} <- [defaultResponse]
+                 ]
+        )
 
 codegenToResponses ::
   -- | Aux. Response module name TODO make this a proper type

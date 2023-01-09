@@ -1,6 +1,7 @@
 Test/Api.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -26,6 +27,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -452,6 +454,7 @@ class ToResponse a where
 Test/Response/Test.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -477,6 +480,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -493,12 +497,16 @@ instance ToResponse TestResponse where
     toResponse (TestResponse200 x) =
         Network.Wai.responseStream Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "text/csv")]) x
 
+instance GHC.Records.HasField "status" TestResponse Network.HTTP.Types.Status where
+    getField (TestResponse200 {}) = Network.HTTP.Types.status200
+
 instance Show TestResponse where
     show _ = "TestResponse {}"
 ---------------------
 Test/Response/Test2.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -524,6 +532,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -540,6 +549,9 @@ data Test2Response
 instance ToResponse Test2Response where
     toResponse (Test2Response200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+
+instance GHC.Records.HasField "status" Test2Response Network.HTTP.Types.Status where
+    getField (Test2Response200 {}) = Network.HTTP.Types.status200
 ---------------------
 test.cabal
 

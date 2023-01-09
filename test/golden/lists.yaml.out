@@ -1,6 +1,7 @@
 Test/Api.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -26,6 +27,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -502,6 +504,7 @@ class ToResponse a where
 Test/Response/ListPackages.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -527,6 +530,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -543,10 +547,14 @@ data ListPackagesResponse
 instance ToResponse ListPackagesResponse where
     toResponse (ListPackagesResponse200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+
+instance GHC.Records.HasField "status" ListPackagesResponse Network.HTTP.Types.Status where
+    getField (ListPackagesResponse200 {}) = Network.HTTP.Types.status200
 ---------------------
 Test/Response/ListPackages2.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -572,6 +580,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -588,10 +597,14 @@ data ListPackages2Response
 instance ToResponse ListPackages2Response where
     toResponse (ListPackages2Response200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+
+instance GHC.Records.HasField "status" ListPackages2Response Network.HTTP.Types.Status where
+    getField (ListPackages2Response200 {}) = Network.HTTP.Types.status200
 ---------------------
 Test/Response/ListPackages3.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -617,6 +630,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -633,10 +647,14 @@ data ListPackages3Response
 instance ToResponse ListPackages3Response where
     toResponse (ListPackages3Response200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+
+instance GHC.Records.HasField "status" ListPackages3Response Network.HTTP.Types.Status where
+    getField (ListPackages3Response200 {}) = Network.HTTP.Types.status200
 ---------------------
 Test/Response/ListPackages4.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -662,6 +680,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -678,10 +697,14 @@ data ListPackages4Response
 instance ToResponse ListPackages4Response where
     toResponse (ListPackages4Response200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+
+instance GHC.Records.HasField "status" ListPackages4Response Network.HTTP.Types.Status where
+    getField (ListPackages4Response200 {}) = Network.HTTP.Types.status200
 ---------------------
 Test/Response/ListPackages5.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -707,6 +730,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -723,10 +747,14 @@ data ListPackages5Response
 instance ToResponse ListPackages5Response where
     toResponse (ListPackages5Response200 x) =
         Network.Wai.responseBuilder Network.HTTP.Types.status200 ([(Network.HTTP.Types.hContentType, "application/json")]) (Data.Aeson.fromEncoding (Data.Aeson.toEncoding x))
+
+instance GHC.Records.HasField "status" ListPackages5Response Network.HTTP.Types.Status where
+    getField (ListPackages5Response200 {}) = Network.HTTP.Types.status200
 ---------------------
 Test/Schemas/Inline.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -752,6 +780,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -787,6 +816,7 @@ type Inline = [ InlineElem ]
 Test/Schemas/Package.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -812,6 +842,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
@@ -845,6 +876,7 @@ instance Data.Aeson.FromJSON Package where
 Test/Schemas/Packages.hs
 
 {-# LANGUAGE BangPatterns #-}
+{-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE ScopedTypeVariables #-}
@@ -870,6 +902,7 @@ import qualified Data.Time
 import qualified Data.Text.Encoding
 import qualified GHC.Float
 import qualified GHC.Int
+import qualified GHC.Records
 import qualified GHC.Types
 import qualified Network.HTTP.Types
 import qualified Network.Wai
