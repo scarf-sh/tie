@@ -38,8 +38,8 @@ jobs:
       - name: Prepare archive
         run: tar -zcvf ./${{ matrix.os }}.tar.gz -C out tie
 
-      - name: Upload build artifact
-        uses: actions/upload-artifact@v3
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        if: startsWith(github.ref, 'refs/tags/')
         with:
-          name: ${{ matrix.os }}-binary
-          path: ${{ matrix.os }}.tar.gz
+          files: ./${{ matrix.os }}.tar.gz
