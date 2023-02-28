@@ -35,8 +35,11 @@ jobs:
       - name: Test
         run: ./out/tie --help
 
+      - name: Prepare archive
+        run: tar -zcvf ./${{ matrix.os }}.tar.gz -C out tie
+
       - name: Upload build artifact
         uses: actions/upload-artifact@v3
         with:
-          name: ${{ matrix.os }}
-          path: ./out/tie
+          name: ${{ matrix.os }}-binary
+          path: ${{ matrix.os }}.tar.gz
