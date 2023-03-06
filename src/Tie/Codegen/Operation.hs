@@ -163,9 +163,8 @@ codegenApiTypeOperation resolver Operation {..} = do
           ( PP.concatWith
               (\x y -> x <+> "->" <> PP.line <> y)
               ( paramsCode
-                  ++ [ codegenRequestBodyComment body
-                         <> codegenFieldType jsonRequestBodyContent
-                       | Just body@RequestBody {jsonRequestBodyContent} <- [requestBody]
+                  ++ [ codegenRequestBodyComment body <> codegenRequestBodyType body
+                       | Just body<- [requestBody]
                      ]
                   ++ ["m" <+> toApiResponseTypeName name]
               )
@@ -186,6 +185,10 @@ codegenApiTypeOperation resolver Operation {..} = do
         mempty
       Just comment ->
         "--" <+> PP.pretty comment <> PP.line
+
+    codegenRequestBodyType RequestBody {provideRequestBodyAsStream, jsonRequestBodyContent}
+      | provideRequestBodyAsStream = "IO" <+> "Data.ByteString.ByteString"
+      | otherwise = codegenFieldType jsonRequestBodyContent
 
     codegenParamSchemaAndComment param = do
       code <- codegenParamSchema param
@@ -293,6 +296,9 @@ codegenRequestBodyGuard :: Maybe RequestBody -> PP.Doc ann -> PP.Doc ann
 codegenRequestBodyGuard requestBody continuation = case requestBody of
   Nothing ->
     continuation
+  Just RequestBody {provideRequestBodyAsStream = True} ->
+    "let" <+> "body" <+> "=" <+> "Network.Wai.getRequestBodyChunk" <+> "request" <+> "in" <> PP.line <>
+      PP.indent 4 ("(" <> continuation <> ")")
   Just RequestBody {jsonRequestBodyContent} ->
     let parsers =
           -- TODO support forms
