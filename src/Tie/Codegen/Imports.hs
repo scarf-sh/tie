@@ -104,6 +104,10 @@ codegenModuleHeader moduleName =
       <> PP.line
       <> "import"
     <+> "qualified"
+    <+> "Data.ByteString"
+      <> PP.line
+      <> "import"
+    <+> "qualified"
     <+> "Data.List"
       <> PP.line
       <> "import"

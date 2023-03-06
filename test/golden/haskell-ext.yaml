@@ -25,6 +25,22 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/Test"              
+    post:
+      operationId: test2
+      summary: test2
+      requestBody:
+        x-tie-haskell-request-body-as-stream: true
+        description: Some nice request body
+        content:
+          application/json:
+            schema:      # Request body contents
+              properties: 
+                nise: 
+                  type: string
+      responses:
+        '201':
+          description: Successful response
+
 components:
   schemas:
     Test: 

@@ -39,6 +39,8 @@ module Tie.Operation
   )
 where
 
+import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Types as Aeson
 import Control.Monad.Writer (WriterT (..), runWriterT)
 import Control.Monad.Writer.Strict (tell)
 import qualified Data.HashMap.Strict.InsOrd as InsOrd
@@ -72,7 +74,8 @@ type StatusCode = Int
 -- | Request body descriptor
 data RequestBody = RequestBody
   { description :: Maybe Text,
-    jsonRequestBodyContent :: Named Type
+    jsonRequestBodyContent :: Named Type,
+    provideRequestBodyAsStream :: Bool
   }
 
 data Header = Header
@@ -307,11 +310,24 @@ requestBodyToRequestBody ::
   OpenApi.RequestBody ->
   m RequestBody
 requestBodyToRequestBody resolver Errors {..} requestBody = do
+  let extensions = 
+        OpenApi._unDefs (OpenApi._requestBodyExtensions requestBody)
+
+      provideRequestBodyAsStream 
+        | Just extensionValue <- InsOrd.lookup "tie-haskell-request-body-as-stream" extensions 
+        , Just flag <-  Aeson.parseMaybe Aeson.parseJSON extensionValue
+        = flag
+        | otherwise = 
+          False
+
   -- TODO support form inputs as well
-  OpenApi.MediaTypeObject {..} <-
-    whenNothing
-      (InsOrd.lookup "application/json" (OpenApi._requestBodyContent requestBody))
-      (traceShow requestBody $ unsupportedMediaType)
+  OpenApi.MediaTypeObject {..} <- whenNothing (
+      asum [
+        InsOrd.lookup "application/json" (OpenApi._requestBodyContent requestBody),
+        InsOrd.lookup "application/x-ndjson" (OpenApi._requestBodyContent requestBody)
+      ]
+    )
+    (traceShow requestBody $ unsupportedMediaType)
   referencedSchema <-
     whenNothing
       _mediaTypeObjectSchema
@@ -321,7 +337,8 @@ requestBodyToRequestBody resolver Errors {..} requestBody = do
   pure
     RequestBody
       { description = OpenApi._requestBodyDescription requestBody,
-        jsonRequestBodyContent = type_
+        jsonRequestBodyContent = type_,
+        provideRequestBodyAsStream
       }
 
 responseToResponse ::
