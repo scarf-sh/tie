@@ -3,6 +3,7 @@
 
 module Main (main) where
 
+import Data.Version (showVersion)
 import Options.Applicative
   ( Parser,
     auto,
@@ -26,11 +27,10 @@ import Options.Applicative
     switch,
     value,
   )
+import Paths_tie (version)
 import System.Environment (getArgs)
 import Tie (fileWriter, generate)
 import Prelude hiding (Option)
-import Data.Version (showVersion)
-import Paths_tie (version)
 
 data Input = Input
   { outputDirectory :: FilePath,
@@ -82,10 +82,12 @@ options =
       )
 
 versioner :: Parser (a -> a)
-versioner = infoOption ("tie " <> showVersion version)
-  ( long "version"
-  <> help "Print Tie version"
-  )
+versioner =
+  infoOption
+    ("tie " <> showVersion version)
+    ( long "version"
+        <> help "Print Tie version"
+    )
 
 main :: IO ()
 main = do

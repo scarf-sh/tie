@@ -52,7 +52,7 @@ import Tie.Type
 import Prelude hiding (Type)
 
 -- | Generate code for a parameter type.
-codegenParamSchema :: Monad m => Param -> m (Doc ann)
+codegenParamSchema :: (Monad m) => Param -> m (Doc ann)
 codegenParamSchema Param {schema, required} =
   fmap (codegenRequiredOptionalFieldType required) $
     case schema of
@@ -93,7 +93,7 @@ codegenHeaderSchema Header {schema, required} =
         error "Header without schema"
 
 -- | Generate code for a schema.
-codegenSchema :: Monad m => Name -> Type -> m (Doc ann)
+codegenSchema :: (Monad m) => Name -> Type -> m (Doc ann)
 codegenSchema typName typ
   | Just Enumeration {alternatives, includeNull} <- isEnumType typ =
       pure (codegenEnumeration typName alternatives includeNull)
@@ -126,7 +126,7 @@ codegenArrayType typeName elemType =
   "type" <+> toDataTypeName typeName <+> "=" <+> "[" <+> codegenFieldType elemType <+> "]"
 
 codegenOneOfType ::
-  Monad m =>
+  (Monad m) =>
   -- | Given a variant type name, returns the discrimintor property
   -- and value, if any
   (Name -> Maybe (Text, Text)) ->
@@ -263,7 +263,7 @@ codegenOneOfType getDiscriminator typName variants = do
 
   pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
 
-codegenObjectType :: Monad m => Name -> ObjectType (Named Type) -> m (Doc ann)
+codegenObjectType :: (Monad m) => Name -> ObjectType (Named Type) -> m (Doc ann)
 codegenObjectType typName ObjectType {..}
   -- for empty, free form objects, just generate a type synonym for Value.
   | Just FreeForm <- additionalProperties,
@@ -366,12 +366,14 @@ codegenObjectType typName ObjectType {..}
                         4
                         ( PP.concatWith
                             (\x y -> x <> "," <> PP.line <> y)
-                            [ toFieldName field
+                            [ toFieldName haskellField
                                 <+> "::"
                                 <+> codegenRequiredOptionalFieldType
                                   (HashSet.member field requiredProperties)
                                   (codegenFieldType fieldType)
-                              | (field, fieldType) <- orderedProperties
+                              | (field, fieldType) <- orderedProperties,
+                                let haskellField =
+                                      HashMap.lookupDefault field field haskellFieldNames
                             ]
                         )
                       <> PP.line
@@ -403,9 +405,11 @@ codegenObjectType typName ObjectType {..}
                               <+> PP.align
                                 ( PP.concatWith
                                     (\x y -> x <> "," <> PP.line <> y)
-                                    [ "\"" <> toJsonFieldName field <> "\"" <+> "Data.Aeson..=" <+> toFieldName field
+                                    [ "\"" <> toJsonFieldName field <> "\"" <+> "Data.Aeson..=" <+> toFieldName haskellField
                                       | (field, _) <- orderedProperties,
-                                        HashSet.member field requiredProperties
+                                        HashSet.member field requiredProperties,
+                                        let haskellField =
+                                              HashMap.lookupDefault field field haskellFieldNames
                                     ]
                                 )
                                 <> PP.line
@@ -417,16 +421,18 @@ codegenObjectType typName ObjectType {..}
                                         <+> "["
                                         <+> "\"" <> toJsonFieldName field <> "\""
                                         <+> "Data.Aeson..="
-                                        <+> toFieldName field
+                                        <+> toFieldName haskellField
                                         <+> "|"
                                         <+> "Just"
-                                        <+> toFieldName field
+                                        <+> toFieldName haskellField
                                         <+> "<-"
-                                        <+> "[" <> toFieldName field <> "]"
+                                        <+> "[" <> toFieldName haskellField <> "]"
                                         <+> "]"
                                     )
                                     | (field, _) <- orderedProperties,
-                                      not (HashSet.member field requiredProperties)
+                                      not (HashSet.member field requiredProperties),
+                                      let haskellField =
+                                            HashMap.lookupDefault field field haskellFieldNames
                                   ]
                                 <> ")"
                           )
@@ -449,7 +455,7 @@ codegenObjectType typName ObjectType {..}
                                           "Data.Aeson.Encoding.pair"
                                             <+> "\"" <> toJsonFieldName field <> "\""
                                             <+> "(" <> "Data.Aeson.toEncoding"
-                                            <+> toFieldName field <> ")"
+                                            <+> toFieldName haskellField <> ")"
                                         else
                                           "maybe"
                                             <+> "mempty"
@@ -458,8 +464,10 @@ codegenObjectType typName ObjectType {..}
                                             <+> "\"" <> toJsonFieldName field <> "\""
                                             <+> "."
                                             <+> "Data.Aeson.toEncoding" <> ")"
-                                            <+> toFieldName field
-                                      | (field, _) <- orderedProperties
+                                            <+> toFieldName haskellField
+                                      | (field, _) <- orderedProperties,
+                                        let haskellField =
+                                              HashMap.lookupDefault field field haskellFieldNames
                                     ]
                                 )
                                 <> PP.line

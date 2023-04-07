@@ -45,7 +45,7 @@ import Tie.Resolve (Resolver)
 
 -- | Generate code for the responses of an 'Operation'.
 codegenResponses ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   -- | Aux. Response module name TODO make this a proper type
   Text ->
