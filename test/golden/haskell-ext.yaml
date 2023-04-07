@@ -48,3 +48,6 @@ components:
         test1: 
           type: string
           x-tie-haskell-type: Scarf.Hashids.Hashid Int32
+        test2: 
+          type: string
+          x-tie-haskell-name: abcdef

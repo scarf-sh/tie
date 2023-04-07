@@ -29,7 +29,7 @@ render =
 
 -- | Renders 'Doc's to a file just as you would expect. Writes files relative
 -- to the given output directory.
-fileWriter :: MonadIO m => FilePath -> Writer m
+fileWriter :: (MonadIO m) => FilePath -> Writer m
 fileWriter outputDirectory path doc = liftIO $ do
   let fullPath = outputDirectory </> path
   createDirectoryIfMissing True (takeDirectory fullPath)
@@ -38,7 +38,7 @@ fileWriter outputDirectory path doc = liftIO $ do
 
 -- | Collects all the FilePath and Doc pairs and returns them concatenated
 -- in one output
-withTestWriter :: MonadIO m => (Writer m -> m a) -> m (a, Builder)
+withTestWriter :: (MonadIO m) => (Writer m -> m a) -> m (a, Builder)
 withTestWriter action = do
   ref <- liftIO (newIORef [])
   result <- action $ \file doc ->

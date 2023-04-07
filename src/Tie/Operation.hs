@@ -39,10 +39,10 @@ module Tie.Operation
   )
 where
 
-import qualified Data.Aeson as Aeson
-import qualified Data.Aeson.Types as Aeson
 import Control.Monad.Writer (WriterT (..), runWriterT)
 import Control.Monad.Writer.Strict (tell)
+import qualified Data.Aeson as Aeson
+import qualified Data.Aeson.Types as Aeson
 import qualified Data.HashMap.Strict.InsOrd as InsOrd
 import qualified Data.OpenApi as OpenApi
 import qualified Data.Text as Text
@@ -150,7 +150,7 @@ data Operation = Operation
 
 data Errors m = Errors
   { missingOperationId :: forall a. m a,
-    unsupportedMediaType :: forall a. HasCallStack => m a,
+    unsupportedMediaType :: forall a. (HasCallStack) => m a,
     requestBodyMissingSchema :: forall a. m a,
     unknownParameter :: forall a. Text -> m a,
     paramMissingSchema :: forall a. m a,
@@ -210,7 +210,7 @@ operationResponseDependencies :: Operation -> [Name]
 operationResponseDependencies Operation {name} = [name]
 
 pathItemsToOperation ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   -- | Conversion error cases
   Errors m ->
@@ -240,7 +240,7 @@ pathItemsToOperation resolver errors@Errors {..} pathInfos = do
 
 -- TODO name
 operationToOperation ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   -- | Conversion error cases
   Errors m ->
@@ -304,30 +304,31 @@ operationToOperation resolver errors@Errors {..} method path params OpenApi.Oper
       }
 
 requestBodyToRequestBody ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   Errors m ->
   OpenApi.RequestBody ->
   m RequestBody
 requestBodyToRequestBody resolver Errors {..} requestBody = do
-  let extensions = 
+  let extensions =
         OpenApi._unDefs (OpenApi._requestBodyExtensions requestBody)
 
-      provideRequestBodyAsStream 
-        | Just extensionValue <- InsOrd.lookup "tie-haskell-request-body-as-stream" extensions 
-        , Just flag <-  Aeson.parseMaybe Aeson.parseJSON extensionValue
-        = flag
-        | otherwise = 
-          False
+      provideRequestBodyAsStream
+        | Just extensionValue <- InsOrd.lookup "tie-haskell-request-body-as-stream" extensions,
+          Just flag <- Aeson.parseMaybe Aeson.parseJSON extensionValue =
+            flag
+        | otherwise =
+            False
 
   -- TODO support form inputs as well
-  OpenApi.MediaTypeObject {..} <- whenNothing (
-      asum [
-        InsOrd.lookup "application/json" (OpenApi._requestBodyContent requestBody),
-        InsOrd.lookup "application/x-ndjson" (OpenApi._requestBodyContent requestBody)
-      ]
-    )
-    (traceShow requestBody $ unsupportedMediaType)
+  OpenApi.MediaTypeObject {..} <-
+    whenNothing
+      ( asum
+          [ InsOrd.lookup "application/json" (OpenApi._requestBodyContent requestBody),
+            InsOrd.lookup "application/x-ndjson" (OpenApi._requestBodyContent requestBody)
+          ]
+      )
+      (traceShow requestBody $ unsupportedMediaType)
   referencedSchema <-
     whenNothing
       _mediaTypeObjectSchema
@@ -342,7 +343,7 @@ requestBodyToRequestBody resolver Errors {..} requestBody = do
       }
 
 responseToResponse ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   Errors m ->
   OpenApi.Response ->
@@ -358,7 +359,7 @@ responseToResponse resolver errors@Errors {..} response@OpenApi.Response {..} = 
       }
 
 responseMediaTypeObject ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   Errors m ->
   OpenApi.Response ->
@@ -396,7 +397,7 @@ pathDependencies path =
   [schema | VariableSegment Param {schema} <- path]
 
 paramToParam ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   Errors m ->
   OpenApi.Param ->
@@ -426,7 +427,7 @@ paramToParam resolver Errors {..} OpenApi.Param {..} = do
       }
 
 headerToHeader ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   Errors m ->
   Text ->
@@ -444,7 +445,7 @@ headerToHeader resolver Errors {..} name referencedHeader = do
       }
 
 pathToPath ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   Errors m ->
   -- | URL Path
@@ -473,7 +474,7 @@ pathToPath resolver errors@Errors {..} textualPath params = do
           paramNotBasicType
       pure param
 
-normalizeParam :: Monad m => Name -> Param -> m (Param, [(Name, Type)])
+normalizeParam :: (Monad m) => Name -> Param -> m (Param, [(Name, Type)])
 normalizeParam operationName param@Param {..} = do
   (normedType, inlineDefinitions) <-
     normalizeNamedType
@@ -481,7 +482,7 @@ normalizeParam operationName param@Param {..} = do
       schema
   pure (param {schema = normedType} :: Param, inlineDefinitions)
 
-normalizeResponse :: Monad m => Name -> Response -> m (Response, [(Name, Type)])
+normalizeResponse :: (Monad m) => Name -> Response -> m (Response, [(Name, Type)])
 normalizeResponse name response@Response {..} = do
   (responseContent, inlineDefinitions) <- runWriterT $
     forM responseContent $ \(mediaType, schema) -> do
@@ -494,7 +495,7 @@ normalizeResponse name response@Response {..} = do
           pure (mediaType, Just normedType)
   pure (response {responseContent}, inlineDefinitions)
 
-normalizeRequestBody :: Monad m => Name -> RequestBody -> m (RequestBody, [(Name, Type)])
+normalizeRequestBody :: (Monad m) => Name -> RequestBody -> m (RequestBody, [(Name, Type)])
 normalizeRequestBody name body@RequestBody {..} = do
   (normedType, inlineDefinitions) <-
     normalizeNamedType
@@ -502,7 +503,7 @@ normalizeRequestBody name body@RequestBody {..} = do
       jsonRequestBodyContent
   pure (body {jsonRequestBodyContent = normedType}, inlineDefinitions)
 
-normalizeOperation :: Monad m => Operation -> m (Operation, [(Name, Type)])
+normalizeOperation :: (Monad m) => Operation -> m (Operation, [(Name, Type)])
 normalizeOperation operation@Operation {..} =
   fmap (second (sortOn fst)) $
     runWriterT $ do

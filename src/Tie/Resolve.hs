@@ -18,11 +18,11 @@ import qualified Data.Text as Text
 
 -- | Resolve an 'OpenApi.Reference' to the underlying component.
 newtype Resolver m = Resolver
-  { resolve :: forall a. Resolvable a => OpenApi.Referenced a -> m a
+  { resolve :: forall a. (Resolvable a) => OpenApi.Referenced a -> m a
   }
 
 newResolver ::
-  Applicative m =>
+  (Applicative m) =>
   OpenApi.Components ->
   (forall a. OpenApi.Reference -> m a) ->
   Resolver m

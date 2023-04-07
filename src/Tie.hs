@@ -77,13 +77,13 @@ import Tie.Writer (Writer, fileWriter, withTestWriter)
 import Prelude hiding (Type)
 
 -- | Our own version of nubOrd that both nubs and sorts
-nubOrd :: Ord a => [a] -> [a]
+nubOrd :: (Ord a) => [a] -> [a]
 nubOrd = Set.toList . Set.fromList
 
 -- | Read an OpenAPI spec. Throws in case it can not
 -- be read or deserialized.
 readOpenApiSpec ::
-  MonadIO m =>
+  (MonadIO m) =>
   FilePath ->
   m OpenApi.OpenApi
 readOpenApiSpec filePath =
@@ -104,7 +104,7 @@ specComponents =
 
 -- | Normalizes a 'Type' by extracting the contained inline type
 -- definitions.
-normalize :: Monad m => Name -> Type -> m (Type, [(Name, Type)])
+normalize :: (Monad m) => Name -> Type -> m (Type, [(Name, Type)])
 normalize =
   normalizeType
     ( \enclosingType fieldName ->
@@ -125,7 +125,7 @@ normalize =
 -- unnamed types left:
 --   forall x. normalize x == []
 --  where x is an element of the result of normalizedTypes
-normalizeTypes :: Monad m => [(Name, Type)] -> m [(Name, Type)]
+normalizeTypes :: (Monad m) => [(Name, Type)] -> m [(Name, Type)]
 normalizeTypes types =
   concat
     <$> traverse
@@ -137,7 +137,7 @@ normalizeTypes types =
       types
 
 generate ::
-  MonadIO m =>
+  (MonadIO m) =>
   Writer m ->
   -- | Package name
   Text ->

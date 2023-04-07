@@ -54,6 +54,7 @@ import qualified Data.HashSet as HashSet
 import Data.OpenApi (HasDiscriminator (discriminator))
 import qualified Data.OpenApi as OpenApi
 import qualified Data.Text as Text
+import Relude.Extra.Lens ((^.))
 import Tie.Name (Name, extractHaskellModule, fromText)
 import Tie.Resolve (Resolver, resolve)
 import Prelude hiding (Type)
@@ -117,7 +118,9 @@ data FreeFormObject ty
 data ObjectType ty = ObjectType
   { properties :: HashMap Name ty,
     requiredProperties :: HashSet Name,
-    additionalProperties :: Maybe (FreeFormObject ty)
+    additionalProperties :: Maybe (FreeFormObject ty),
+    -- | Names of each property in the generated Haskell code
+    haskellFieldNames :: HashMap Name Name
   }
   deriving (Eq, Ord, Show, Functor, Foldable, Traversable)
 
@@ -185,20 +188,33 @@ isEnumType typ
       Nothing
 
 schemaRefToType ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   OpenApi.Referenced OpenApi.Schema ->
   m (Named Type)
-schemaRefToType resolver referencedSchema = do
+schemaRefToType resolver referencedSchema =
+  fmap fst $
+    schemaRefToType_ resolver referencedSchema
+
+schemaRefToType_ ::
+  (Monad m) =>
+  Resolver m ->
+  OpenApi.Referenced OpenApi.Schema ->
+  m (Named Type, OpenApi.SpecificationExtensions)
+schemaRefToType_ resolver referencedSchema = do
   schema <- resolve resolver referencedSchema
   case referencedSchema of
-    OpenApi.Ref reference ->
-      Named (fromText (OpenApi.getReference reference))
-        <$> schemaToType resolver schema
+    OpenApi.Ref reference -> do
+      type_ <-
+        Named (fromText (OpenApi.getReference reference))
+          <$> schemaToType resolver schema
+      pure (type_, schema ^. OpenApi.extensions)
     OpenApi.Inline schema -> do
-      Unnamed <$> schemaToType resolver schema
+      type_ <-
+        Unnamed <$> schemaToType resolver schema
+      pure (type_, schema ^. OpenApi.extensions)
 
-resolveMapping :: Monad m => Resolver m -> Text -> m Text
+resolveMapping :: (Monad m) => Resolver m -> Text -> m Text
 resolveMapping resolver referenceOrschemaName = do
   let -- The OpenApi package doesn't expose a way to parse references.
       -- Instead we construct the JSON manually and let it run through
@@ -215,7 +231,7 @@ resolveMapping resolver referenceOrschemaName = do
 
 -- | Converts an 'OpenApi.Schema' to our internal 'Type' representation.
 -- An optional 'ComponentName' indicates the name of component.
-schemaToType :: Monad m => Resolver m -> OpenApi.Schema -> m Type
+schemaToType :: (Monad m) => Resolver m -> OpenApi.Schema -> m Type
 schemaToType resolver schema
   | Just allOfsRefs <- OpenApi._schemaAllOf schema = do
       AllOf <$> traverse (schemaRefToType resolver) allOfsRefs
@@ -270,7 +286,8 @@ schemaToType resolver schema
                           ( ObjectType
                               { properties = mempty,
                                 requiredProperties = mempty,
-                                additionalProperties = Just FreeForm
+                                additionalProperties = Just FreeForm,
+                                haskellFieldNames = mempty
                               }
                           )
                       )
@@ -295,7 +312,8 @@ schemaToType resolver schema
             ( ObjectType
                 { properties = mempty,
                   requiredProperties = mempty,
-                  additionalProperties = Just FreeForm
+                  additionalProperties = Just FreeForm,
+                  haskellFieldNames = mempty
                 }
             )
         )
@@ -303,15 +321,35 @@ schemaToType resolver schema
 -- | Resolves an 'OpenApi.Schema' to an 'ObjectType'. In case the the 'OpenApi.Schema' is an
 -- allOf-schema. This function doesn't do any additional type checking.
 schemaToObjectType ::
-  Monad m =>
+  (Monad m) =>
   Resolver m ->
   OpenApi.Schema ->
   m (ObjectType (Named Type))
 schemaToObjectType resolver schema = do
-  properties <-
+  propertiesWithExtensions <-
     traverse
-      (schemaRefToType resolver)
+      (schemaRefToType_ resolver)
       (InsOrd.toHashMap (OpenApi._schemaProperties schema))
+  let properties =
+        fmap fst propertiesWithExtensions
+
+      -- x-tie-haskell-name allows users to specify the property name to use
+      -- in the generated Haskell code
+      haskellFieldNames :: HashMap Text Name
+      haskellFieldNames =
+        HashMap.mapWithKey
+          ( \property (_type, extensions) ->
+              case InsOrd.lookup "tie-haskell-name" (OpenApi._unDefs extensions) of
+                Just extensionValue
+                  | Just haskellFieldName <- Aeson.parseMaybe Aeson.parseJSON extensionValue ->
+                      fromText haskellFieldName
+                _ ->
+                  -- If there is no name override specified or the override doesn't parse
+                  -- as string, we use the property name itself.
+                  fromText property
+          )
+          propertiesWithExtensions
+
   freeFormObject <- case OpenApi._schemaAdditionalProperties schema of
     Nothing ->
       pure Nothing
@@ -329,7 +367,9 @@ schemaToObjectType resolver schema = do
         properties =
           HashMap.fromList (map (first fromText) (HashMap.toList properties)),
         requiredProperties =
-          HashSet.fromList (map fromText (OpenApi._schemaRequired schema))
+          HashSet.fromList (map fromText (OpenApi._schemaRequired schema)),
+        haskellFieldNames =
+          HashMap.fromList (map (first fromText) (HashMap.toList haskellFieldNames))
       }
 
 -- | Treat an 'OpenApi.Schema' as stringy. Accounts for enumerations
@@ -519,7 +559,8 @@ isObjectType ty = case ty of
       ObjectType
         { properties = mempty,
           requiredProperties = mempty,
-          additionalProperties = Nothing
+          additionalProperties = Nothing,
+          haskellFieldNames = mempty
         }
 
     -- Combine two ObjectTypes. Doesn't report common fields! Also merging
@@ -540,11 +581,12 @@ isObjectType ty = case ty of
             (Just x, Just y) ->
               -- This might be controversial, OTOH definining additional properties on both
               -- objects is undefined behavior anyways.
-              Just FreeForm
+              Just FreeForm,
+          haskellFieldNames = haskellFieldNames o1 <> haskellFieldNames o2
         }
 
 normalizeNamedType ::
-  Monad m =>
+  (Monad m) =>
   -- | Generate a new name based on the context of an anonymous type. Within 'normalizeNamedType'
   -- we don't know anything about the enclosing context and we expect the callers to do the right
   -- thing (tm).
@@ -574,7 +616,7 @@ normalizeNamedType assignName namedType = case namedType of
         pure (namedType, [])
 
 normalizeObjectType ::
-  Monad m =>
+  (Monad m) =>
   -- | Assign a name to an anonnymous type in a field of an 'ObjectType'
   (Name -> m Name) ->
   -- | Assign a name to the additionalProperties type of an 'ObjectType'
@@ -600,7 +642,7 @@ normalizeObjectType assignObjectFieldTypeName assignAdditionaPropertiesTypeName 
   pure (objectType {additionalProperties, properties}, newTypes <> newTypes')
 
 normalizeVariants ::
-  Monad m =>
+  (Monad m) =>
   (Int -> m Name) ->
   [Named Type] ->
   m ([Named Type], [(Name, Type)])
@@ -622,7 +664,7 @@ normalizeVariants assignName variants = runWriterT $
 --   - top-level definitions
 --   - inline definitions that we just assigned a name
 normalizeTypeShallow ::
-  Monad m =>
+  (Monad m) =>
   -- | Assign a name to an anonnymous type in a field of an 'ObjectType'
   (Name -> Name -> m Name) ->
   -- | Assign a name to the additionalProperties type of an 'ObjectType'
@@ -667,7 +709,7 @@ normalizeTypeShallow
 -- Normalizes a 'Type' by assigning each anonymous, inline definition a name.
 -- Returns the normalized 'Type' alongside with the additional inline definitions.
 normalizeType ::
-  Monad m =>
+  (Monad m) =>
   -- | Assign a name to an anonnymous type in a field of an 'ObjectType'
   (Name -> Name -> m Name) ->
   -- | Assign a name to the additionalProperties type of an 'ObjectType'

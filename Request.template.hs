@@ -52,7 +52,7 @@ import Web.HttpApiData
   )
 
 pathVariable ::
-  FromHttpApiData a =>
+  (FromHttpApiData a) =>
   -- | Path variable value
   Text ->
   (a -> Wai.Application) ->
@@ -73,27 +73,27 @@ data Style
 
 newtype CommaDelimitedValue a = CommaDelimitedValue {unCommaDelimitedValue :: [a]}
 
-instance FromHttpApiData a => FromHttpApiData (CommaDelimitedValue a) where
+instance (FromHttpApiData a) => FromHttpApiData (CommaDelimitedValue a) where
   parseUrlPiece input = do
     xs <- parseUrlPieces (Text.splitOn "," input)
     pure (CommaDelimitedValue xs)
 
 newtype SpaceDelimitedValue a = SpaceDelimitedValue {unSpaceDelimitedValue :: [a]}
 
-instance FromHttpApiData a => FromHttpApiData (SpaceDelimitedValue a) where
+instance (FromHttpApiData a) => FromHttpApiData (SpaceDelimitedValue a) where
   parseUrlPiece input = do
     xs <- parseUrlPieces (Text.splitOn " " input)
     pure (SpaceDelimitedValue xs)
 
 newtype PipeDelimitedValue a = PipeDelimitedValue {unPipeDelimitedValue :: [a]}
 
-instance FromHttpApiData a => FromHttpApiData (PipeDelimitedValue a) where
+instance (FromHttpApiData a) => FromHttpApiData (PipeDelimitedValue a) where
   parseUrlPiece input = do
     xs <- parseUrlPieces (Text.splitOn "|" input)
     pure (PipeDelimitedValue xs)
 
 requiredQueryParameters ::
-  FromHttpApiData a =>
+  (FromHttpApiData a) =>
   Style ->
   ByteString ->
   (NonEmpty.NonEmpty a -> Wai.Application) ->
@@ -144,7 +144,7 @@ requiredQueryParameters style name withParam =
         )
 
 optionalQueryParameters ::
-  FromHttpApiData a =>
+  (FromHttpApiData a) =>
   Style ->
   ByteString ->
   (Maybe (NonEmpty.NonEmpty a) -> Wai.Application) ->
@@ -186,7 +186,7 @@ optionalQueryParameters style name withParam =
         )
 
 requiredQueryParameter ::
-  FromHttpApiData a =>
+  (FromHttpApiData a) =>
   ByteString ->
   (a -> Wai.Application) ->
   Wai.Application
@@ -205,7 +205,7 @@ requiredQueryParameter name withParam = \request respond ->
 {-# INLINEABLE requiredQueryParameter #-}
 
 optionalQueryParameter ::
-  FromHttpApiData a =>
+  (FromHttpApiData a) =>
   ByteString ->
   -- | Allow empty, e.g. "x="
   Bool ->
@@ -229,7 +229,7 @@ optionalQueryParameter name allowEmpty withParam = \request respond ->
 {-# INLINEABLE optionalQueryParameter #-}
 
 optionalHeader ::
-  FromHttpApiData a =>
+  (FromHttpApiData a) =>
   HeaderName ->
   (Maybe a -> Wai.Application) ->
   Wai.Application
@@ -246,7 +246,7 @@ optionalHeader name withHeader = \request respond ->
 {-# INLINEABLE optionalHeader #-}
 
 requiredHeader ::
-  FromHttpApiData a =>
+  (FromHttpApiData a) =>
   HeaderName ->
   (a -> Wai.Application) ->
   Wai.Application
@@ -267,11 +267,11 @@ data BodyParser a
       Network.HTTP.Media.MediaType
       ((a -> Wai.Application) -> Wai.Application)
 
-jsonBodyParser :: FromJSON a => BodyParser a
+jsonBodyParser :: (FromJSON a) => BodyParser a
 jsonBodyParser = BodyParser "application/json" parseRequestBodyJSON
 {-# INLINE jsonBodyParser #-}
 
-formBodyParser :: FromForm a => BodyParser a
+formBodyParser :: (FromForm a) => BodyParser a
 formBodyParser = BodyParser "application/xxx-form-urlencoded" parseRequestBodyForm
 {-# INLINE formBodyParser #-}
 
@@ -294,7 +294,7 @@ parseRequestBody parsers withBody = \request respond -> do
       respond (Wai.responseBuilder (toEnum 415) [] mempty)
 {-# INLINE parseRequestBody #-}
 
-parseRequestBodyJSON :: FromJSON a => (a -> Wai.Application) -> Wai.Application
+parseRequestBodyJSON :: (FromJSON a) => (a -> Wai.Application) -> Wai.Application
 parseRequestBodyJSON withBody = \request respond -> do
   result <- parseWith (Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
   case eitherResult result of
@@ -308,7 +308,7 @@ parseRequestBodyJSON withBody = \request respond -> do
           withBody body request respond
 {-# INLINEABLE parseRequestBodyJSON #-}
 
-parseRequestBodyForm :: FromForm a => (a -> Wai.Application) -> Wai.Application
+parseRequestBodyForm :: (FromForm a) => (a -> Wai.Application) -> Wai.Application
 parseRequestBodyForm withBody = \request respond -> do
   -- Reads the body using lazy IO. Not great but it gets us
   -- going and is pretty local.

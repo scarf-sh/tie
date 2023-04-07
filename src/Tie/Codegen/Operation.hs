@@ -32,7 +32,7 @@ import Tie.Operation
 import Tie.Resolve (Resolver)
 import Tie.Type (isArrayType, namedType)
 
-codegenOperations :: Monad m => Resolver m -> [Operation] -> m (PP.Doc ann)
+codegenOperations :: (Monad m) => Resolver m -> [Operation] -> m (PP.Doc ann)
 codegenOperations resolver operations = do
   let groupedOperations :: Map.Map Path [Operation]
       groupedOperations =
@@ -121,7 +121,7 @@ codegenOperations resolver operations = do
 
   pure (dataApiDecl <> PP.line <> PP.line <> apiDecl <> PP.line <> inlineablePragma)
 
-codegenApiType :: Monad m => Resolver m -> [Operation] -> m (PP.Doc ann)
+codegenApiType :: (Monad m) => Resolver m -> [Operation] -> m (PP.Doc ann)
 codegenApiType resolver operations = do
   operationsFieldsCode <- traverse (codegenApiTypeOperation resolver) operations
   let fieldsCode =
@@ -140,7 +140,7 @@ codegenApiType resolver operations = do
             <> "}"
   pure dataDecl
 
-codegenApiTypeOperation :: Monad m => Resolver m -> Operation -> m (PP.Doc ann)
+codegenApiTypeOperation :: (Monad m) => Resolver m -> Operation -> m (PP.Doc ann)
 codegenApiTypeOperation resolver Operation {..} = do
   paramsCode <-
     sequence $
@@ -164,7 +164,7 @@ codegenApiTypeOperation resolver Operation {..} = do
               (\x y -> x <+> "->" <> PP.line <> y)
               ( paramsCode
                   ++ [ codegenRequestBodyComment body <> codegenRequestBodyType body
-                       | Just body<- [requestBody]
+                       | Just body <- [requestBody]
                      ]
                   ++ ["m" <+> toApiResponseTypeName name]
               )
@@ -194,7 +194,7 @@ codegenApiTypeOperation resolver Operation {..} = do
       code <- codegenParamSchema param
       pure (codegenParamComment param <> code)
 
-codegenOperation :: Monad m => Resolver m -> [Operation] -> m (PP.Doc ann)
+codegenOperation :: (Monad m) => Resolver m -> [Operation] -> m (PP.Doc ann)
 codegenOperation resolver operations@(Operation {path} : _) =
   pure $
     codegenPathGuard path $
@@ -297,8 +297,14 @@ codegenRequestBodyGuard requestBody continuation = case requestBody of
   Nothing ->
     continuation
   Just RequestBody {provideRequestBodyAsStream = True} ->
-    "let" <+> "body" <+> "=" <+> "Network.Wai.getRequestBodyChunk" <+> "request" <+> "in" <> PP.line <>
-      PP.indent 4 ("(" <> continuation <> ")")
+    "let"
+      <+> "body"
+      <+> "="
+      <+> "Network.Wai.getRequestBodyChunk"
+      <+> "request"
+      <+> "in"
+        <> PP.line
+        <> PP.indent 4 ("(" <> continuation <> ")")
   Just RequestBody {jsonRequestBodyContent} ->
     let parsers =
           -- TODO support forms
