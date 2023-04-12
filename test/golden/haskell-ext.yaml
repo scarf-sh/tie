@@ -51,3 +51,13 @@ components:
         test2: 
           type: string
           x-tie-haskell-name: abcdef
+        '$test3':
+          type: array
+          x-tie-haskell-name: test3
+          items: 
+            type: object
+            properties: 
+              name: 
+                type: string
+              value: 
+                type: string

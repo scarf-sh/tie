@@ -619,8 +619,34 @@ import qualified Scarf.Hashids
 
 
 
+data TestTest3 = TestTest3
+    {
+        name :: (Data.Maybe.Maybe (Data.Text.Text)),
+        value :: (Data.Maybe.Maybe (Data.Text.Text))
+    }
+    deriving (Show)
+
+instance Data.Aeson.ToJSON TestTest3 where
+    toJSON TestTest3 {..} = Data.Aeson.object
+        ([ 
+        ]
+        ++ [ "name" Data.Aeson..= name | Just name <- [name] ]
+        ++ [ "value" Data.Aeson..= value | Just value <- [value] ])
+
+    toEncoding TestTest3 {..} = Data.Aeson.Encoding.pairs
+        ( maybe mempty (Data.Aeson.Encoding.pair "name" . Data.Aeson.toEncoding) name <>
+          maybe mempty (Data.Aeson.Encoding.pair "value" . Data.Aeson.toEncoding) value
+        )
+
+instance Data.Aeson.FromJSON TestTest3 where
+    parseJSON = Data.Aeson.withObject "TestTest3" $ \o ->
+        TestTest3
+            <$> o Data.Aeson..:? "name"
+            <*> o Data.Aeson..:? "value"
+
 data Test = Test
     {
+        test3 :: (Data.Maybe.Maybe ([ TestTest3 ])),
         test1 :: (Data.Maybe.Maybe (Scarf.Hashids.Hashid Int32)),
         abcdef :: (Data.Maybe.Maybe (Data.Text.Text))
     }
@@ -630,18 +656,21 @@ instance Data.Aeson.ToJSON Test where
     toJSON Test {..} = Data.Aeson.object
         ([ 
         ]
+        ++ [ "$test3" Data.Aeson..= test3 | Just test3 <- [test3] ]
         ++ [ "test1" Data.Aeson..= test1 | Just test1 <- [test1] ]
         ++ [ "test2" Data.Aeson..= abcdef | Just abcdef <- [abcdef] ])
 
     toEncoding Test {..} = Data.Aeson.Encoding.pairs
-        ( maybe mempty (Data.Aeson.Encoding.pair "test1" . Data.Aeson.toEncoding) test1 <>
+        ( maybe mempty (Data.Aeson.Encoding.pair "$test3" . Data.Aeson.toEncoding) test3 <>
+          maybe mempty (Data.Aeson.Encoding.pair "test1" . Data.Aeson.toEncoding) test1 <>
           maybe mempty (Data.Aeson.Encoding.pair "test2" . Data.Aeson.toEncoding) abcdef
         )
 
 instance Data.Aeson.FromJSON Test where
     parseJSON = Data.Aeson.withObject "Test" $ \o ->
         Test
-            <$> o Data.Aeson..:? "test1"
+            <$> o Data.Aeson..:? "$test3"
+            <*> o Data.Aeson..:? "test1"
             <*> o Data.Aeson..:? "test2"
 ---------------------
 test.cabal
