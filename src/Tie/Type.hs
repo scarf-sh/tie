@@ -627,9 +627,12 @@ normalizeObjectType ::
 normalizeObjectType assignObjectFieldTypeName assignAdditionaPropertiesTypeName objectType@ObjectType {..} = do
   (properties, newTypes) <- runWriterT $
     flip HashMap.traverseWithKey properties $ \fieldName fieldType -> do
+      let 
+        haskellFieldName = 
+          HashMap.lookupDefault fieldName fieldName haskellFieldNames
       WriterT $
         normalizeNamedType
-          (assignObjectFieldTypeName fieldName)
+          (assignObjectFieldTypeName haskellFieldName)
           fieldType
   (additionalProperties, newTypes') <- runWriterT $
     case additionalProperties of
