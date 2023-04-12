@@ -508,8 +508,6 @@ objectTypeDependencies getDependencies objectType =
 -- | Casting a 'Type' to the set of types it could be.
 isOneOfType :: Type -> Maybe (Maybe (Discriminator (Named Type)), [Named Type])
 isOneOfType ty = case ty of
-  OneOf _ [_] ->
-    Nothing
   OneOf discriminator oneOfs ->
     Just (discriminator, oneOfs)
   _ ->
