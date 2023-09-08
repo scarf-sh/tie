@@ -56,14 +56,7 @@ Then, you need to build it using cabal:
 $ cabal build exe:tie
 ```
 
-Finally, you can copy the resulting executable to your desired location:
-
-```bash
-$ cp $(cabal exec -- which tie) ~/.local/bin/tie
-```
-
-Alternatively, instead of manually copying the executable you can install with
-cabal:
+Y ou can install the executable with using:
 
 ```bash
 $ cabal install .
