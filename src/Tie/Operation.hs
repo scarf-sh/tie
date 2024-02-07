@@ -122,7 +122,8 @@ data Param = Param
     schema :: Named Type,
     required :: Bool,
     explode :: Bool,
-    style :: Maybe Style
+    style :: Maybe Style,
+    allowEmpty :: Bool
   }
   deriving (Eq, Ord, Show)
 
@@ -423,7 +424,8 @@ paramToParam resolver Errors {..} OpenApi.Param {..} = do
             | OpenApi.ParamQuery <- _paramIn ->
                 Just StyleForm
             | otherwise -> Nothing,
-        schema = typ
+        schema = typ,
+        allowEmpty = fromMaybe False _paramAllowEmptyValue
       }
 
 headerToHeader ::

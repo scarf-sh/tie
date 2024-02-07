@@ -48,6 +48,7 @@ import Tie.Type
     isOneOfType,
     namedType,
     normalizeType,
+    isFitForFromFormInstance,
   )
 import Prelude hiding (Type)
 
@@ -264,7 +265,7 @@ codegenOneOfType getDiscriminator typName variants = do
   pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
 
 codegenObjectType :: (Monad m) => Name -> ObjectType (Named Type) -> m (Doc ann)
-codegenObjectType typName ObjectType {..}
+codegenObjectType typName objectType@ObjectType {..}
   -- for empty, free form objects, just generate a type synonym for Value.
   | Just FreeForm <- additionalProperties,
     null properties =
@@ -508,7 +509,53 @@ codegenObjectType typName ObjectType {..}
                                 )
                           )
                   )
-       in pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
+
+          parseFormForm form fieldName fieldType
+            | Just {} <- isArrayType (namedType fieldType) =
+                if is_required then
+                  "Web.FormUrlEncoded.parseAll" <+> "\"" <> toJsonFieldName fieldName <> "\"" <+> form
+                else
+                  "(" <> "either" <+> "(" <> "const" <+> "(" <> "Right" <+> "Nothing" <> ")" <> ")" <+> "(" <> "Right" <+> "." <+> "Just" <> ")" <+> "(" <> "Web.FormUrlEncoded.parseAll" <+> "\"" <> toJsonFieldName fieldName <> "\"" <+> form <> ")" <> ")"
+            | Just {} <- isObjectType (namedType fieldType) = 
+                if is_required then 
+                  "Web.FormUrlEncoded.fromForm" <+> form
+                else 
+                  "(" <> "either" <+> "(" <> "const" <+> "(" <> "Right" <+> "Nothing" <> ")" <> ")" <+> "(" <> "Right" <+> "." <+> "Just" <> ")" <+> "(" <> "Web.FormUrlEncoded.fromForm" <+> form <> ")" <> ")"
+            | is_required =
+                "Web.FormUrlEncoded.parseUnique" <+> "\"" <> toJsonFieldName fieldName <> "\"" <+> form
+            | otherwise =
+                "Web.FormUrlEncoded.parseMaybe" <+> "\"" <> toJsonFieldName fieldName <> "\"" <+> form
+            where 
+              is_required = HashSet.member fieldName requiredProperties        
+
+          fromForm
+            | isFitForFromFormInstance (Object objectType) =
+                "instance"
+                  <+> "Web.FormUrlEncoded.FromForm"
+                  <+> toDataTypeName typName
+                  <+> "where"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( "fromForm" <+> "x" <+> "=" 
+                            <> PP.line
+                            <> PP.indent
+                              4
+                              ( toConstructorName typName
+                                  <> PP.line
+                                  <> PP.indent
+                                    4
+                                    ( PP.vsep
+                                        [ op <+> parseFormForm "x" fieldName fieldType
+                                          | (op, (fieldName, fieldType)) <- zip ("<$>" : repeat "<*>") orderedProperties
+                                        ]
+                                    )
+                              )
+                      )
+            | otherwise = 
+                mempty
+
+       in pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson, fromForm])
 
 codegenRequiredOptionalFieldType :: Bool -> Doc ann -> Doc ann
 codegenRequiredOptionalFieldType True doc = doc

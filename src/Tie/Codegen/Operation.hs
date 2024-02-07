@@ -363,7 +363,7 @@ codegenQueryParamStyle explode style = case (explode, style) of
   (False, StyleForm) -> Just "CommaDelimitedStyle"
 
 codegenQueryParamGuard :: Param -> PP.Doc ann -> PP.Doc ann
-codegenQueryParamGuard Param {name, required, style, explode, schema} continuation
+codegenQueryParamGuard Param {name, required, style, explode, schema, allowEmpty} continuation
   | Just _ <- isArrayType (namedType schema),
     Just style <- style,
     Just style <- codegenQueryParamStyle explode style =
@@ -394,7 +394,7 @@ codegenQueryParamGuard Param {name, required, style, explode, schema} continuati
   | otherwise =
       "optionalQueryParameter"
         <+> "\"" <> toParamName name <> "\""
-        <+> "False"
+        <+> if allowEmpty then "True" else "False"
         <+> "(" <> "\\" <> toParamBinder name
         <+> "request"
         <+> "respond"

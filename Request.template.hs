@@ -146,10 +146,11 @@ requiredQueryParameters style name withParam =
 optionalQueryParameters ::
   (FromHttpApiData a) =>
   Style ->
+  Bool ->
   ByteString ->
   (Maybe (NonEmpty.NonEmpty a) -> Wai.Application) ->
   Wai.Application
-optionalQueryParameters style name withParam =
+optionalQueryParameters style allowEmpty name withParam =
   case style of
     FormStyle -> \request respond ->
       case urlDecodeForm (LBS.fromStrict (ByteString.drop 1 (Wai.rawQueryString request))) of
@@ -166,21 +167,21 @@ optionalQueryParameters style name withParam =
     SpaceDelimitedStyle ->
       optionalQueryParameter
         name
-        False
+        allowEmpty
         ( \xs ->
             withParam (xs >>= NonEmpty.nonEmpty . unSpaceDelimitedValue)
         )
     PipeDelimitedStyle ->
       optionalQueryParameter
         name
-        False
+        allowEmpty
         ( \xs ->
             withParam (xs >>= NonEmpty.nonEmpty . unPipeDelimitedValue)
         )
     CommaDelimitedStyle ->
       optionalQueryParameter
         name
-        False
+        allowEmpty
         ( \xs ->
             withParam (xs >>= NonEmpty.nonEmpty . unCommaDelimitedValue)
         )

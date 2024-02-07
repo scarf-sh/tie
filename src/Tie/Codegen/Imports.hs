@@ -161,6 +161,10 @@ codegenModuleHeader moduleName =
       <> "import"
     <+> "qualified"
     <+> "Web.HttpApiData"
+      <> PP.line
+      <> "import"
+    <+> "qualified"
+    <+> "Web.FormUrlEncoded"
 
 codegenExtraApiModuleDependencies :: ApiName -> Doc ann
 codegenExtraApiModuleDependencies apiName =

@@ -31,6 +31,7 @@ module Tie.Type
     isArrayType,
     isObjectType,
     isOneOfType,
+    isFitForFromFormInstance,
 
     -- * Normalize types
     normalizeType,
@@ -517,6 +518,24 @@ isArrayType :: Type -> Maybe (Named Type)
 isArrayType ty = case ty of
   Array elem -> Just elem
   _ -> Nothing
+
+-- | Due to techinical reasons we only generate the fromFrom code for certain data types.
+-- It's a matter of the instances that http-api-data providers but nothing structural that 
+-- would prevent us from doing all types.
+isFitForFromFormInstance :: Type -> Bool
+isFitForFromFormInstance ty 
+  | Just {} <- isOneOfType ty =
+      False
+  | Just ty <- isArrayType ty =
+    isJust (isBasicType (namedType ty))
+  | Just objectTy <- isObjectType ty =
+    isJust (traverse (isBasicType . namedType) objectTy)
+  | Just {} <- isEnumType ty =
+      True
+  | Just {} <- isBasicType ty =
+      True
+  | otherwise = 
+      False
 
 -- | Casting a 'Type' to an 'ObjectType', if possible. `isObjectType` looks through
 -- allOf, oneOf, anyOf to ensure

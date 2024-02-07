@@ -50,21 +50,6 @@ $ git clone https://github.com/scarf-sh/tie.git
 $ cd tie
 ```
 
-Then, you need to build it using cabal:
-
-```bash
-$ cabal build exe:tie
-```
-
-Finally, you can copy the resulting executable to your desired location:
-
-```bash
-$ cp $(cabal exec -- which tie) ~/.local/bin/tie
-```
-
-Alternatively, instead of manually copying the executable you can install with
-cabal:
-
 ```bash
 $ cabal install .
 ```
