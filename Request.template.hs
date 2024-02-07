@@ -18,8 +18,7 @@ module Tie.Template.Request_
   )
 where
 
-import Data.Aeson (FromJSON, parseJSON)
-import qualified Data.Aeson.Parser
+import qualified Data.Aeson
 import qualified Data.Aeson.Types
 import Data.Attoparsec.ByteString (eitherResult, parseWith)
 import Data.ByteString (ByteString)
@@ -267,7 +266,7 @@ data BodyParser a
       Network.HTTP.Media.MediaType
       ((a -> Wai.Application) -> Wai.Application)
 
-jsonBodyParser :: (FromJSON a) => BodyParser a
+jsonBodyParser :: (Data.Aeson.FromJSON a) => BodyParser a
 jsonBodyParser = BodyParser "application/json" parseRequestBodyJSON
 {-# INLINE jsonBodyParser #-}
 
@@ -294,35 +293,20 @@ parseRequestBody parsers withBody = \request respond -> do
       respond (Wai.responseBuilder (toEnum 415) [] mempty)
 {-# INLINE parseRequestBody #-}
 
-parseRequestBodyJSON :: (FromJSON a) => (a -> Wai.Application) -> Wai.Application
+parseRequestBodyJSON :: (Data.Aeson.FromJSON a) => (a -> Wai.Application) -> Wai.Application
 parseRequestBodyJSON withBody = \request respond -> do
-  result <- parseWith (Wai.getRequestBodyChunk request) Data.Aeson.Parser.json' mempty
-  case eitherResult result of
-    Left _err ->
+  body <- Wai.lazyRequestBody request
+  case Data.Aeson.decode' body of 
+    Nothing -> 
       respond (Wai.responseBuilder (toEnum 400) [] mempty)
-    Right value ->
-      case Data.Aeson.Types.parseEither Data.Aeson.parseJSON value of
-        Left _err ->
-          respond (Wai.responseBuilder (toEnum 400) [] mempty)
-        Right body ->
-          withBody body request respond
+    Just body ->
+      withBody body request respond
 {-# INLINEABLE parseRequestBodyJSON #-}
 
 parseRequestBodyForm :: (FromForm a) => (a -> Wai.Application) -> Wai.Application
 parseRequestBodyForm withBody = \request respond -> do
-  -- Reads the body using lazy IO. Not great but it gets us
-  -- going and is pretty local.
-  let getBodyBytes :: IO [ByteString]
-      getBodyBytes = do
-        chunk <- Wai.getRequestBodyChunk request
-        case chunk of
-          "" -> pure []
-          _ -> do
-            rest <- unsafeInterleaveIO getBodyBytes
-            pure (chunk : rest)
-
-  bytes <- getBodyBytes
-  case urlDecodeAsForm (LBS.fromChunks bytes) of
+  body <- Wai.lazyRequestBody request
+  case urlDecodeAsForm body of
     Left _err ->
       respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Right form ->

@@ -92,10 +92,6 @@ codegenModuleHeader moduleName =
       <> PP.line
       <> "import"
     <+> "qualified"
-    <+> "Data.Aeson.Parser"
-      <> PP.line
-      <> "import"
-    <+> "qualified"
     <+> "Data.Aeson.Types"
       <> PP.line
       <> "import"
