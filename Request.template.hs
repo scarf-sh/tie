@@ -192,13 +192,13 @@ requiredQueryParameter ::
 requiredQueryParameter name withParam = \request respond ->
   case List.lookup name (Wai.queryString request) of
     Nothing ->
-      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+      respond (Wai.responseBuilder (toEnum 400) [] ("Missing query parameter: " <> name))
     Just Nothing ->
-      respond (Wai.responseBuilder (toEnum 400) [] mempty)
+      respond (Wai.responseBuilder (toEnum 400) [] ("Missing query parameter: " <> name))
     Just (Just value) ->
       case parseQueryParam (Text.decodeUtf8 value) of
         Left _err ->
-          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+          respond (Wai.responseBuilder (toEnum 400) [] ("Unable to recognize query parameter: " <> name))
         Right x ->
           withParam x request respond
 {-# INLINEABLE requiredQueryParameter #-}
