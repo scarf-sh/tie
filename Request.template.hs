@@ -218,11 +218,11 @@ optionalQueryParameter name allowEmpty withParam = \request respond ->
       | allowEmpty ->
           withParam Nothing request respond
       | otherwise ->
-          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+          respond (Wai.responseBuilder (toEnum 400) [] ("Missing query parameter: " <> name))
     Just (Just value) ->
       case parseQueryParam (Text.decodeUtf8 value) of
         Left _err ->
-          respond (Wai.responseBuilder (toEnum 400) [] mempty)
+          respond (Wai.responseBuilder (toEnum 400) [] ("Unable to recognize query parameter: " <> name))
         Right x ->
           withParam (Just x) request respond
 {-# INLINEABLE optionalQueryParameter #-}
