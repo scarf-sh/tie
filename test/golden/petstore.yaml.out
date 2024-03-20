@@ -18,6 +18,7 @@ import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.ByteString
+import qualified Data.ByteString.Builder as Builder
 import qualified Data.List
 import qualified Data.List.NonEmpty
 import qualified Data.Map
@@ -295,13 +296,13 @@ requiredQueryParameter ::
 requiredQueryParameter name withParam = \request respond ->
   case List.lookup name (Wai.queryString request) of
     Nothing ->
-      respond (Wai.responseBuilder (toEnum 400) [] ("Missing query parameter: " <> name))
+      respond (Wai.responseBuilder (toEnum 400) [] ("Missing query parameter: " <> Builder.byteString name))
     Just Nothing ->
-      respond (Wai.responseBuilder (toEnum 400) [] ("Missing query parameter: " <> name))
+      respond (Wai.responseBuilder (toEnum 400) [] ("Missing query parameter: " <> Builder.byteString name))
     Just (Just value) ->
       case parseQueryParam (Text.decodeUtf8 value) of
         Left _err ->
-          respond (Wai.responseBuilder (toEnum 400) [] ("Unable to recognize query parameter: " <> name))
+          respond (Wai.responseBuilder (toEnum 400) [] ("Unable to recognize query parameter: " <> Builder.byteString name))
         Right x ->
           withParam x request respond
 {-# INLINEABLE requiredQueryParameter #-}
@@ -321,11 +322,11 @@ optionalQueryParameter name allowEmpty withParam = \request respond ->
       | allowEmpty ->
           withParam Nothing request respond
       | otherwise ->
-          respond (Wai.responseBuilder (toEnum 400) [] ("Missing query parameter: " <> name))
+          respond (Wai.responseBuilder (toEnum 400) [] ("Missing query parameter: " <> Builder.byteString name))
     Just (Just value) ->
       case parseQueryParam (Text.decodeUtf8 value) of
         Left _err ->
-          respond (Wai.responseBuilder (toEnum 400) [] ("Unable to recognize query parameter: " <> name))
+          respond (Wai.responseBuilder (toEnum 400) [] ("Unable to recognize query parameter: " <> Builder.byteString name))
         Right x ->
           withParam (Just x) request respond
 {-# INLINEABLE optionalQueryParameter #-}
@@ -399,8 +400,8 @@ parseRequestBody parsers withBody = \request respond -> do
 parseRequestBodyJSON :: (Data.Aeson.FromJSON a) => (a -> Wai.Application) -> Wai.Application
 parseRequestBodyJSON withBody = \request respond -> do
   body <- Wai.lazyRequestBody request
-  case Data.Aeson.decode' body of 
-    Nothing -> 
+  case Data.Aeson.decode' body of
+    Nothing ->
       respond (Wai.responseBuilder (toEnum 400) [] mempty)
     Just body ->
       withBody body request respond
