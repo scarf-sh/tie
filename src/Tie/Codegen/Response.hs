@@ -2,6 +2,7 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
 {-# LANGUAGE TypeApplications #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Tie.Codegen.Response
   ( codegenResponses,
@@ -13,7 +14,7 @@ import qualified Data.ByteString as ByteString
 import Data.List (lookup)
 import qualified Data.Text as Text
 import Network.HTTP.Media (renderHeader)
-import Paths_tie (getDataFileName)
+import Data.FileEmbed (embedStringFile, makeRelativeToProject)
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
@@ -313,11 +314,11 @@ codegenToResponses responseModuleName operationName responses defaultResponse =
               )
    in decl
 
+templateContents :: ByteString
+templateContents = $(embedStringFile =<< makeRelativeToProject "Response.template.hs")
+
 auxTemplate :: Text
-auxTemplate = unsafePerformIO $ do
-  file <- getDataFileName "Response.template.hs"
-  contents <- ByteString.readFile file
-  pure (decodeUtf8 contents)
+auxTemplate = decodeUtf8 templateContents
 {-# NOINLINE auxTemplate #-}
 
 codegenResponseAuxFile ::
