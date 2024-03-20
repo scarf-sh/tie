@@ -13,12 +13,10 @@ author:             Alex Biehl (alex@scarf.sh)
 maintainer:         alex@scarf.sh, engineering@scarf.sh
 copyright:          (c) 2022 Scarf Systems
 category:
-extra-source-files: CHANGELOG.md
-data-files:
+extra-source-files:
+  CHANGELOG.md
   Response.template.hs
   Request.template.hs
-  test/golden/**/*.out
-  test/golden/**/*.yaml
 
 source-repository head
   type:     git
@@ -48,6 +46,7 @@ library
     , containers
     , directory
     , filepath
+    , file-embed
     , http-media
     , insert-ordered-containers
     , lens
@@ -99,6 +98,7 @@ test-suite tie-tests
     , bytestring
     , containers
     , filepath
+    , file-embed
     , hspec
     , insert-ordered-containers
     , openapi3

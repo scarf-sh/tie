@@ -1,20 +1,22 @@
 {-# LANGUAGE OverloadedStrings #-}
+{-# LANGUAGE ScopedTypeVariables #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 module Tie.Codegen.Request (codegenRequestAuxFile) where
 
 import qualified Data.ByteString as ByteString
 import qualified Data.Text as Text
-import Paths_tie (getDataFileName)
+import Data.FileEmbed (embedStringFile, makeRelativeToProject)
 import Prettyprinter (Doc, hsep, vsep)
 import qualified Prettyprinter.Util as Prettyprinter
 import System.IO.Unsafe (unsafePerformIO)
 import Tie.Name (Name)
 
+templateContents :: ByteString
+templateContents = $(embedStringFile =<< makeRelativeToProject "Request.template.hs")
+
 auxTemplate :: Text
-auxTemplate = unsafePerformIO $ do
-  file <- getDataFileName "Request.template.hs"
-  contents <- ByteString.readFile file
-  pure (decodeUtf8 contents)
+auxTemplate = decodeUtf8 templateContents
 {-# NOINLINE auxTemplate #-}
 
 codegenRequestAuxFile ::
