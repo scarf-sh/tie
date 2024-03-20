@@ -18,7 +18,6 @@ import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.ByteString
-import qualified Data.ByteString.Builder as Builder
 import qualified Data.List
 import qualified Data.List.NonEmpty
 import qualified Data.Map
@@ -162,6 +161,7 @@ import qualified Data.Aeson
 import qualified Data.Aeson.Types
 import Data.Attoparsec.ByteString (eitherResult, parseWith)
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce (coerce)

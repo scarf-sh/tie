@@ -18,7 +18,6 @@ import qualified Data.Aeson.Encoding
 import qualified Data.Aeson.Types
 import qualified Data.Attoparsec.ByteString
 import qualified Data.ByteString
-import qualified Data.ByteString.Builder as Builder
 import qualified Data.List
 import qualified Data.List.NonEmpty
 import qualified Data.Map
@@ -125,6 +124,7 @@ import qualified Data.Aeson
 import qualified Data.Aeson.Types
 import Data.Attoparsec.ByteString (eitherResult, parseWith)
 import Data.ByteString (ByteString)
+import qualified Data.ByteString.Builder as Builder
 import qualified Data.ByteString as ByteString
 import qualified Data.ByteString.Lazy as LBS
 import Data.Coerce (coerce)
@@ -670,7 +670,7 @@ newtype Inline = Inline
 
 instance Data.Aeson.ToJSON Inline where
     toJSON Inline {..} = Data.Aeson.object
-        ([
+        ([ 
         ]
         ++ [ "value" Data.Aeson..= value | Just value <- [value] ])
 
@@ -768,7 +768,7 @@ newtype Inline2 = Inline2
 
 instance Data.Aeson.ToJSON Inline2 where
     toJSON Inline2 {..} = Data.Aeson.object
-        ([
+        ([ 
         ]
         ++ [ "value" Data.Aeson..= value | Just value <- [value] ])
 
@@ -886,7 +886,7 @@ data Package = Package
 
 instance Data.Aeson.ToJSON Package where
     toJSON Package {..} = Data.Aeson.object
-        ([
+        ([ 
         ]
         ++ [ "enum_field_name" Data.Aeson..= enumFieldName | Just enumFieldName <- [enumFieldName] ]
         ++ [ "one_of_field_name" Data.Aeson..= oneOfFieldName | Just oneOfFieldName <- [oneOfFieldName] ]
@@ -952,7 +952,7 @@ newtype Pet = Pet
 
 instance Data.Aeson.ToJSON Pet where
     toJSON Pet {..} = Data.Aeson.object
-        ([
+        ([ 
         ]
         ++ [ "type" Data.Aeson..= type' | Just type' <- [type'] ])
 
