@@ -1,8 +1,8 @@
 cabal-version:      3.0
 name:               tie
-version:            0.1.0.0
+version:            0.2.0.0
 synopsis:
-  Tie allows generation of Haskell server stubs from 
+  Tie allows generation of Haskell server stubs from
   OpenAPI (v 3.x) specifications.
 
 bug-reports:        https://github.com/scarf-sh/tie/issues
