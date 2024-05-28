@@ -103,10 +103,10 @@ data BasicType
   | TyInteger (Maybe IntegerFormat)
   | TyBoolean
   | TyHaskellType
+      -- | Haskell modules to import
       [Text]
-      -- ^ Haskell modules to import
+      -- | Type to insert
       Text
-      -- ^ Type to insert
   deriving (Eq, Ord, Show)
 
 data FreeFormObject ty
@@ -277,7 +277,7 @@ schemaToType resolver schema
                 OpenApi.OpenApiItemsObject itemsSchemaRef ->
                   Array <$> schemaRefToType resolver itemsSchemaRef
                 OpenApi.OpenApiItemsArray _itemsSchemaRefs ->
-                  undefined -- TODO find out what tuple schemas are
+                  error "unimplemented" -- TODO find out what tuple schemas are
           | otherwise ->
               pure $
                 Array
@@ -293,7 +293,7 @@ schemaToType resolver schema
                       )
                   )
         OpenApi.OpenApiNull ->
-          undefined -- TODO need a BasicType for that
+          error "unimplemented" -- TODO need a BasicType for OpenApiNull
         OpenApi.OpenApiObject ->
           Object <$> schemaToObjectType resolver schema
   -- Heuristic: if the 'OpenApi.Schema' has properties attached
@@ -625,9 +625,8 @@ normalizeObjectType ::
 normalizeObjectType assignObjectFieldTypeName assignAdditionaPropertiesTypeName objectType@ObjectType {..} = do
   (properties, newTypes) <- runWriterT $
     flip HashMap.traverseWithKey properties $ \fieldName fieldType -> do
-      let 
-        haskellFieldName = 
-          HashMap.lookupDefault fieldName fieldName haskellFieldNames
+      let haskellFieldName =
+            HashMap.lookupDefault fieldName fieldName haskellFieldNames
       WriterT $
         normalizeNamedType
           (assignObjectFieldTypeName haskellFieldName)

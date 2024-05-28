@@ -5,8 +5,8 @@
 module Tie.Codegen.Request (codegenRequestAuxFile) where
 
 import qualified Data.ByteString as ByteString
-import qualified Data.Text as Text
 import Data.FileEmbed (embedStringFile, makeRelativeToProject)
+import qualified Data.Text as Text
 import Prettyprinter (Doc, hsep, vsep)
 import qualified Prettyprinter.Util as Prettyprinter
 import System.IO.Unsafe (unsafePerformIO)

@@ -70,7 +70,7 @@ codegenParamSchema Param {schema, required} =
         | Just objectType <- isObjectType typ ->
             error "Invariant broken: ruled out by pathToPath"
         | otherwise ->
-            undefined
+            error "Impossible"
 
 -- | Generate code for a header
 codegenHeaderSchema :: Header -> Doc ann
@@ -88,7 +88,7 @@ codegenHeaderSchema Header {schema, required} =
         | Just objectType <- isObjectType typ ->
             error "Invariant broken: ruled out by pathToPath"
         | otherwise ->
-            undefined
+            error "Impossible"
       Nothing ->
         error "Header without schema"
 
@@ -159,82 +159,94 @@ codegenOneOfType getDiscriminator typName variants = do
       decl =
         "data"
           <+> toOneOfDataTypeName typName
-            <> PP.line
-            <> PP.indent
-              4
-              ( PP.vsep
-                  ( [ op
-                        <+> variantName
-                        <+> codegenFieldType variantType
-                      | (op, (_, variantName, variantType)) <- zip ("=" : repeat "|") variantConstructors
-                    ]
-                      ++ [ "deriving" <+> "(" <> "Show" <> ")"
-                         ]
-                  )
-              )
+          <> PP.line
+          <> PP.indent
+            4
+            ( PP.vsep
+                ( [ op
+                      <+> variantName
+                      <+> codegenFieldType variantType
+                    | (op, (_, variantName, variantType)) <- zip ("=" : repeat "|") variantConstructors
+                  ]
+                    ++ [ "deriving" <+> "(" <> "Show" <> ")"
+                       ]
+                )
+            )
 
       toJson =
         "instance"
           <+> "Data.Aeson.ToJSON"
           <+> toDataTypeName typName
           <+> "where"
-            <> PP.line
-            <> PP.indent
-              4
-              ( PP.vsep
-                  [ "toJSON"
-                      <+> "(" <> variantName
-                      <+> "x" <> ")"
+          <> PP.line
+          <> PP.indent
+            4
+            ( PP.vsep
+                [ "toJSON"
+                    <+> "("
+                    <> variantName
+                    <+> "x"
+                    <> ")"
+                    <+> "="
+                    <+> "Data.Aeson.toJSON"
+                    <+> "x"
+                  | (_, variantName, _) <- variantConstructors
+                ]
+                <> PP.line
+                <> PP.line
+                <> PP.vsep
+                  [ "toEncoding"
+                      <+> "("
+                      <> variantName
+                      <+> "x"
+                      <> ")"
                       <+> "="
-                      <+> "Data.Aeson.toJSON"
+                      <+> "Data.Aeson.toEncoding"
                       <+> "x"
                     | (_, variantName, _) <- variantConstructors
                   ]
-                  <> PP.line
-                  <> PP.line
-                  <> PP.vsep
-                    [ "toEncoding"
-                        <+> "(" <> variantName
-                        <+> "x" <> ")"
-                        <+> "="
-                        <+> "Data.Aeson.toEncoding"
-                        <+> "x"
-                      | (_, variantName, _) <- variantConstructors
-                    ]
-              )
+            )
 
       fromJsonVariant :: Name -> PP.Doc ann
       fromJsonVariant variantName
         | Just (property, value) <- getDiscriminator variantName =
-            "(" <> "Data.Aeson.Types.withObject"
-              <+> "\"" <> toDataTypeName variantName <> "\""
+            "("
+              <> "Data.Aeson.Types.withObject"
+              <+> "\""
+              <> toDataTypeName variantName
+              <> "\""
               <+> "$"
-              <+> "\\" <> "o"
+              <+> "\\"
+              <> "o"
               <+> "->"
-                <> PP.line
-                <> PP.indent
-                  4
-                  ( "do"
-                      <+> PP.align
-                        ( "(" <> "\"" <> PP.pretty value <> "\""
-                            <+> "::"
-                            <+> "Data.Text.Text" <> ")"
-                            <+> "<-"
-                            <+> "o"
-                            <+> "Data.Aeson..:"
-                            <+> "\""
-                              <> PP.pretty property
-                              <> "\""
-                              <> PP.line
-                              <> "Data.Aeson.parseJSON"
-                            <+> "("
-                              <> "Data.Aeson.Object"
-                            <+> "o"
-                              <> ")"
-                        )
-                  )
-                <> PP.line
-                <> ")"
+              <> PP.line
+              <> PP.indent
+                4
+                ( "do"
+                    <+> PP.align
+                      ( "("
+                          <> "\""
+                          <> PP.pretty value
+                          <> "\""
+                          <+> "::"
+                          <+> "Data.Text.Text"
+                          <> ")"
+                          <+> "<-"
+                          <+> "o"
+                          <+> "Data.Aeson..:"
+                          <+> "\""
+                          <> PP.pretty property
+                          <> "\""
+                          <> PP.line
+                          <> "Data.Aeson.parseJSON"
+                          <+> "("
+                          <> "Data.Aeson.Object"
+                          <+> "o"
+                          <> ")"
+                      )
+                )
+              <> PP.line
+              <> ")"
               <+> "x"
         | otherwise =
             "Data.Aeson.parseJSON" <+> "x"
@@ -244,22 +256,22 @@ codegenOneOfType getDiscriminator typName variants = do
           <+> "Data.Aeson.FromJSON"
           <+> toDataTypeName typName
           <+> "where"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "parseJSON"
-                  <+> "x"
-                  <+> "="
-                    <> PP.line
-                    <> PP.indent
-                      4
-                      ( PP.concatWith
-                          (\x y -> x <+> "Control.Applicative.<|>" <> PP.line <> y)
-                          [ "(" <> variantConstructorName <+> "<$>" <+> fromJsonVariant variantName <> ")"
-                            | (variantName, variantConstructorName, _variantType) <- variantConstructors
-                          ]
-                      )
-              )
+          <> PP.line
+          <> PP.indent
+            4
+            ( "parseJSON"
+                <+> "x"
+                <+> "="
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( PP.concatWith
+                      (\x y -> x <+> "Control.Applicative.<|>" <> PP.line <> y)
+                      [ "(" <> variantConstructorName <+> "<$>" <+> fromJsonVariant variantName <> ")"
+                        | (variantName, variantConstructorName, _variantType) <- variantConstructors
+                      ]
+                  )
+            )
 
   pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
 
@@ -278,67 +290,74 @@ codegenObjectType typName ObjectType {..}
               <+> toDataTypeName typName
               <+> "="
               <+> toConstructorName typName
-                <> PP.line
-                <> PP.indent
-                  4
-                  ( "(" <> "Data.Map.Map"
-                      <+> "Data.Text.Text"
-                      <+> "("
-                        <> codegenFieldType propertyType
-                        <> ")"
-                        <> ")"
-                        <> PP.line
-                        <> "deriving"
-                      <+> "(" <> "Show" <> ")"
-                  )
+              <> PP.line
+              <> PP.indent
+                4
+                ( "("
+                    <> "Data.Map.Map"
+                    <+> "Data.Text.Text"
+                    <+> "("
+                    <> codegenFieldType propertyType
+                    <> ")"
+                    <> ")"
+                    <> PP.line
+                    <> "deriving"
+                    <+> "("
+                    <> "Show"
+                    <> ")"
+                )
 
           toJson =
             "instance"
               <+> "Data.Aeson.ToJSON"
               <+> toDataTypeName typName
               <+> "where"
-                <> PP.line
-                <> PP.indent
-                  4
-                  ( "toJSON"
-                      <+> "(" <> toConstructorName typName
-                      <+> "x" <> ")"
-                      <+> "="
-                        <> PP.line
-                        <> PP.indent
-                          4
-                          ( "Data.Aeson.toJSON" <+> "x"
-                          )
-                        <> PP.line
-                        <> PP.line
-                        <> "toEncoding"
-                      <+> "(" <> toConstructorName typName
-                      <+> "x" <> ")"
-                      <+> "="
-                        <> PP.line
-                        <> PP.indent
-                          4
-                          ( "Data.Aeson.toEncoding" <+> "x"
-                          )
-                  )
+              <> PP.line
+              <> PP.indent
+                4
+                ( "toJSON"
+                    <+> "("
+                    <> toConstructorName typName
+                    <+> "x"
+                    <> ")"
+                    <+> "="
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( "Data.Aeson.toJSON" <+> "x"
+                      )
+                    <> PP.line
+                    <> PP.line
+                    <> "toEncoding"
+                    <+> "("
+                    <> toConstructorName typName
+                    <+> "x"
+                    <> ")"
+                    <+> "="
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( "Data.Aeson.toEncoding" <+> "x"
+                      )
+                )
 
           fromJson =
             "instance"
               <+> "Data.Aeson.FromJSON"
               <+> toDataTypeName typName
               <+> "where"
-                <> PP.line
-                <> PP.indent
-                  4
-                  ( "parseJSON"
-                      <+> "x"
-                      <+> "="
-                        <> PP.line
-                        <> PP.indent
-                          4
-                          ( toConstructorName typName <+> "<$>" <+> "Data.Aeson.parseJSON" <+> "x"
-                          )
-                  )
+              <> PP.line
+              <> PP.indent
+                4
+                ( "parseJSON"
+                    <+> "x"
+                    <+> "="
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( toConstructorName typName <+> "<$>" <+> "Data.Aeson.parseJSON" <+> "x"
+                      )
+                )
        in pure $ PP.vsep $ intersperse mempty [decl, toJson, fromJson]
   -- additionalProperties: $ref some other schema + required properties
   | Just (AdditionalProperties propertyType) <- additionalProperties =
@@ -357,123 +376,135 @@ codegenObjectType typName ObjectType {..}
               <+> toDataTypeName typName
               <+> "="
               <+> toConstructorName typName
-                <> PP.line
-                <> PP.indent
-                  4
-                  ( "{"
-                      <> PP.line
-                      <> PP.indent
-                        4
-                        ( PP.concatWith
-                            (\x y -> x <> "," <> PP.line <> y)
-                            [ toFieldName haskellField
-                                <+> "::"
-                                <+> codegenRequiredOptionalFieldType
-                                  (HashSet.member field requiredProperties)
-                                  (codegenFieldType fieldType)
-                              | (field, fieldType) <- orderedProperties,
-                                let haskellField =
-                                      HashMap.lookupDefault field field haskellFieldNames
-                            ]
-                        )
-                      <> PP.line
-                      <> "}"
-                      <> PP.line
-                      <> "deriving"
-                      <+> "("
-                        <> "Show"
-                        <> ")"
-                  )
+              <> PP.line
+              <> PP.indent
+                4
+                ( "{"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( PP.concatWith
+                          (\x y -> x <> "," <> PP.line <> y)
+                          [ toFieldName haskellField
+                              <+> "::"
+                              <+> codegenRequiredOptionalFieldType
+                                (HashSet.member field requiredProperties)
+                                (codegenFieldType fieldType)
+                            | (field, fieldType) <- orderedProperties,
+                              let haskellField =
+                                    HashMap.lookupDefault field field haskellFieldNames
+                          ]
+                      )
+                    <> PP.line
+                    <> "}"
+                    <> PP.line
+                    <> "deriving"
+                    <+> "("
+                    <> "Show"
+                    <> ")"
+                )
 
           toJson =
             "instance"
               <+> "Data.Aeson.ToJSON"
               <+> toDataTypeName typName
               <+> "where"
-                <> PP.line
-                <> PP.indent
-                  4
-                  ( "toJSON"
-                      <+> toConstructorName typName
-                      <+> "{..}"
-                      <+> "="
-                      <+> "Data.Aeson.object"
-                        <> PP.line
-                        <> PP.indent
-                          4
-                          ( "(" <> "["
-                              <+> PP.align
-                                ( PP.concatWith
-                                    (\x y -> x <> "," <> PP.line <> y)
-                                    [ "\"" <> toJsonFieldName field <> "\"" <+> "Data.Aeson..=" <+> toFieldName haskellField
-                                      | (field, _) <- orderedProperties,
-                                        HashSet.member field requiredProperties,
-                                        let haskellField =
-                                              HashMap.lookupDefault field field haskellFieldNames
-                                    ]
-                                )
-                                <> PP.line
-                                <> "]"
-                                <> PP.line
-                                <> PP.concatWith
-                                  (\x y -> x <> PP.line <> y)
-                                  [ ( "++"
-                                        <+> "["
-                                        <+> "\"" <> toJsonFieldName field <> "\""
-                                        <+> "Data.Aeson..="
+              <> PP.line
+              <> PP.indent
+                4
+                ( "toJSON"
+                    <+> toConstructorName typName
+                    <+> "{..}"
+                    <+> "="
+                    <+> "Data.Aeson.object"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( "("
+                          <> "["
+                          <+> PP.align
+                            ( PP.concatWith
+                                (\x y -> x <> "," <> PP.line <> y)
+                                [ "\"" <> toJsonFieldName field <> "\"" <+> "Data.Aeson..=" <+> toFieldName haskellField
+                                  | (field, _) <- orderedProperties,
+                                    HashSet.member field requiredProperties,
+                                    let haskellField =
+                                          HashMap.lookupDefault field field haskellFieldNames
+                                ]
+                            )
+                          <> PP.line
+                          <> "]"
+                          <> PP.line
+                          <> PP.concatWith
+                            (\x y -> x <> PP.line <> y)
+                            [ ( "++"
+                                  <+> "["
+                                  <+> "\""
+                                  <> toJsonFieldName field
+                                  <> "\""
+                                  <+> "Data.Aeson..="
+                                  <+> toFieldName haskellField
+                                  <+> "|"
+                                  <+> "Just"
+                                  <+> toFieldName haskellField
+                                  <+> "<-"
+                                  <+> "["
+                                  <> toFieldName haskellField
+                                  <> "]"
+                                  <+> "]"
+                              )
+                              | (field, _) <- orderedProperties,
+                                not (HashSet.member field requiredProperties),
+                                let haskellField =
+                                      HashMap.lookupDefault field field haskellFieldNames
+                            ]
+                          <> ")"
+                      )
+                    <> PP.line
+                    <> PP.line
+                    <> "toEncoding"
+                    <+> toConstructorName typName
+                    <+> "{..}"
+                    <+> "="
+                    <+> "Data.Aeson.Encoding.pairs"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( "("
+                          <+> PP.align
+                            ( PP.concatWith
+                                (\x y -> x <+> "<>" <> PP.line <> y)
+                                [ if HashSet.member field requiredProperties
+                                    then
+                                      "Data.Aeson.Encoding.pair"
+                                        <+> "\""
+                                        <> toJsonFieldName field
+                                        <> "\""
+                                        <+> "("
+                                        <> "Data.Aeson.toEncoding"
                                         <+> toFieldName haskellField
-                                        <+> "|"
-                                        <+> "Just"
+                                        <> ")"
+                                    else
+                                      "maybe"
+                                        <+> "mempty"
+                                        <+> "("
+                                        <> "Data.Aeson.Encoding.pair"
+                                        <+> "\""
+                                        <> toJsonFieldName field
+                                        <> "\""
+                                        <+> "."
+                                        <+> "Data.Aeson.toEncoding"
+                                        <> ")"
                                         <+> toFieldName haskellField
-                                        <+> "<-"
-                                        <+> "[" <> toFieldName haskellField <> "]"
-                                        <+> "]"
-                                    )
-                                    | (field, _) <- orderedProperties,
-                                      not (HashSet.member field requiredProperties),
-                                      let haskellField =
-                                            HashMap.lookupDefault field field haskellFieldNames
-                                  ]
-                                <> ")"
-                          )
-                        <> PP.line
-                        <> PP.line
-                        <> "toEncoding"
-                      <+> toConstructorName typName
-                      <+> "{..}"
-                      <+> "="
-                      <+> "Data.Aeson.Encoding.pairs"
-                        <> PP.line
-                        <> PP.indent
-                          4
-                          ( "("
-                              <+> PP.align
-                                ( PP.concatWith
-                                    (\x y -> x <+> "<>" <> PP.line <> y)
-                                    [ if HashSet.member field requiredProperties
-                                        then
-                                          "Data.Aeson.Encoding.pair"
-                                            <+> "\"" <> toJsonFieldName field <> "\""
-                                            <+> "(" <> "Data.Aeson.toEncoding"
-                                            <+> toFieldName haskellField <> ")"
-                                        else
-                                          "maybe"
-                                            <+> "mempty"
-                                            <+> "("
-                                              <> "Data.Aeson.Encoding.pair"
-                                            <+> "\"" <> toJsonFieldName field <> "\""
-                                            <+> "."
-                                            <+> "Data.Aeson.toEncoding" <> ")"
-                                            <+> toFieldName haskellField
-                                      | (field, _) <- orderedProperties,
-                                        let haskellField =
-                                              HashMap.lookupDefault field field haskellFieldNames
-                                    ]
-                                )
-                                <> PP.line
-                                <> ")"
-                          )
-                  )
+                                  | (field, _) <- orderedProperties,
+                                    let haskellField =
+                                          HashMap.lookupDefault field field haskellFieldNames
+                                ]
+                            )
+                          <> PP.line
+                          <> ")"
+                      )
+                )
 
           fromOptOrReq field
             | HashSet.member field requiredProperties = "Data.Aeson..:"
@@ -484,30 +515,33 @@ codegenObjectType typName ObjectType {..}
               <+> "Data.Aeson.FromJSON"
               <+> toDataTypeName typName
               <+> "where"
-                <> PP.line
-                <> PP.indent
-                  4
-                  ( "parseJSON"
-                      <+> "="
-                      <+> "Data.Aeson.withObject"
-                      <+> "\"" <> toDataTypeName typName <> "\""
-                      <+> "$"
-                      <+> "\\" <> "o"
-                      <+> "->"
-                        <> PP.line
-                        <> PP.indent
-                          4
-                          ( toConstructorName typName
-                              <> PP.line
-                              <> PP.indent
-                                4
-                                ( PP.vsep
-                                    [ op <+> "o" <+> fromOptOrReq fieldName <+> "\"" <> toJsonFieldName fieldName <> "\""
-                                      | (op, (fieldName, _)) <- zip ("<$>" : repeat "<*>") orderedProperties
-                                    ]
-                                )
-                          )
-                  )
+              <> PP.line
+              <> PP.indent
+                4
+                ( "parseJSON"
+                    <+> "="
+                    <+> "Data.Aeson.withObject"
+                    <+> "\""
+                    <> toDataTypeName typName
+                    <> "\""
+                    <+> "$"
+                    <+> "\\"
+                    <> "o"
+                    <+> "->"
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( toConstructorName typName
+                          <> PP.line
+                          <> PP.indent
+                            4
+                            ( PP.vsep
+                                [ op <+> "o" <+> fromOptOrReq fieldName <+> "\"" <> toJsonFieldName fieldName <> "\""
+                                  | (op, (fieldName, _)) <- zip ("<$>" : repeat "<*>") orderedProperties
+                                ]
+                            )
+                      )
+                )
        in pure (PP.vsep $ intersperse mempty [decl, toJson, fromJson])
 
 codegenRequiredOptionalFieldType :: Bool -> Doc ann -> Doc ann
@@ -585,142 +619,148 @@ codegenEnumeration typName alternatives _includeNull =
   let dataDecl =
         "data"
           <+> toDataTypeName typName
-            <> PP.line
-            <> PP.indent
-              4
-              ( "="
-                  <+> PP.concatWith
-                    (\x y -> x <> PP.line <> "|" <+> y)
-                    (map (toEnumConstructorName typName) alternatives)
-                    <> PP.line
-                    <> "deriving"
-                  <+> "(" <> "Eq" <> ","
-                  <+> "Show" <> ")"
-              )
+          <> PP.line
+          <> PP.indent
+            4
+            ( "="
+                <+> PP.concatWith
+                  (\x y -> x <> PP.line <> "|" <+> y)
+                  (map (toEnumConstructorName typName) alternatives)
+                <> PP.line
+                <> "deriving"
+                <+> "("
+                <> "Eq"
+                <> ","
+                <+> "Show"
+                <> ")"
+            )
       toJSON =
         "instance"
           <+> "Data.Aeson.ToJSON"
           <+> toDataTypeName typName
           <+> "where"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "toJSON"
-                  <+> "x"
-                  <+> "="
-                  <+> "case"
-                  <+> "x"
-                  <+> "of"
-                    <> PP.line
-                    <> PP.indent
-                      4
-                      ( PP.vsep
-                          [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
-                            | alt <- alternatives
-                          ]
-                      )
-                    <> PP.line
-                    <> PP.line
-                    <> "toEncoding"
-                  <+> "x"
-                  <+> "="
-                  <+> "case"
-                  <+> "x"
-                  <+> "of"
-                    <> PP.line
-                    <> PP.indent
-                      4
-                      ( PP.vsep
-                          [ toEnumConstructorName typName alt <+> "->" <+> "Data.Aeson.Encoding.text" <+> "\"" <> PP.pretty alt <> "\""
-                            | alt <- alternatives
-                          ]
-                      )
-              )
+          <> PP.line
+          <> PP.indent
+            4
+            ( "toJSON"
+                <+> "x"
+                <+> "="
+                <+> "case"
+                <+> "x"
+                <+> "of"
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( PP.vsep
+                      [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
+                        | alt <- alternatives
+                      ]
+                  )
+                <> PP.line
+                <> PP.line
+                <> "toEncoding"
+                <+> "x"
+                <+> "="
+                <+> "case"
+                <+> "x"
+                <+> "of"
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( PP.vsep
+                      [ toEnumConstructorName typName alt <+> "->" <+> "Data.Aeson.Encoding.text" <+> "\"" <> PP.pretty alt <> "\""
+                        | alt <- alternatives
+                      ]
+                  )
+            )
       fromJSON =
         "instance"
           <+> "Data.Aeson.FromJSON"
           <+> toDataTypeName typName
           <+> "where"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "parseJSON"
-                  <+> "="
-                  <+> "Data.Aeson.withText"
-                  <+> "\"" <> toDataTypeName typName <> "\""
-                  <+> "$"
-                  <+> "\\" <> "s"
-                  <+> "->"
-                    <> PP.line
-                    <> PP.indent
-                      4
-                      ( "case"
-                          <+> "s"
-                          <+> "of"
-                            <> PP.line
-                            <> PP.indent
-                              4
-                              ( PP.vsep
-                                  ( [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> "pure" <+> toEnumConstructorName typName alt
-                                      | alt <- alternatives
-                                    ]
-                                      ++ ["_" <+> "->" <+> "fail" <+> "\"invalid enum value\""]
-                                  )
-                              )
-                      )
-              )
+          <> PP.line
+          <> PP.indent
+            4
+            ( "parseJSON"
+                <+> "="
+                <+> "Data.Aeson.withText"
+                <+> "\""
+                <> toDataTypeName typName
+                <> "\""
+                <+> "$"
+                <+> "\\"
+                <> "s"
+                <+> "->"
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( "case"
+                      <+> "s"
+                      <+> "of"
+                      <> PP.line
+                      <> PP.indent
+                        4
+                        ( PP.vsep
+                            ( [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> "pure" <+> toEnumConstructorName typName alt
+                                | alt <- alternatives
+                              ]
+                                ++ ["_" <+> "->" <+> "fail" <+> "\"invalid enum value\""]
+                            )
+                        )
+                  )
+            )
       toHttpApiData =
         "instance"
           <+> "Web.HttpApiData.ToHttpApiData"
           <+> toDataTypeName typName
           <+> "where"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "toQueryParam"
-                  <+> "x"
-                  <+> "="
-                  <+> "case"
-                  <+> "x"
-                  <+> "of"
-                    <> PP.line
-                    <> PP.indent
-                      4
-                      ( PP.vsep
-                          [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
-                            | alt <- alternatives
-                          ]
-                      )
-              )
+          <> PP.line
+          <> PP.indent
+            4
+            ( "toQueryParam"
+                <+> "x"
+                <+> "="
+                <+> "case"
+                <+> "x"
+                <+> "of"
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( PP.vsep
+                      [ toEnumConstructorName typName alt <+> "->" <+> "\"" <> PP.pretty alt <> "\""
+                        | alt <- alternatives
+                      ]
+                  )
+            )
       fromHttpApiData =
         "instance"
           <+> "Web.HttpApiData.FromHttpApiData"
           <+> toDataTypeName typName
           <+> "where"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "parseUrlPiece"
-                  <+> "x"
-                  <+> "="
-                    <> PP.line
-                    <> PP.indent
-                      4
-                      ( "case"
-                          <+> "x"
-                          <+> "of"
-                            <> PP.line
-                            <> PP.indent
-                              4
-                              ( PP.vsep
-                                  ( [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> "pure" <+> toEnumConstructorName typName alt
-                                      | alt <- alternatives
-                                    ]
-                                      ++ ["_" <+> "->" <+> "Left" <+> "\"invalid enum value\""]
-                                  )
-                              )
-                      )
-              )
+          <> PP.line
+          <> PP.indent
+            4
+            ( "parseUrlPiece"
+                <+> "x"
+                <+> "="
+                <> PP.line
+                <> PP.indent
+                  4
+                  ( "case"
+                      <+> "x"
+                      <+> "of"
+                      <> PP.line
+                      <> PP.indent
+                        4
+                        ( PP.vsep
+                            ( [ "\"" <> PP.pretty alt <> "\"" <+> "->" <+> "pure" <+> toEnumConstructorName typName alt
+                                | alt <- alternatives
+                              ]
+                                ++ ["_" <+> "->" <+> "Left" <+> "\"invalid enum value\""]
+                            )
+                        )
+                  )
+            )
    in PP.vsep
         ( intersperse
             mempty
