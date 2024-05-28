@@ -26,137 +26,55 @@ import Tie.Name
 
 codegenModuleHeader :: Text -> Doc ann
 codegenModuleHeader moduleName =
-  "{-#"
-    <+> "LANGUAGE"
-    <+> "BangPatterns"
-    <+> "#-}"
-    <> PP.line
-    <> "{-#"
-    <+> "LANGUAGE"
-    <+> "DataKinds"
-    <+> "#-}"
-    <> PP.line
-    <> "{-#"
-    <+> "LANGUAGE"
-    <+> "DuplicateRecordFields"
-    <+> "#-}"
-    <> PP.line
-    <> "{-#"
-    <+> "LANGUAGE"
-    <+> "OverloadedStrings"
-    <+> "#-}"
-    <> PP.line
-    <> "{-#"
-    <+> "LANGUAGE"
-    <+> "ScopedTypeVariables"
-    <+> "#-}"
-    <> PP.line
-    <> "{-#"
-    <+> "LANGUAGE"
-    <+> "RankNTypes"
-    <+> "#-}"
-    <> PP.line
-    <> "{-#"
-    <+> "LANGUAGE"
-    <+> "RecordWildCards"
-    <+> "#-}"
-    <> PP.line
-    <> "module"
-    <+> PP.pretty moduleName
-    <+> "where"
-    <> PP.line
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Control.Applicative"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Control.Exception"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Control.Monad"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Control.Monad.IO.Class"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.Aeson"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.Aeson.Encoding"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.Aeson.Types"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.Attoparsec.ByteString"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.ByteString"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.List"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.List.NonEmpty"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.Map"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.Maybe"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.Text"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.Time"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Data.Text.Encoding"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "GHC.Float"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "GHC.Int"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "GHC.Records"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "GHC.Types"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Network.HTTP.Types"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Network.Wai"
-    <> PP.line
-    <> "import"
-    <+> "qualified"
-    <+> "Web.HttpApiData"
+  let languageExtensions :: [Text]
+      languageExtensions =
+        sort
+          [ "BangPatterns",
+            "DataKinds",
+            "DuplicateRecordFields",
+            "OverloadedStrings",
+            "ScopedTypeVariables",
+            "RankNTypes",
+            "RecordWildCards"
+          ]
+
+      imports :: [Text]
+      imports =
+        sort
+          [ "Control.Applicative",
+            "Control.Exception",
+            "Control.Monad",
+            "Control.Monad.IO.Class",
+            "Data.Aeson",
+            "Data.Aeson.Types",
+            "Data.Aeson.Encoding",
+            "Data.Attoparsec.ByteString",
+            "Data.ByteString",
+            "Data.List",
+            "Data.List.NonEmpty",
+            "Data.Map",
+            "Data.Maybe",
+            "Data.Text",
+            "Data.Time",
+            "Data.Text.Encoding",
+            "GHC.Float",
+            "GHC.Int",
+            "GHC.Records",
+            "GHC.Types",
+            "Network.HTTP.Types",
+            "Network.Wai",
+            "Web.HttpApiData"
+          ]
+   in PP.vcat $
+        ( map
+            (\extension -> "{-#" <+> "LANGUAGE" <+> PP.pretty extension <+> "#-}")
+            languageExtensions
+        )
+          ++ ["module" <+> PP.pretty moduleName <+> "where", ""]
+          ++ ( map
+                 (\import_ -> "import" <+> "qualified" <+> PP.pretty import_)
+                 imports
+             )
 
 codegenExtraApiModuleDependencies :: ApiName -> Doc ann
 codegenExtraApiModuleDependencies apiName =

@@ -4,9 +4,9 @@ Test/Api.hs
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Test.Api where
 
 import qualified Control.Applicative
@@ -23,8 +23,8 @@ import qualified Data.List.NonEmpty
 import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
-import qualified Data.Time
 import qualified Data.Text.Encoding
+import qualified Data.Time
 import qualified GHC.Float
 import qualified GHC.Int
 import qualified GHC.Records
@@ -442,9 +442,9 @@ Test/Response/Test.hs
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Test.Response.Test where
 
 import qualified Control.Applicative
@@ -461,8 +461,8 @@ import qualified Data.List.NonEmpty
 import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
-import qualified Data.Time
 import qualified Data.Text.Encoding
+import qualified Data.Time
 import qualified GHC.Float
 import qualified GHC.Int
 import qualified GHC.Records
@@ -494,9 +494,9 @@ Test/Response/Test2.hs
 {-# LANGUAGE DataKinds #-}
 {-# LANGUAGE DuplicateRecordFields #-}
 {-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE ScopedTypeVariables #-}
 {-# LANGUAGE RankNTypes #-}
 {-# LANGUAGE RecordWildCards #-}
+{-# LANGUAGE ScopedTypeVariables #-}
 module Test.Response.Test2 where
 
 import qualified Control.Applicative
@@ -513,8 +513,8 @@ import qualified Data.List.NonEmpty
 import qualified Data.Map
 import qualified Data.Maybe
 import qualified Data.Text
-import qualified Data.Time
 import qualified Data.Text.Encoding
+import qualified Data.Time
 import qualified GHC.Float
 import qualified GHC.Int
 import qualified GHC.Records
