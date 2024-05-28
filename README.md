@@ -62,6 +62,16 @@ Y ou can install the executable with using:
 $ cabal install .
 ```
 
+## Formatting
+
+To pass the lint workflow run
+
+```
+$ git ls-files | grep -v 'example/' | grep \.hs | xargs ./ormolu --mode=inplace
+```
+
+to format the Haskell files accordingly using Ormolu.
+
 ## Community & Contact
 
 Feel free to join on us on our
