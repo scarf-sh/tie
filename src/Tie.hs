@@ -10,13 +10,18 @@ module Tie
   )
 where
 
+import qualified Data.Aeson
+import qualified Data.Aeson.KeyMap
+import qualified Data.Aeson.Types as Data.Aeson
 import qualified Data.HashMap.Strict.InsOrd as InsOrd
 import qualified Data.HashSet as HashSet
 import qualified Data.OpenApi as OpenApi
 import qualified Data.Set as Set
+import qualified Data.Text as Text
 import Data.Yaml (decodeFileThrow)
 import Prettyprinter (Doc, vsep)
 import Prettyprinter.Internal (unsafeTextWithoutNewlines)
+import System.FilePath (takeDirectory, (</>))
 import Tie.Codegen.Cabal (codegenCabalFile)
 import Tie.Codegen.Imports
   ( codegenExternalHaskellDependencies,
@@ -86,8 +91,49 @@ readOpenApiSpec ::
   (MonadIO m) =>
   FilePath ->
   m OpenApi.OpenApi
-readOpenApiSpec filePath =
-  liftIO (decodeFileThrow filePath)
+readOpenApiSpec filePath = do
+  value <- liftIO (decodeFileThrow filePath)
+  value <- resolveFileReferences (takeDirectory filePath) value
+  case Data.Aeson.parseMaybe Data.Aeson.parseJSON value of
+    Just openApi ->
+      pure openApi
+    Nothing ->
+      error "Could not decode OpenAPI specification"
+
+resolveFileReferences ::
+  (MonadIO m) =>
+  FilePath ->
+  Data.Aeson.Value ->
+  m Data.Aeson.Value
+resolveFileReferences cwd value = case value of
+  Data.Aeson.Object object
+    -- Relative references of the form
+    --   "$ref": "./dir/some-file.yaml"
+    | Just (Data.Aeson.String path) <- Data.Aeson.KeyMap.lookup "$ref" object,
+      "." `Text.isPrefixOf` path -> do
+        let fileName = cwd </> toString path
+        value <- liftIO (decodeFileThrow fileName)
+        resolveFileReferences (takeDirectory fileName) value
+
+    -- Relative references of the form
+    --   "$ref": "/dir/some-file.yaml"
+    | Just (Data.Aeson.String path) <- Data.Aeson.KeyMap.lookup "$ref" object,
+      "/" `Text.isPrefixOf` path -> do
+        let fileName = toString path
+        value <- liftIO (decodeFileThrow fileName)
+        resolveFileReferences (takeDirectory fileName) value
+    | otherwise ->
+        Data.Aeson.Object <$> forM object (resolveFileReferences cwd)
+  Data.Aeson.Array array ->
+    Data.Aeson.Array <$> forM array (resolveFileReferences cwd)
+  Data.Aeson.String {} ->
+    pure value
+  Data.Aeson.Number {} ->
+    pure value
+  Data.Aeson.Bool {} ->
+    pure value
+  Data.Aeson.Null ->
+    pure value
 
 -- | Extracts all the schemas form an 'OpenApi.OpenApi'.
 specSchemas :: OpenApi.OpenApi -> [(Text, OpenApi.Schema)]
