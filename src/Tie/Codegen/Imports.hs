@@ -30,131 +30,131 @@ codegenModuleHeader moduleName =
     <+> "LANGUAGE"
     <+> "BangPatterns"
     <+> "#-}"
-      <> PP.line
-      <> "{-#"
+    <> PP.line
+    <> "{-#"
     <+> "LANGUAGE"
     <+> "DataKinds"
     <+> "#-}"
-      <> PP.line
-      <> "{-#"
+    <> PP.line
+    <> "{-#"
     <+> "LANGUAGE"
     <+> "DuplicateRecordFields"
     <+> "#-}"
-      <> PP.line
-      <> "{-#"
+    <> PP.line
+    <> "{-#"
     <+> "LANGUAGE"
     <+> "OverloadedStrings"
     <+> "#-}"
-      <> PP.line
-      <> "{-#"
+    <> PP.line
+    <> "{-#"
     <+> "LANGUAGE"
     <+> "ScopedTypeVariables"
     <+> "#-}"
-      <> PP.line
-      <> "{-#"
+    <> PP.line
+    <> "{-#"
     <+> "LANGUAGE"
     <+> "RankNTypes"
     <+> "#-}"
-      <> PP.line
-      <> "{-#"
+    <> PP.line
+    <> "{-#"
     <+> "LANGUAGE"
     <+> "RecordWildCards"
     <+> "#-}"
-      <> PP.line
-      <> "module"
+    <> PP.line
+    <> "module"
     <+> PP.pretty moduleName
     <+> "where"
-      <> PP.line
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Control.Applicative"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Control.Exception"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Control.Monad"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Control.Monad.IO.Class"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.Aeson"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.Aeson.Encoding"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.Aeson.Types"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.Attoparsec.ByteString"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.ByteString"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.List"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.List.NonEmpty"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.Map"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.Maybe"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.Text"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.Time"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Data.Text.Encoding"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "GHC.Float"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "GHC.Int"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "GHC.Records"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "GHC.Types"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Network.HTTP.Types"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Network.Wai"
-      <> PP.line
-      <> "import"
+    <> PP.line
+    <> "import"
     <+> "qualified"
     <+> "Web.HttpApiData"
 

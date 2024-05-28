@@ -1,8 +1,8 @@
 {-# LANGUAGE NamedFieldPuns #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE TypeApplications #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeApplications #-}
 
 module Tie.Codegen.Response
   ( codegenResponses,
@@ -11,10 +11,10 @@ module Tie.Codegen.Response
 where
 
 import qualified Data.ByteString as ByteString
+import Data.FileEmbed (embedStringFile, makeRelativeToProject)
 import Data.List (lookup)
 import qualified Data.Text as Text
 import Network.HTTP.Media (renderHeader)
-import Data.FileEmbed (embedStringFile, makeRelativeToProject)
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
@@ -90,30 +90,30 @@ codegenResponses resolver responseModuleName Operation {..} = do
       decl =
         "data"
           <+> toApiResponseTypeName name
-            <> PP.line
-            <> PP.indent
-              4
-              ( PP.vsep $
-                  [ PP.hsep $
-                      concat
-                        [ [op, toApiResponseConstructorName name statusCode],
-                          responseBodyType response,
-                          responseHeaderTypes response
-                        ]
-                    | (op, (statusCode, response)) <- zip ("=" : repeat "|") responses
-                  ]
-                    ++ [ PP.hsep $
-                           concat
-                             [ ["|", toApiDefaultResponseConstructorName name, "Network.HTTP.Types.Status"],
-                               responseBodyType response,
-                               responseHeaderTypes response
-                             ]
-                         | Just response <- [defaultResponse]
-                       ]
-                    ++ [ "deriving" <+> "(" <> "Show" <> ")"
-                         | not requiresCustomShowInstance
-                       ]
-              )
+          <> PP.line
+          <> PP.indent
+            4
+            ( PP.vsep $
+                [ PP.hsep $
+                    concat
+                      [ [op, toApiResponseConstructorName name statusCode],
+                        responseBodyType response,
+                        responseHeaderTypes response
+                      ]
+                  | (op, (statusCode, response)) <- zip ("=" : repeat "|") responses
+                ]
+                  ++ [ PP.hsep $
+                         concat
+                           [ ["|", toApiDefaultResponseConstructorName name, "Network.HTTP.Types.Status"],
+                             responseBodyType response,
+                             responseHeaderTypes response
+                           ]
+                       | Just response <- [defaultResponse]
+                     ]
+                  ++ [ "deriving" <+> "(" <> "Show" <> ")"
+                       | not requiresCustomShowInstance
+                     ]
+            )
 
       toResponseInstance =
         codegenToResponses responseModuleName name responses defaultResponse
@@ -126,11 +126,11 @@ codegenResponses resolver responseModuleName Operation {..} = do
           <+> "Show"
           <+> toApiResponseTypeName name
           <+> "where"
-            <> PP.line
-            <> PP.indent
-              4
-              ( "show" <+> "_" <+> "=" <+> "\"" <> toApiResponseTypeName name <+> "{}" <> "\""
-              )
+          <> PP.line
+          <> PP.indent
+            4
+            ( "show" <+> "_" <+> "=" <+> "\"" <> toApiResponseTypeName name <+> "{}" <> "\""
+            )
 
   pure
     ( PP.vsep $
@@ -150,35 +150,38 @@ codegenHasStatusField operationName responses defaultResponse =
     <+> toApiResponseTypeName operationName
     <+> "Network.HTTP.Types.Status"
     <+> "where"
-      <> PP.line
-      <> PP.indent
-        4
-        ( PP.vsep $
-            [ "getField"
-                <+> "(" <> toApiResponseConstructorName operationName statusCode
-                <+> "{}" <> ")"
-                <+> "="
-                <+> "Network.HTTP.Types.status" <> PP.pretty statusCode
-              | (statusCode, _response) <- responses
-            ]
-              ++ [ "getField"
-                     <+> "("
-                       <> PP.hsep
-                         ( concat
-                             [ [toApiDefaultResponseConstructorName operationName, "status"],
-                               ( case response of
-                                   Response {responseContent = _ : _} -> ["_"]
-                                   _ -> []
-                               ),
-                               ["_" | Header {name} <- headers]
-                             ]
-                         )
-                       <> ")"
-                     <+> "="
-                     <+> "status"
-                   | Just response@Response {headers} <- [defaultResponse]
-                 ]
-        )
+    <> PP.line
+    <> PP.indent
+      4
+      ( PP.vsep $
+          [ "getField"
+              <+> "("
+              <> toApiResponseConstructorName operationName statusCode
+              <+> "{}"
+              <> ")"
+              <+> "="
+              <+> "Network.HTTP.Types.status"
+              <> PP.pretty statusCode
+            | (statusCode, _response) <- responses
+          ]
+            ++ [ "getField"
+                   <+> "("
+                   <> PP.hsep
+                     ( concat
+                         [ [toApiDefaultResponseConstructorName operationName, "status"],
+                           ( case response of
+                               Response {responseContent = _ : _} -> ["_"]
+                               _ -> []
+                           ),
+                           ["_" | Header {name} <- headers]
+                         ]
+                     )
+                   <> ")"
+                   <+> "="
+                   <+> "status"
+                 | Just response@Response {headers} <- [defaultResponse]
+               ]
+      )
 
 codegenToResponses ::
   -- | Aux. Response module name TODO make this a proper type
@@ -237,14 +240,21 @@ codegenToResponses responseModuleName operationName responses defaultResponse =
               ]
 
             optionalHeaders =
-              [ "[" <> "(\"" <> toParamName name <> "\","
+              [ "["
+                  <> "(\""
+                  <> toParamName name
+                  <> "\","
                   <+> "Web.HttpApiData.toHeader"
-                  <+> toParamBinder name <> ")"
+                  <+> toParamBinder name
+                  <> ")"
                   <+> "|"
                   <+> "Just"
                   <+> toParamBinder name
                   <+> "<-"
-                  <+> "[" <> toParamBinder name <> "]" <> "]"
+                  <+> "["
+                  <> toParamBinder name
+                  <> "]"
+                  <> "]"
                 | Header {name, required = False} <- headers
               ]
          in "("
@@ -265,53 +275,54 @@ codegenToResponses responseModuleName operationName responses defaultResponse =
           <+> "ToResponse"
           <+> toApiResponseTypeName operationName
           <+> "where"
-            <> PP.line
-            <> PP.indent
-              4
-              ( PP.vsep $
-                  [ "toResponse"
-                      <+> "("
-                        <> PP.hsep
-                          ( concat
-                              [ [toApiResponseConstructorName operationName statusCode],
-                                bodyBinder response,
-                                [toParamBinder name | Header {name} <- headers]
-                              ]
-                          )
-                        <> ")"
-                      <+> "="
-                        <> PP.line
-                        <> PP.indent
-                          4
-                          ( waiResponse response
-                              <+> "Network.HTTP.Types.status" <> PP.pretty statusCode
-                              <+> responseHeaders response
-                              <+> bodySerialize response
-                          )
-                    | (statusCode, response@Response {headers}) <- responses
-                  ]
-                    ++ [ "toResponse"
-                           <+> "("
-                             <> PP.hsep
-                               ( concat
-                                   [ [toApiDefaultResponseConstructorName operationName, "status"],
-                                     bodyBinder response,
-                                     [toParamBinder name | Header {name} <- headers]
-                                   ]
-                               )
-                             <> ")"
-                           <+> "="
-                             <> PP.line
-                             <> PP.indent
-                               4
-                               ( waiResponse response
-                                   <+> "status"
-                                   <+> responseHeaders response
-                                   <+> bodySerialize response
-                               )
-                         | Just response@Response {headers} <- [defaultResponse]
-                       ]
-              )
+          <> PP.line
+          <> PP.indent
+            4
+            ( PP.vsep $
+                [ "toResponse"
+                    <+> "("
+                    <> PP.hsep
+                      ( concat
+                          [ [toApiResponseConstructorName operationName statusCode],
+                            bodyBinder response,
+                            [toParamBinder name | Header {name} <- headers]
+                          ]
+                      )
+                    <> ")"
+                    <+> "="
+                    <> PP.line
+                    <> PP.indent
+                      4
+                      ( waiResponse response
+                          <+> "Network.HTTP.Types.status"
+                          <> PP.pretty statusCode
+                          <+> responseHeaders response
+                          <+> bodySerialize response
+                      )
+                  | (statusCode, response@Response {headers}) <- responses
+                ]
+                  ++ [ "toResponse"
+                         <+> "("
+                         <> PP.hsep
+                           ( concat
+                               [ [toApiDefaultResponseConstructorName operationName, "status"],
+                                 bodyBinder response,
+                                 [toParamBinder name | Header {name} <- headers]
+                               ]
+                           )
+                         <> ")"
+                         <+> "="
+                         <> PP.line
+                         <> PP.indent
+                           4
+                           ( waiResponse response
+                               <+> "status"
+                               <+> responseHeaders response
+                               <+> bodySerialize response
+                           )
+                       | Just response@Response {headers} <- [defaultResponse]
+                     ]
+            )
    in decl
 
 templateContents :: ByteString
