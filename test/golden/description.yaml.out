@@ -38,25 +38,24 @@ import Test.Response
 
 
 
-import Test.Schemas.Test
+
 
 import Test.Response.Test
-import Test.Response.Test1
-import Test.Response.Test2
 
 data Api m = Api {
     -- | test
     test ::
-        -- @x-next@
-        -- How many items to return at one time (max 100)
-        (Data.Maybe.Maybe (GHC.Int.Int32)) ->
-        m TestResponse,
-    -- | test
-    test1 ::
-        m Test1Response,
-    -- | test
-    test2 ::
-        m Test2Response
+        -- @package_query@
+        -- Use this query parameter to filter for the packages thats suits your use case. It can be used by passing in either package names or package ids.  To query for multiple packages you can pass in comma separated values. For example:
+        -- ```
+        -- package_query=17ea97c0-d350-45ce-9f36-ebb66694196c,558664cd-fece-47f5-a9ca-f30974cf96a5,...
+        -- ```
+        -- Or if you prefer using package names, you can also pass in 
+        -- ```
+        -- package_query=package_name_1,package_name_2...
+        -- ```
+        (Data.Maybe.Maybe (Data.Text.Text)) ->
+        m TestResponse
 }
 
 application :: (Control.Monad.IO.Class.MonadIO m) => (forall a . Network.Wai.Request -> m a -> IO a) -> Api m -> Network.Wai.Application -> Network.Wai.Application
@@ -65,31 +64,11 @@ application run api notFound request respond =
         ["test"] ->
             case Network.Wai.requestMethod request of
                 "GET" ->
-                    optionalHeader "x-next" (\__x_next request respond ->
+                    optionalQueryParameter "package_query" False (\__package_query request respond ->
                         run request (do
-                            response <- test api __x_next
+                            response <- test api __package_query
                             Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
                         )) request respond
-                x ->
-                    unsupportedMethod x
-
-        ["test1"] ->
-            case Network.Wai.requestMethod request of
-                "GET" ->
-                    run request (do
-                        response <- test1 api
-                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
-                    )
-                x ->
-                    unsupportedMethod x
-
-        ["test2"] ->
-            case Network.Wai.requestMethod request of
-                "GET" ->
-                    run request (do
-                        response <- test2 api
-                        Control.Monad.IO.Class.liftIO (respond $! (toResponse response))
-                    )
                 x ->
                     unsupportedMethod x
 
@@ -489,12 +468,14 @@ import qualified Network.HTTP.Types
 import qualified Network.Wai
 import qualified Web.HttpApiData
 
-import Test.Schemas.Test
+
 
 import Test.Response
 
+type TestResponseBody200 = Data.Aeson.Value
+
 data TestResponse
-    = TestResponse200 Test
+    = TestResponse200 [ TestResponseBody200 ]
     deriving (Show)
 
 instance ToResponse TestResponse where
@@ -503,170 +484,6 @@ instance ToResponse TestResponse where
 
 instance GHC.Records.HasField "status" TestResponse Network.HTTP.Types.Status where
     getField (TestResponse200 {}) = Network.HTTP.Types.status200
----------------------
-Test/Response/Test1.hs
-
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-module Test.Response.Test1 where
-
-import qualified Control.Applicative
-import qualified Control.Exception
-import qualified Control.Monad
-import qualified Control.Monad.IO.Class
-import qualified Data.Aeson
-import qualified Data.Aeson.Encoding
-import qualified Data.Aeson.Types
-import qualified Data.Attoparsec.ByteString
-import qualified Data.ByteString
-import qualified Data.List
-import qualified Data.List.NonEmpty
-import qualified Data.Map
-import qualified Data.Maybe
-import qualified Data.Text
-import qualified Data.Text.Encoding
-import qualified Data.Time
-import qualified GHC.Float
-import qualified GHC.Int
-import qualified GHC.Records
-import qualified GHC.Types
-import qualified Network.HTTP.Types
-import qualified Network.Wai
-import qualified Web.HttpApiData
-
-
-
-import Test.Response
-
-data Test1Response
-    = Test1Response201 (Data.Maybe.Maybe (Data.Text.Text))
-    deriving (Show)
-
-instance ToResponse Test1Response where
-    toResponse (Test1Response201 __Location) =
-        Network.Wai.responseBuilder Network.HTTP.Types.status201 ([("Location", Web.HttpApiData.toHeader __Location) | Just __Location <- [__Location]] ++ []) mempty
-
-instance GHC.Records.HasField "status" Test1Response Network.HTTP.Types.Status where
-    getField (Test1Response201 {}) = Network.HTTP.Types.status201
----------------------
-Test/Response/Test2.hs
-
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-module Test.Response.Test2 where
-
-import qualified Control.Applicative
-import qualified Control.Exception
-import qualified Control.Monad
-import qualified Control.Monad.IO.Class
-import qualified Data.Aeson
-import qualified Data.Aeson.Encoding
-import qualified Data.Aeson.Types
-import qualified Data.Attoparsec.ByteString
-import qualified Data.ByteString
-import qualified Data.List
-import qualified Data.List.NonEmpty
-import qualified Data.Map
-import qualified Data.Maybe
-import qualified Data.Text
-import qualified Data.Text.Encoding
-import qualified Data.Time
-import qualified GHC.Float
-import qualified GHC.Int
-import qualified GHC.Records
-import qualified GHC.Types
-import qualified Network.HTTP.Types
-import qualified Network.Wai
-import qualified Web.HttpApiData
-
-
-
-import Test.Response
-
-data Test2Response
-    = Test2Response201 Data.Text.Text
-    deriving (Show)
-
-instance ToResponse Test2Response where
-    toResponse (Test2Response201 __Location) =
-        Network.Wai.responseBuilder Network.HTTP.Types.status201 ([("Location", Web.HttpApiData.toHeader __Location)]) mempty
-
-instance GHC.Records.HasField "status" Test2Response Network.HTTP.Types.Status where
-    getField (Test2Response201 {}) = Network.HTTP.Types.status201
----------------------
-Test/Schemas/Test.hs
-
-{-# LANGUAGE BangPatterns #-}
-{-# LANGUAGE DataKinds #-}
-{-# LANGUAGE DuplicateRecordFields #-}
-{-# LANGUAGE OverloadedStrings #-}
-{-# LANGUAGE RankNTypes #-}
-{-# LANGUAGE RecordWildCards #-}
-{-# LANGUAGE ScopedTypeVariables #-}
-module Test.Schemas.Test where
-
-import qualified Control.Applicative
-import qualified Control.Exception
-import qualified Control.Monad
-import qualified Control.Monad.IO.Class
-import qualified Data.Aeson
-import qualified Data.Aeson.Encoding
-import qualified Data.Aeson.Types
-import qualified Data.Attoparsec.ByteString
-import qualified Data.ByteString
-import qualified Data.List
-import qualified Data.List.NonEmpty
-import qualified Data.Map
-import qualified Data.Maybe
-import qualified Data.Text
-import qualified Data.Text.Encoding
-import qualified Data.Time
-import qualified GHC.Float
-import qualified GHC.Int
-import qualified GHC.Records
-import qualified GHC.Types
-import qualified Network.HTTP.Types
-import qualified Network.Wai
-import qualified Web.HttpApiData
-
-
-
-
-
-data Test = Test
-    {
-        dateProp :: (Data.Maybe.Maybe (Data.Time.Day)),
-        dateTimeProp :: (Data.Maybe.Maybe (Data.Time.UTCTime))
-    }
-    deriving (Show)
-
-instance Data.Aeson.ToJSON Test where
-    toJSON Test {..} = Data.Aeson.object
-        ([ 
-        ]
-        ++ [ "dateProp" Data.Aeson..= dateProp | Just dateProp <- [dateProp] ]
-        ++ [ "dateTimeProp" Data.Aeson..= dateTimeProp | Just dateTimeProp <- [dateTimeProp] ])
-
-    toEncoding Test {..} = Data.Aeson.Encoding.pairs
-        ( maybe mempty (Data.Aeson.Encoding.pair "dateProp" . Data.Aeson.toEncoding) dateProp <>
-          maybe mempty (Data.Aeson.Encoding.pair "dateTimeProp" . Data.Aeson.toEncoding) dateTimeProp
-        )
-
-instance Data.Aeson.FromJSON Test where
-    parseJSON = Data.Aeson.withObject "Test" $ \o ->
-        Test
-            <$> o Data.Aeson..:? "dateProp"
-            <*> o Data.Aeson..:? "dateTimeProp"
 ---------------------
 test.cabal
 
@@ -693,6 +510,3 @@ library
     Test.Request
     Test.Response
     Test.Response.Test
-    Test.Response.Test1
-    Test.Response.Test2
-    Test.Schemas.Test

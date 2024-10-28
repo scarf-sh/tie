@@ -9,6 +9,7 @@ module Tie.Codegen.Operation
 where
 
 import qualified Data.Map.Strict as Map
+import qualified Debug.Trace
 import Prettyprinter (Doc, (<+>))
 import qualified Prettyprinter as PP
 import qualified Prettyprinter.Render.Text as PP
@@ -185,7 +186,18 @@ codegenApiTypeOperation resolver Operation {..} = do
       Nothing ->
         "--" <+> "@" <> toParamName name <> "@" <> PP.line
       Just comment ->
-        "--" <+> "@" <> toParamName name <> "@" <+> PP.pretty comment <> PP.line
+        "--"
+          <+> "@"
+          <> toParamName name
+          <> "@"
+          <> PP.line
+          <> codegenMultilineComment comment
+          <> PP.line
+
+    codegenMultilineComment :: Text -> Doc ann
+    codegenMultilineComment commentLines =
+      let comments = fmap ("-- " <>) $ lines commentLines
+       in PP.cat (fmap PP.pretty comments)
 
     codegenRequestBodyComment RequestBody {description} = case description of
       Nothing ->

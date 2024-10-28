@@ -9,5 +9,6 @@ pkgs.mkShell {
     ghc
     cabal-install
     ghcid
+    ormolu
   ];
 }
