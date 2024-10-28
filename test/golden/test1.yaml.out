@@ -47,9 +47,11 @@ import Test.Response.GetUser
 data Api m = Api {
     -- | Adds a new user
     createUser ::
-        -- @id@ Uniquely identifies a user
+        -- @id@
+        -- Uniquely identifies a user
         GHC.Int.Int ->
-        -- @name@ Name of a user
+        -- @name@
+        -- Name of a user
         Data.Text.Text ->
         -- @page@
         GHC.Int.Int ->
@@ -59,9 +61,11 @@ data Api m = Api {
         CreateUserRequestBody ->
         m CreateUserResponse,
     getUser ::
-        -- @id@ Uniquely identifies a user
+        -- @id@
+        -- Uniquely identifies a user
         GHC.Int.Int ->
-        -- @name@ Name of a user
+        -- @name@
+        -- Name of a user
         Data.Text.Text ->
         -- @page@
         GHC.Int.Int ->

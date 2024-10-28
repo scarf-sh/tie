@@ -52,12 +52,14 @@ data Api m = Api {
         m CreatePetsResponse,
     -- | List all pets
     listPets ::
-        -- @limit@ How many items to return at one time (max 100)
+        -- @limit@
+        -- How many items to return at one time (max 100)
         (Data.Maybe.Maybe (GHC.Int.Int32)) ->
         m ListPetsResponse,
     -- | Info for a specific pet
     showPetById ::
-        -- @petId@ The id of the pet to retrieve
+        -- @petId@
+        -- The id of the pet to retrieve
         Data.Text.Text ->
         m ShowPetByIdResponse
 }
